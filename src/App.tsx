@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { HashRouter, Navigate, NavLink, Outlet, Route, Routes, useLocation } from "react-router-dom";
 
+import { AlarmRinging } from "./components/AlarmRinging";
 import { I18nProvider } from "./components/I18nProvider";
 import { TitleBar } from "./components/TitleBar";
 import { ToastHost } from "./components/ToastHost";
@@ -86,6 +87,7 @@ function Shell() {
       <main className="content">
         <Outlet />
       </main>
+      <AlarmRinging />
       <ToastHost />
     </div>
   );

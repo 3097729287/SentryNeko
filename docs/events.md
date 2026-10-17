@@ -35,12 +35,14 @@ a new event: add the new name, migrate the listeners, then drop the old one.
 | `notification-fallback` | `NotificationFallback` — `{ kind, reason }` | `send_test_notification` pushes one when the system refuses the toast, so the frontend paints it in the app instead | T14 |
 | `app-switch` | `AppEvent` — `{ id, appName, windowTitle, startedAt, endedAt }` | The foreground collector opened a row, i.e. another app took the foreground. A title change inside the same app updates its row without a push, so one push is one switch | T15 |
 | `pomodoro-finished` | `PomodoroSession` — `{ id, phase, plannedSeconds, actualSeconds, startedAt, endedAt, todoId }` | `finish_pomodoro_session` closed a session, so a history view can refresh without polling; the window that closed it already knows | T15 |
+| `alarm-triggered` | `Alarm` — `{ id, label, hour, minute, repeatDays, enabled, createdAt }` | `services/scheduler.rs` reached the alarm's local time: the system chime and the toast (or its `notification-fallback`) were handed over first. A one-off is already switched off, so the payload carries `enabled: false` | T17 |
 
 The shell (`App.tsx`) subscribes to `app-switch` once and hands every push to
 `stores/appEventStore.ts`, which keeps the newest rows; `EventsPage` renders that tail, so switching
-apps updates the list while the page is open and keeps it current across page changes. The alarm
-trigger push is not listed yet: it arrives with T17, once `services/scheduler.rs` has something to
-fire.
+apps updates the list while the page is open and keeps it current across page changes. It also
+renders `AlarmRinging`, which keeps the newest `alarm-triggered` push on screen for a minute or
+until dismissed: a toast can be missed while the window is in the background, and the payload is
+enough to say which alarm it was.
 
 ## Payload rules
 

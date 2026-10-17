@@ -8,6 +8,7 @@ import type { ApiResponse, TestEventPayload } from "../types";
 
 /** Event names the backend pushes; each one is documented in `docs/events.md`. */
 export const BACKEND_EVENTS = {
+  alarmTriggered: "alarm-triggered",
   appSwitch: "app-switch",
   notificationFallback: "notification-fallback",
   pomodoroFinished: "pomodoro-finished",

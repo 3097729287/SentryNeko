@@ -66,6 +66,41 @@ impl Notification {
             title: title.to_owned(),
         }
     }
+
+    /// The copy shown when an alarm goes off; an empty label leaves the time of day to the body.
+    #[must_use]
+    pub fn alarm(language: Language, label: &str) -> Self {
+        let (title, reminder) = match language {
+            Language::ZhCn => ("闹钟", "到点了。"),
+            Language::EnUs => ("Alarm", "It is time."),
+        };
+        let label = label.trim();
+
+        Self {
+            body: if label.is_empty() {
+                reminder.to_owned()
+            } else {
+                label.to_owned()
+            },
+            kind: NotificationKind::Alarm,
+            title: title.to_owned(),
+        }
+    }
+}
+
+/// Plays the alarm tone; [`AppHandle`] in the application, a fake in tests.
+///
+/// The tone is separate from the toast on purpose: a system that blocks notifications must not
+/// silence an alarm, and a machine without a sound device must still show one.
+pub trait Chime: Send + Sync + 'static {
+    /// Plays the tone once; the error message is the platform's reason when it cannot.
+    fn play(&self) -> Result<(), String>;
+}
+
+impl<R: Runtime> Chime for AppHandle<R> {
+    fn play(&self) -> Result<(), String> {
+        crate::utils::windows::play_alert()
+    }
 }
 
 /// Which path a delivery took.
@@ -231,6 +266,27 @@ mod tests {
             assert!(!english.body.is_empty());
             assert_ne!(english.title, chinese.title, "{phase:?} is not translated");
         }
+    }
+
+    #[test]
+    fn the_alarm_copy_carries_the_label_and_is_translated() {
+        let english = Notification::alarm(Language::EnUs, "  stand up  ");
+        let chinese = Notification::alarm(Language::ZhCn, "  stand up  ");
+
+        assert_eq!(english.kind, NotificationKind::Alarm);
+        assert_eq!(english.body, "stand up", "the label is the body, trimmed");
+        assert_eq!(english.title, "Alarm");
+        assert_ne!(english.title, chinese.title);
+    }
+
+    #[test]
+    fn an_unlabelled_alarm_falls_back_to_its_reminder_copy() {
+        let english = Notification::alarm(Language::EnUs, "   ");
+        let chinese = Notification::alarm(Language::ZhCn, "");
+
+        assert!(!english.body.is_empty());
+        assert_ne!(english.body, chinese.body, "the copy is translated");
+        assert_eq!(english.body, "It is time.");
     }
 
     #[test]

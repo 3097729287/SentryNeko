@@ -68,7 +68,7 @@ The schema holds seven tables:
 | `todos` | Tasks the user maintains | `title`, `completed`, `completed_at`, `created_at`, `updated_at`, `tag_ids` |
 | `pomodoro_sessions` | One focus or break interval | `phase`, `planned_seconds`, `actual_seconds`, `started_at`, `ended_at`, `todo_id` |
 | `app_events` | Foreground application activity | `app_name`, `window_title`, `started_at`, `ended_at` |
-| `alarms` | Recurring reminders | `label`, `hour`, `minute`, `repeat_days`, `enabled`, `created_at` |
+| `alarms` | One-off or weekly reminders | `label`, `hour`, `minute`, `repeat_days`, `enabled`, `created_at` |
 | `settings` | Key/value application settings | `key`, `value`, `updated_at` |
 | `tags` | Tag names a task can carry | `name` (unique, case-insensitive), `created_at` |
 | `todo_tags` | Link between a task and a tag | `todo_id`, `tag_id` |
@@ -116,6 +116,24 @@ The heatmap (`models/heatmap.rs`) rolls `pomodoro_sessions` and `todos` up into 
 - A task counts on the day `completed_at` names. `set_completed` stamps it when the box is ticked
   and clears it when the task is reopened, so renaming a finished task never moves it to another
   day.
+
+`alarms` is maintained by `commands/alarm_commands.rs` and read by `services/scheduler.rs`:
+
+- `hour` and `minute` are the local wall clock, never an instant, so a row keeps its meaning when
+  the time zone changes. `repeat_days` is a weekday mask: bit 0 is Monday and bit 6 is Sunday, so
+  `127` is every day and `0` is a one-off.
+- A one-off rings at the next occurrence of its time and is switched off once it has rung; turning
+  it back on arms it again. A repeating alarm stays on and waits for its next selected weekday.
+- Every row persists, so an alarm that has not expired keeps working after a restart: the
+  scheduler resolves the next instant from the clock at startup instead of storing one. By the
+  same rule an instant that passed while the app was closed is not replayed.
+- The instant is resolved through the Windows time zone rules, so a day whose clocks move keeps
+  its real length. A wall-clock time the clock skips that day (spring forward) is skipped with it —
+  a repeating alarm waits for its next selected day; a time the clock repeats (fall back) rings on
+  its first pass and never twice.
+- The scheduler keeps one instant per alarm and reads the table once a second, so adding, editing,
+  deleting or switching a row takes effect within a second. An instant that arrived while the row
+  was being read still rings, up to one tick late.
 
 ## Schema creation
 

@@ -111,7 +111,11 @@ midnight — and the backend clips stored rows to it, merges an app revisited la
 and drops the lock and sign-in shells. The heatmap group answers the chart: `heatmap` takes the
 window and a `granularity` (`day`, `week` or `month`) and returns one bucket per local day, Monday
 or first of the month — empty ones included — carrying the focus seconds of phases that started
-there and the tasks completed there; the rules live in `docs/database.md`.
+there and the tasks completed there; the rules live in `docs/database.md`. The alarm group
+maintains the reminders the scheduler watches: `list_alarms`, `add_alarm`, `update_alarm`,
+`set_alarm_enabled` and `delete_alarm`. `hour` and `minute` are the local wall clock and
+`repeatDays` is a weekday mask (`0` for a one-off); nothing here rings — `services/scheduler.rs`
+does, on the thread that owns the clock, so an alarm fires whether or not the page is open.
 
 | Command | Module | Arguments | Returns | Task |
 | --- | --- | --- | --- | --- |
@@ -141,3 +145,8 @@ there and the tasks completed there; the rules live in `docs/database.md`.
 | `get_uptime` | `system_commands` | — | `Uptime` (`{ bootAt, todaySeconds, totalSeconds }`) | T13 |
 | `app_usage` | `app_event_commands` | `from: i64`, `to: i64`, `limit: i64` | `AppUsage[]` (`{ appName, seconds }`) | T20 |
 | `heatmap` | `heatmap_commands` | `from: i64`, `to: i64`, `granularity: "day" \| "week" \| "month"` | `HeatmapBucket[]` (`{ start, focusSeconds, completedTasks }`) | T19 |
+| `list_alarms` | `alarm_commands` | — | `Alarm[]` (`{ id, label, hour, minute, repeatDays, enabled, createdAt }`) | T17 |
+| `add_alarm` | `alarm_commands` | `label: String`, `hour: i64`, `minute: i64`, `repeatDays: i64` | `Alarm` | T17 |
+| `update_alarm` | `alarm_commands` | `id: i64`, `label: String`, `hour: i64`, `minute: i64`, `repeatDays: i64` | `Alarm` | T17 |
+| `set_alarm_enabled` | `alarm_commands` | `id: i64`, `enabled: bool` | `Alarm` | T17 |
+| `delete_alarm` | `alarm_commands` | `id: i64` | — | T17 |

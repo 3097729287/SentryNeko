@@ -1,4 +1,37 @@
 {
+  "alarm": {
+    "add": "Add alarm",
+    "cancel": "Cancel",
+    "delete": "Delete alarm",
+    "edit": "Edit alarm",
+    "empty": "No alarms yet — add the first one above.",
+    "error": "The alarm list could not be loaded.",
+    "label": "Label",
+    "labelPlaceholder": "Wake up",
+    "loading": "Loading…",
+    "repeat": {
+      "every": "Every day",
+      "label": "Repeat",
+      "once": "Once"
+    },
+    "ringing": {
+      "dismiss": "Dismiss",
+      "title": "Alarm"
+    },
+    "save": "Save",
+    "time": "Time",
+    "toggle": "Enable alarm",
+    "untitled": "Alarm",
+    "weekday": {
+      "fri": "Fri",
+      "mon": "Mon",
+      "sat": "Sat",
+      "sun": "Sun",
+      "thu": "Thu",
+      "tue": "Tue",
+      "wed": "Wed"
+    }
+  },
   "analytics": {
     "loading": "Loading…",
     "range": {

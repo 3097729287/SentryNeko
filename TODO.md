@@ -54,7 +54,7 @@ Status legend: `[ ]` not started　`[~]` in progress　`[x]` done　`[!]` blocke
 
 | Status | ID | Task | Depends on | Acceptance criteria |
 | --- | --- | --- | --- | --- |
-| [ ] | T17 | Alarms: one-off/repeating + `scheduler.rs` | T04, T14 | Fires notification and ringtone on time; alarms that have not expired survive an app restart; pushes the alarm trigger event (T15) |
+| [x] | T17 | Alarms: one-off/repeating + `scheduler.rs` | T04, T14 | Fires notification and ringtone on time; alarms that have not expired survive an app restart; pushes the alarm trigger event (T15) |
 | [ ] | T18 | Alarm defaults (ring duration, notification method) | T16, T17 | Merged into the settings page; new alarms inherit the defaults |
 | [x] | T19 | Heatmap: aggregate focus time and task count by day/week/month | T04, T11 | `heatmap_commands.rs` + `HeatmapChart.tsx`, GitHub style; aggregation rules documented and consistent |
 | [x] | T20 | App usage stats: aggregation per app + Top ranking | T12 | Attribution rules defined (merge adjacent records, ignore idle/lock screen); ranking supports time-range switching |

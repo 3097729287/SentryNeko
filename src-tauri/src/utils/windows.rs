@@ -54,9 +54,13 @@ struct LastInputInfo {
     tick: u32,
 }
 
+/// `MB_ICONASTERISK`: the chime Windows plays for an informational alert.
+const MB_ICONASTERISK: u32 = 0x0000_0040;
+
 #[link(name = "user32")]
 extern "system" {
     fn GetForegroundWindow() -> WindowHandle;
+    fn MessageBeep(sound: u32) -> i32;
     fn IsWindowVisible(window: WindowHandle) -> i32;
     fn GetWindowTextLengthW(window: WindowHandle) -> i32;
     fn GetWindowTextW(window: WindowHandle, buffer: *mut u16, capacity: i32) -> i32;
@@ -187,6 +191,18 @@ pub fn milliseconds_since_last_input() -> Option<u64> {
     Some(u64::from(now.wrapping_sub(last.tick)))
 }
 
+/// Plays the chime Windows uses for an informational alert, once.
+///
+/// The error is the platform's reason, e.g. when the process has no sound device; the caller
+/// decides whether that is worth reporting.
+pub fn play_alert() -> Result<(), String> {
+    if unsafe { MessageBeep(MB_ICONASTERISK) } == 0 {
+        return Err("the system refused to play the alert".to_owned());
+    }
+
+    Ok(())
+}
+
 /// UTC epoch seconds of the local midnight that starts the day `utc_seconds` falls in.
 ///
 /// The local time is resolved through the Windows time zone rules rather than a stored offset, so
@@ -194,12 +210,7 @@ pub fn milliseconds_since_last_input() -> Option<u64> {
 /// break the instant down.
 #[must_use]
 pub fn local_midnight(utc_seconds: i64) -> Option<i64> {
-    let universal = system_time_of(utc_seconds)?;
-
-    let mut local = SystemTime::default();
-    if unsafe { SystemTimeToTzSpecificLocalTime(ptr::null(), &universal, &mut local) } == 0 {
-        return None;
-    }
+    let local = local_time_of(utc_seconds)?;
 
     let midnight = SystemTime {
         hour: 0,
@@ -224,12 +235,7 @@ pub fn local_midnight(utc_seconds: i64) -> Option<i64> {
 /// Local calendar date of `utc_seconds`; `None` when Windows cannot break the instant down.
 #[must_use]
 pub fn local_date(utc_seconds: i64) -> Option<LocalDate> {
-    let universal = system_time_of(utc_seconds)?;
-    let mut local = SystemTime::default();
-
-    if unsafe { SystemTimeToTzSpecificLocalTime(ptr::null(), &universal, &mut local) } == 0 {
-        return None;
-    }
+    let local = local_time_of(utc_seconds)?;
 
     Some(LocalDate {
         year: local.year,
@@ -237,6 +243,17 @@ pub fn local_date(utc_seconds: i64) -> Option<LocalDate> {
         day: local.day,
         weekday: local.day_of_week,
     })
+}
+
+/// Minutes the local clock reads on `utc_seconds`, counted from its midnight.
+///
+/// `None` when Windows cannot break the instant down. The value runs `0..1440` on a normal day and
+/// is one of the answers a wall-clock time can have when a clock change repeats an hour.
+#[must_use]
+pub fn local_minutes(utc_seconds: i64) -> Option<i64> {
+    let local = local_time_of(utc_seconds)?;
+
+    Some(seconds_of_day(&local) / 60)
 }
 
 /// Process id that owns `window`; `None` when Windows reports none.
@@ -288,6 +305,18 @@ fn window_title(window: WindowHandle) -> Option<String> {
     let title = title.trim();
 
     (!title.is_empty()).then(|| title.to_owned())
+}
+
+/// Broken-down local time of an epoch instant, in the zone the machine is set to.
+fn local_time_of(utc_seconds: i64) -> Option<SystemTime> {
+    let universal = system_time_of(utc_seconds)?;
+    let mut local = SystemTime::default();
+
+    if unsafe { SystemTimeToTzSpecificLocalTime(ptr::null(), &universal, &mut local) } == 0 {
+        return None;
+    }
+
+    Some(local)
 }
 
 /// Broken-down universal time of an epoch instant.
@@ -411,6 +440,31 @@ mod tests {
         assert_eq!(
             local_date(midnight).map(|start| (start.year, start.month, start.day)),
             Some((date.year, date.month, date.day))
+        );
+    }
+
+    #[test]
+    fn the_local_minutes_count_the_wall_clock_from_midnight() {
+        let now = now();
+        let minutes = local_minutes(now).expect("the clock is readable");
+        let midnight = local_midnight(now).expect("the day has a start");
+
+        assert!(
+            (0..1440).contains(&minutes),
+            "{minutes} is not a time of day"
+        );
+        assert_eq!(
+            local_minutes(midnight),
+            Some(0),
+            "midnight is zero minutes into the day"
+        );
+
+        // The wall clock agrees with the elapsed time on a day whose offset does not change.
+        let elapsed = (now - midnight) / 60;
+
+        assert!(
+            (minutes - elapsed).abs() <= 90,
+            "the wall clock reads {minutes} after {elapsed} minutes"
         );
     }
 
