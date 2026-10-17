@@ -1003,6 +1003,233 @@ p {
   height: 10px;
 }
 
+/* Dashboard */
+
+.dash {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+.dash-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.dash-hero {
+  grid-row: span 2;
+  border-color: var(--border-strong);
+  background:
+    radial-gradient(120% 80% at 100% 0%, var(--accent-soft), transparent 62%),
+    var(--surface);
+}
+
+.dash-wide {
+  grid-column: 1 / -1;
+}
+
+.dash-kicker {
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.dash-clock {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  font-size: clamp(46px, 7vw, 68px);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  letter-spacing: -0.05em;
+  line-height: 0.95;
+}
+
+.dash-clock .dash-unit {
+  margin-right: 6px;
+}
+
+.dash-timer,
+.dash-rate,
+.dash-count {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.dash-timer {
+  font-size: 34px;
+}
+
+.dash-rate {
+  font-size: 44px;
+}
+
+.dash-count {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  font-size: 44px;
+}
+
+.dash-unit {
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.dash-note {
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+
+.dash-muted {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.dash-link {
+  align-self: flex-start;
+  margin-top: auto;
+  border-bottom: 1px solid transparent;
+  color: var(--accent-text);
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.dash-link:hover {
+  border-bottom-color: currentColor;
+}
+
+.dash-pulse {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: auto;
+  padding-top: var(--space-4);
+}
+
+.dash-day {
+  display: grid;
+  grid-template-rows: 96px auto;
+  gap: 6px;
+  min-width: 0;
+}
+
+.dash-day-track {
+  display: flex;
+  align-items: flex-end;
+  height: 100%;
+  border-bottom: 1px solid var(--border);
+}
+
+.dash-day-bar {
+  width: 100%;
+  border-radius: 3px 3px 0 0;
+  background: var(--border-strong);
+  transition: height 240ms ease, background-color 120ms ease;
+}
+
+.dash-day[data-today="true"] .dash-day-bar {
+  background: var(--accent);
+  box-shadow: 0 0 14px var(--accent-soft);
+}
+
+.dash-day:hover .dash-day-bar {
+  background: var(--accent-text);
+}
+
+.dash-day-label {
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dash-day[data-today="true"] .dash-day-label {
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+.dash-apps {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dash-app {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px var(--space-3);
+  align-items: baseline;
+  font-size: 13px;
+}
+
+.dash-app .meter {
+  grid-column: 1 / -1;
+  height: 4px;
+}
+
+.dash-app-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dash-app-time {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.dash-alarm {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  align-items: baseline;
+}
+
+.dash-alarm-time {
+  font-size: 32px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.dash-alarm-label {
+  font-size: 13.5px;
+}
+
+.dash-alarm .dash-link {
+  margin-top: 0;
+  margin-left: auto;
+}
+
+@media (max-width: 760px) {
+  .dash {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dash-hero {
+    grid-row: auto;
+  }
+}
+
 /* Analytics */
 
 .analytics-section {
@@ -1190,7 +1417,8 @@ p {
 @media (prefers-reduced-motion: reduce) {
   .nav-indicator,
   .segmented-indicator,
-  .usage-bar span {
+  .meter span,
+  .dash-day-bar {
     transition: none;
   }
 }

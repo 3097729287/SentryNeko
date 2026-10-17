@@ -95,6 +95,52 @@
     "title": "Start with Windows",
     "toggle": "Start SentryNeko when I sign in"
   },
+  "dashboard": {
+    "alarm": {
+      "empty": "No alarm is switched on.",
+      "everyday": "Every day",
+      "once": "One-off",
+      "open": "Open alarms",
+      "title": "Next alarm",
+      "untitled": "Alarm"
+    },
+    "apps": {
+      "empty": "No foreground activity today.",
+      "open": "Open analytics",
+      "title": "Apps today"
+    },
+    "error": "The dashboard could not be loaded.",
+    "focus": {
+      "average": "7-day average {{value}}",
+      "completed": "{{count}} tasks done today",
+      "title": "Focus today"
+    },
+    "hours": "h",
+    "loading": "Loading…",
+    "minutes": "m",
+    "pomodoro": {
+      "idle": "Not started",
+      "open": "Open timer",
+      "running": "Running",
+      "title": "Pomodoro"
+    },
+    "pulse": {
+      "label": "Focus time of the last seven days",
+      "point": "{{day}} · {{minutes}} min"
+    },
+    "rate": {
+      "counts": "{{completed}} of {{total}} tasks done",
+      "empty": "No tasks yet today.",
+      "title": "Completion today",
+      "value": "{{percent}}%"
+    },
+    "todos": {
+      "completed": "{{count}} done",
+      "open": "Open tasks",
+      "remaining": "open",
+      "title": "Todos"
+    }
+  },
   "events": {
     "error": "The event stream could not be loaded.",
     "loading": "Loading…",
@@ -148,9 +194,6 @@
       "pomodoro": "The pomodoro phase ended, but the system blocked the notification.",
       "test": "System notifications are blocked; this one is shown in the app instead."
     }
-  },
-  "pages": {
-    "empty": "Nothing here yet."
   },
   "pomodoro": {
     "error": "The timer could not reach the backend.",
