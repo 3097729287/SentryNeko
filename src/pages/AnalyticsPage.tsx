@@ -1,7 +1,8 @@
-/** Analytics page: app usage ranking, focus trends and task completion rate. */
+/** Analytics page: app usage ranking, task completion rate and focus trend. */
 
 import { useState } from "react";
 
+import { AnalyticsPanel } from "../components/AnalyticsPanel";
 import { FocusTrendChart } from "../components/FocusTrendChart";
 import { SegmentedControl } from "../components/ui/SegmentedControl";
 import { useAppUsage } from "../hooks/useAppEvents";
@@ -35,9 +36,8 @@ const TREND_DURATION: DurationKeys = {
 /**
  * Renders the analytics page.
  *
- * The foreground ranking is the first block: it switches between today, the last seven days and
- * the last thirty, and the backend answers each switch with one aggregated query instead of the
- * page crunching rows itself.
+ * The three blocks load on their own, so switching one range never waits for another, and each
+ * switch asks the backend for one aggregated answer instead of the page crunching rows itself.
  */
 export function AnalyticsPage() {
   const { t } = useI18n();
@@ -71,9 +71,8 @@ export function AnalyticsPage() {
   return (
     <>
       <h1>{t("nav.analytics")}</h1>
-      <section className="analytics-section">
-        <div className="analytics-head">
-          <h2>{t("analytics.usage.title")}</h2>
+      <AnalyticsPanel
+        action={
           <SegmentedControl
             label={t("analytics.range.label")}
             onChange={setRange}
@@ -83,13 +82,14 @@ export function AnalyticsPage() {
             }))}
             value={range}
           />
-        </div>
-        {loading ? <p className="muted">{t("analytics.loading")}</p> : null}
-        {error !== null ? <p className="error">{t("analytics.usage.error")}</p> : null}
-        {!loading && error === null && usage.length === 0 ? (
+        }
+        error={error === null ? null : t("analytics.usage.error")}
+        loading={loading}
+        title={t("analytics.usage.title")}
+      >
+        {usage.length === 0 ? (
           <p className="muted">{t("analytics.usage.empty")}</p>
-        ) : null}
-        {usage.length > 0 ? (
+        ) : (
           <ul className="usage-list">
             {usage.map((entry) => (
               <li className="usage-row" key={entry.appName}>
@@ -103,11 +103,10 @@ export function AnalyticsPage() {
               </li>
             ))}
           </ul>
-        ) : null}
-      </section>
-      <section className="analytics-section">
-        <div className="analytics-head">
-          <h2>{t("analytics.completion.title")}</h2>
+        )}
+      </AnalyticsPanel>
+      <AnalyticsPanel
+        action={
           <SegmentedControl
             label={t("analytics.completion.scope.label")}
             onChange={setScope}
@@ -117,13 +116,14 @@ export function AnalyticsPage() {
             }))}
             value={scope}
           />
-        </div>
-        {completionLoading ? <p className="muted">{t("analytics.loading")}</p> : null}
-        {completionError !== null ? <p className="error">{t("analytics.completion.error")}</p> : null}
-        {!completionLoading && completionError === null && completion.total === 0 ? (
+        }
+        error={completionError === null ? null : t("analytics.completion.error")}
+        loading={completionLoading}
+        title={t("analytics.completion.title")}
+      >
+        {completion.total === 0 ? (
           <p className="muted">{t("analytics.completion.empty")}</p>
-        ) : null}
-        {!completionLoading && completionError === null && completion.total > 0 ? (
+        ) : (
           <>
             <p className="completion-rate">
               <span className="completion-value">
@@ -136,15 +136,14 @@ export function AnalyticsPage() {
                 })}
               </span>
             </p>
-            <span className="meter" aria-hidden="true">
+            <span aria-hidden="true" className="meter">
               <span style={{ width: `${percent}%` }} />
             </span>
           </>
-        ) : null}
-      </section>
-      <section className="analytics-section">
-        <div className="analytics-head">
-          <h2>{t("analytics.trend.title")}</h2>
+        )}
+      </AnalyticsPanel>
+      <AnalyticsPanel
+        action={
           <SegmentedControl
             label={t("analytics.trend.granularity.label")}
             onChange={setGranularity}
@@ -154,18 +153,16 @@ export function AnalyticsPage() {
             }))}
             value={granularity}
           />
-        </div>
-        {trendLoading ? <p className="muted">{t("analytics.loading")}</p> : null}
-        {trendError !== null ? <p className="error">{t("analytics.trend.error")}</p> : null}
-        {!trendLoading && trendError === null ? (
-          <>
-            <FocusTrendChart buckets={buckets} granularity={granularity} />
-            {totalSeconds > 0 ? (
-              <p className="muted">{duration(totalSeconds, TREND_DURATION)}</p>
-            ) : null}
-          </>
+        }
+        error={trendError === null ? null : t("analytics.trend.error")}
+        loading={trendLoading}
+        title={t("analytics.trend.title")}
+      >
+        <FocusTrendChart buckets={buckets} granularity={granularity} />
+        {totalSeconds > 0 ? (
+          <p className="muted">{duration(totalSeconds, TREND_DURATION)}</p>
         ) : null}
-      </section>
+      </AnalyticsPanel>
     </>
   );
 }

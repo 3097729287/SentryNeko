@@ -1,0 +1,33 @@
+/** One block of the analytics page: its heading and the states every block shares. */
+
+import type { ReactNode } from "react";
+
+import { useI18n } from "../hooks/useI18n";
+
+interface AnalyticsPanelProps {
+  /** Already translated heading. */
+  title: string;
+  /** Switch shown beside the heading. */
+  action?: ReactNode;
+  loading: boolean;
+  /** Already translated failure message, `null` while the block is fine. */
+  error: string | null;
+  children: ReactNode;
+}
+
+/** Renders loading and failure once, so no block can forget one of them. */
+export function AnalyticsPanel({ action, children, error, loading, title }: AnalyticsPanelProps) {
+  const { t } = useI18n();
+
+  return (
+    <section className="analytics-section">
+      <div className="analytics-head">
+        <h2>{title}</h2>
+        {action}
+      </div>
+      {loading ? <p className="muted">{t("analytics.loading")}</p> : null}
+      {error !== null ? <p className="error">{error}</p> : null}
+      {!loading && error === null ? children : null}
+    </section>
+  );
+}
