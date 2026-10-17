@@ -58,7 +58,7 @@ Status legend: `[ ]` not started　`[~]` in progress　`[x]` done　`[!]` blocke
 | [x] | T18 | Alarm defaults (ring duration, notification method) | T16, T17 | Merged into the settings page; new alarms inherit the defaults |
 | [x] | T19 | Heatmap: aggregate focus time and task count by day/week/month | T04, T11 | `heatmap_commands.rs` + `HeatmapChart.tsx`, GitHub style; aggregation rules documented and consistent |
 | [x] | T20 | App usage stats: aggregation per app + Top ranking | T12 | Attribution rules defined (merge adjacent records, ignore idle/lock screen); ranking supports time-range switching |
-| [ ] | T21 | Focus trends: daily/weekly/monthly trend charts | T11, T19 | Granularity switchable; empty-data placeholder state present |
+| [x] | T21 | Focus trends: daily/weekly/monthly trend charts | T11, T19 | Granularity switchable; empty-data placeholder state present |
 | [ ] | T22 | Task completion rate | T10 | Rate definition (all-time vs. today) switchable and documented |
 | [ ] | T23 | Event stream page (`EventsPage`) | T15 | Browse foreground app events newest-first with paging |
 | [ ] | T24 | Analytics page (`AnalyticsPage`) | T20, T21, T22 | Aggregates the stats above; page-level loading and error states implemented |

@@ -50,6 +50,21 @@
       "today": "今天",
       "week": "近 7 天"
     },
+    "trend": {
+      "empty": "这个时间窗里还没有专注记录。",
+      "error": "趋势加载失败。",
+      "granularity": {
+        "day": "近 30 天",
+        "label": "聚合粒度",
+        "month": "近 12 个月",
+        "week": "近 12 周"
+      },
+      "peak": "单格最高 {{minutes}} 分钟",
+      "point": "{{date}} · 专注 {{minutes}} 分钟",
+      "title": "专注趋势",
+      "totalHours": "窗口内共 {{hours}} 小时 {{minutes}} 分",
+      "totalMinutes": "窗口内共 {{minutes}} 分钟"
+    },
     "usage": {
       "empty": "这个范围里还没有前台活动记录。",
       "error": "排行榜加载失败。",

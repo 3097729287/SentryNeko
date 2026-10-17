@@ -50,6 +50,21 @@
       "today": "Today",
       "week": "7 days"
     },
+    "trend": {
+      "empty": "No focus recorded in this window yet.",
+      "error": "The trend could not be loaded.",
+      "granularity": {
+        "day": "30 days",
+        "label": "Granularity",
+        "month": "12 months",
+        "week": "12 weeks"
+      },
+      "peak": "Best bucket: {{minutes}} min",
+      "point": "{{date}} · {{minutes}} min of focus",
+      "title": "Focus trend",
+      "totalHours": "{{hours}} h {{minutes}} min in this window",
+      "totalMinutes": "{{minutes}} min in this window"
+    },
     "usage": {
       "empty": "No foreground activity in this range yet.",
       "error": "The ranking could not be loaded.",
