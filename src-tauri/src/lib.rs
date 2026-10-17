@@ -12,7 +12,7 @@ use tauri::{Manager, RunEvent};
 
 use crate::collectors::foreground_app::RunningCollector;
 use crate::commands::{
-    app_event_commands, event_commands, notification_commands, pomodoro_commands,
+    app_event_commands, event_commands, heatmap_commands, notification_commands, pomodoro_commands,
     settings_commands, system_commands, tag_commands, todo_commands,
 };
 use crate::config::Config;
@@ -62,7 +62,8 @@ pub fn run() {
             pomodoro_commands::finish_pomodoro_session,
             pomodoro_commands::list_pomodoro_sessions,
             system_commands::get_uptime,
-            app_event_commands::app_usage
+            app_event_commands::app_usage,
+            heatmap_commands::heatmap
         ])
         .build(tauri::generate_context!())
         .expect("error while building the SentryNeko application");

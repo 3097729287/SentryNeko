@@ -91,6 +91,16 @@ extern "system" {
     ) -> i32;
 }
 
+/// A local calendar date, as Windows breaks it down.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct LocalDate {
+    pub year: u16,
+    pub month: u16,
+    pub day: u16,
+    /// Day of the week, `0` being Sunday.
+    pub weekday: u16,
+}
+
 /// The window the user is looking at, as far as the collector cares.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ForegroundApp {
@@ -209,6 +219,24 @@ pub fn local_midnight(utc_seconds: i64) -> Option<i64> {
     // A zone can jump over the midnight hour when its clock moves; the wall clock still says how
     // much of the day has passed, which is close enough for a fallback.
     Some(utc_seconds - seconds_of_day(&local))
+}
+
+/// Local calendar date of `utc_seconds`; `None` when Windows cannot break the instant down.
+#[must_use]
+pub fn local_date(utc_seconds: i64) -> Option<LocalDate> {
+    let universal = system_time_of(utc_seconds)?;
+    let mut local = SystemTime::default();
+
+    if unsafe { SystemTimeToTzSpecificLocalTime(ptr::null(), &universal, &mut local) } == 0 {
+        return None;
+    }
+
+    Some(LocalDate {
+        year: local.year,
+        month: local.month,
+        day: local.day,
+        weekday: local.day_of_week,
+    })
 }
 
 /// Process id that owns `window`; `None` when Windows reports none.
@@ -368,6 +396,22 @@ mod tests {
         let midnight = local_midnight(now()).expect("the day has a start");
 
         assert_eq!(local_midnight(midnight), Some(midnight));
+    }
+
+    #[test]
+    fn the_local_date_agrees_with_the_midnight_it_belongs_to() {
+        let now = now();
+        let date = local_date(now).expect("the day has a date");
+        let midnight = local_midnight(now).expect("the day has a start");
+
+        assert!((1..=12).contains(&date.month), "{date:?}");
+        assert!((1..=31).contains(&date.day), "{date:?}");
+        assert!(date.weekday < 7, "{date:?}");
+        assert_eq!(local_midnight(midnight), Some(midnight));
+        assert_eq!(
+            local_date(midnight).map(|start| (start.year, start.month, start.day)),
+            Some((date.year, date.month, date.day))
+        );
     }
 
     #[test]

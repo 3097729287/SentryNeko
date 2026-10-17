@@ -35,6 +35,26 @@
       "received": "已收到测试事件 #{{sequence}}"
     }
   },
+  "heatmap": {
+    "cell": "{{date}} · 专注 {{minutes}} 分钟 · 完成 {{tasks}} 个任务",
+    "empty": "过去一年还没有专注记录。",
+    "error": "热力图加载失败。",
+    "granularity": {
+      "day": "按天",
+      "label": "聚合粒度",
+      "month": "按月",
+      "week": "按周"
+    },
+    "hours": "{{hours}} 小时 {{minutes}} 分",
+    "legend": {
+      "less": "少",
+      "more": "多"
+    },
+    "loading": "加载中…",
+    "minutes": "{{minutes}} 分钟",
+    "summary": "专注 {{duration}} · 完成 {{tasks}} 个任务",
+    "title": "专注热力图"
+  },
   "language": {
     "label": "语言"
   },

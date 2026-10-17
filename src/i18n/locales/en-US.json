@@ -35,6 +35,26 @@
       "received": "Received test event #{{sequence}}"
     }
   },
+  "heatmap": {
+    "cell": "{{date}} · {{minutes}} min focused · {{tasks}} tasks",
+    "empty": "No focus time in the last year yet.",
+    "error": "The heatmap could not be loaded.",
+    "granularity": {
+      "day": "Day",
+      "label": "Group by",
+      "month": "Month",
+      "week": "Week"
+    },
+    "hours": "{{hours}} h {{minutes}} min",
+    "legend": {
+      "less": "Less",
+      "more": "More"
+    },
+    "loading": "Loading…",
+    "minutes": "{{minutes}} min",
+    "summary": "{{duration}} focused · {{tasks}} tasks completed",
+    "title": "Focus heatmap"
+  },
   "language": {
     "label": "Language"
   },

@@ -61,7 +61,7 @@ app.manage(db);
 
 | 表 | 存放 | 关键列 |
 | --- | --- | --- |
-| `todos` | 用户维护的任务 | `title`、`completed`、`created_at`、`updated_at`、`tag_ids` |
+| `todos` | 用户维护的任务 | `title`、`completed`、`completed_at`、`created_at`、`updated_at`、`tag_ids` |
 | `pomodoro_sessions` | 一次专注或休息区间 | `phase`、`planned_seconds`、`actual_seconds`、`started_at`、`ended_at`、`todo_id` |
 | `app_events` | 前台应用活动 | `app_name`、`window_title`、`started_at`、`ended_at` |
 | `alarms` | 周期提醒 | `label`、`hour`、`minute`、`repeat_days`、`enabled`、`created_at` |
@@ -93,6 +93,16 @@ app.manage(db);
 `AppEvent::usage` 读取这张表生成排行：把每一行裁到所问的时间窗内，按应用把多行相加（窗口中
 再次出现的应用与之前那段时间合并，而不是出现两次），没有 `ended_at` 的行计到窗口结束，并丢掉
 `LockApp` / `LogonUI`，让锁屏时间不归到任何应用头上。
+
+热力图（`models/heatmap.rs`）把 `pomodoro_sessions` 与 `todos` 汇总成桶：
+
+- 一个桶是本地的一天、以周一为起点的一周，或一个自然月。边界按 Windows 时区规则换算，所以
+  一年里两次调钟的那些天长度仍然正确，不会整体偏一小时。
+- 窗口内每一天都会返回，空桶也返回，图表不必自己补齐。
+- 专注阶段按 `actual_seconds` 计入，并归属到它「开始」的那一天；还没收尾的阶段在收尾后计入。
+  其他阶段（休息）不计。
+- 任务计入 `completed_at` 所在的那一天。`set_completed` 在勾选时写入、取消勾选时清空，所以之后
+  重命名一个已完成任务不会把它挪到别的日子。
 
 ## 建表
 

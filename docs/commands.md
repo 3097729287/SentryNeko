@@ -108,7 +108,10 @@ instant. The foreground group answers what the ranking shows: `app_usage` takes 
 `to`, UTC epoch seconds) and a `limit`, and ranks applications by the seconds they held the
 foreground inside it. The frontend computes the window for its presets — "today" starts at local
 midnight — and the backend clips stored rows to it, merges an app revisited later in the window,
-and drops the lock and sign-in shells.
+and drops the lock and sign-in shells. The heatmap group answers the chart: `heatmap` takes the
+window and a `granularity` (`day`, `week` or `month`) and returns one bucket per local day, Monday
+or first of the month — empty ones included — carrying the focus seconds of phases that started
+there and the tasks completed there; the rules live in `docs/database.md`.
 
 | Command | Module | Arguments | Returns | Task |
 | --- | --- | --- | --- | --- |
@@ -137,3 +140,4 @@ and drops the lock and sign-in shells.
 | `notify_pomodoro_phase` | `notification_commands` | `phase: Phase` | `Outcome` (`"toast"` or `"fallback"`) | T14 |
 | `get_uptime` | `system_commands` | — | `Uptime` (`{ bootAt, todaySeconds, totalSeconds }`) | T13 |
 | `app_usage` | `app_event_commands` | `from: i64`, `to: i64`, `limit: i64` | `AppUsage[]` (`{ appName, seconds }`) | T20 |
+| `heatmap` | `heatmap_commands` | `from: i64`, `to: i64`, `granularity: "day" \| "week" \| "month"` | `HeatmapBucket[]` (`{ start, focusSeconds, completedTasks }`) | T19 |
