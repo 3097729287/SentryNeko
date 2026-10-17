@@ -1,31 +1,26 @@
-/** Language selection control. */
+/** Language selection control: every offered language by its own name. */
 
 import { useI18n } from "../hooks/useI18n";
 import { isAvailableLanguage } from "../i18n/config";
+import { SegmentedControl } from "./ui/SegmentedControl";
 
 /** Lets the user pick one of the offered languages; reserved tags are not listed. */
 export function LanguageSwitcher() {
   const { t, language, languages, setLanguage } = useI18n();
 
   return (
-    <label className="language-switcher">
-      <select
-        aria-label={t("language.label")}
-        value={language}
-        onChange={(event) => {
-          const next = event.target.value;
-
-          if (isAvailableLanguage(next)) {
-            void setLanguage(next);
-          }
-        }}
-      >
-        {languages.map((option) => (
-          <option key={option.code} value={option.code}>
-            {option.nativeName}
-          </option>
-        ))}
-      </select>
-    </label>
+    <SegmentedControl
+      label={t("language.label")}
+      onChange={(next) => {
+        if (isAvailableLanguage(next) && next !== language) {
+          void setLanguage(next);
+        }
+      }}
+      options={languages.map((option) => ({
+        label: option.nativeName,
+        value: option.code,
+      }))}
+      value={language}
+    />
   );
 }
