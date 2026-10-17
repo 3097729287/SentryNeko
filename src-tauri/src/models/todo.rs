@@ -1,12 +1,12 @@
 //! Todo task model.
 
 use rusqlite::{params, Row};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::db::connection::Db;
 use crate::db::repository;
 use crate::utils::response::{ApiError, ApiResult};
-use crate::utils::time;
+use crate::utils::{time, windows};
 
 /// Columns every query selects, in the order [`Todo::from_row`] reads them.
 const COLUMNS: &str = "id, title, completed, created_at, updated_at, tag_ids";
@@ -30,6 +30,24 @@ pub struct Todo {
 pub struct TodoCounts {
     pub total: i64,
     pub remaining: i64,
+    pub completed: i64,
+}
+
+/// Tasks whose completion rate is measured.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum CompletionScope {
+    /// Every stored task, however old.
+    All,
+    /// Tasks created since local midnight.
+    Today,
+}
+
+/// Numerator and denominator of the completion rate; the caller renders the percentage.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TaskCompletion {
+    pub total: i64,
     pub completed: i64,
 }
 
@@ -201,6 +219,30 @@ impl TodoCounts {
     }
 }
 
+impl TaskCompletion {
+    /// Counts the tasks of `scope`; `now` decides where "today" starts.
+    pub fn load(db: &Db, scope: CompletionScope, now: i64) -> ApiResult<Self> {
+        let from = match scope {
+            CompletionScope::All => None,
+            CompletionScope::Today => Some(windows::local_midnight(now).ok_or_else(|| {
+                ApiError::internal("the local day boundary could not be resolved")
+            })?),
+        };
+
+        repository::query_one(
+            db,
+            "SELECT COUNT(*), SUM(completed = 1) FROM todos WHERE ?1 IS NULL OR created_at >= ?1",
+            params![from],
+            |row| {
+                Ok(Self {
+                    total: row.get(0)?,
+                    completed: row.get::<_, Option<i64>>(1)?.unwrap_or_default(),
+                })
+            },
+        )
+    }
+}
+
 /// Trims the title and rejects an empty result.
 fn validate_title(title: &str) -> ApiResult<String> {
     let trimmed = title.trim();
@@ -351,6 +393,75 @@ mod tests {
             TodoCounts {
                 total: 1,
                 remaining: 1,
+                completed: 0
+            }
+        );
+    }
+
+    /// Stores a task at a chosen instant, so a rate can be measured over a window.
+    fn stored_at(db: &Db, title: &str, created_at: i64, completed: bool) {
+        repository::insert(
+            db,
+            "INSERT INTO todos (title, completed, completed_at, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?4)",
+            params![
+                title,
+                completed,
+                completed.then_some(created_at),
+                created_at
+            ],
+        )
+        .expect("the task is stored");
+    }
+
+    /// Local midnight of the day the test runs in.
+    fn today() -> i64 {
+        windows::local_midnight(time::now_seconds()).expect("today has a start")
+    }
+
+    #[test]
+    fn the_all_scope_counts_every_task() {
+        let db = migrated();
+        let now = today();
+
+        stored_at(&db, "old", now - 30 * 86_400, true);
+        stored_at(&db, "new", now + 60, false);
+
+        assert_eq!(
+            TaskCompletion::load(&db, CompletionScope::All, now).expect("rate"),
+            TaskCompletion {
+                total: 2,
+                completed: 1
+            }
+        );
+    }
+
+    #[test]
+    fn the_today_scope_starts_at_local_midnight() {
+        let db = migrated();
+        let now = today() + 3_600;
+
+        stored_at(&db, "yesterday", today() - 60, true);
+        stored_at(&db, "done", now + 60, true);
+        stored_at(&db, "open", now + 120, false);
+
+        assert_eq!(
+            TaskCompletion::load(&db, CompletionScope::Today, now).expect("rate"),
+            TaskCompletion {
+                total: 2,
+                completed: 1
+            }
+        );
+    }
+
+    #[test]
+    fn an_empty_table_answers_zero_over_zero() {
+        let db = migrated();
+
+        assert_eq!(
+            TaskCompletion::load(&db, CompletionScope::All, today()).expect("rate"),
+            TaskCompletion {
+                total: 0,
                 completed: 0
             }
         );

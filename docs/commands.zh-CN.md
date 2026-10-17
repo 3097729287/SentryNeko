@@ -79,7 +79,8 @@ fn toggle(id: i64) -> ApiResult<Todo> {
 `config.json` 中的标签，`set_language` 对 `Language::ALL` 之外的标签返回 `INVALID_INPUT`。
 `emit_test_event` 是事件探针背后的诊断命令，它推送的事件定义在 `docs/events.md`。待办这一组
 就是清单本身：`list_todos` 按完成状态筛选，写操作都返回落库后的整行，`todo_counts` 供剩余
-计数使用。标签这一组属于预留，目前没有页面调用：它维护名称索引，`set_todo_tags` 建立任务与
+计数使用，`completion_rate` 回答 `all` 或 `today` 口径下任务已完成的比例——统计规则写在
+`docs/database.md`。标签这一组属于预留，目前没有页面调用：它维护名称索引，`set_todo_tags` 建立任务与
 标签的关联，并从两个方向读取关系（`todo_tags` 查某任务的标签，`todos_with_tag` 查某标签下的任务）。
 番茄钟这一组负责持久化：`start_pomodoro_session` 在阶段开始时插入一行，`finish_pomodoro_session`
 用实际秒数收尾——倒计时本身由前端按时间戳推进，不依赖 tick 计数，且由 store 驱动而非页面，
@@ -93,7 +94,8 @@ fn toggle(id: i64) -> ApiResult<Todo> {
 因此恢复后开机时刻不会漂移。前台这一组回答排行榜用什么：`app_usage` 接收一个时间窗
 （`from`、`to`，UTC epoch 秒）和一个 `limit`，按应用在该窗口内占据前台的秒数排名。窗口由前端按
 预设算好（「今天」从本地零点起），后端只负责把存储的行裁到窗口内、把窗口中再次出现的应用合并，
-并丢掉锁屏与登录界面外壳。热力图这一组回答图表要什么：`heatmap` 接收窗口和 `granularity`
+并丢掉锁屏与登录界面外壳。事件流读的是同一张表：`list_app_events` 倒序返回一页，`before` 传上一页
+最后一行的 id，采集器持续插入时翻页也不会错位。热力图这一组回答图表要什么：`heatmap` 接收窗口和 `granularity`
 （`day`、`week`、`month`），按本地日、周一或月初返回每个桶——空桶也返回——桶里带在该处开始的
 专注秒数和在该处完成的任务数；规则写在 `docs/database.md`。闹钟这一组维护调度器盯着的那批提醒：
 `list_alarms`、`add_alarm`、`update_alarm`、`set_alarm_enabled`、`delete_alarm`。`hour` 和
@@ -116,6 +118,7 @@ fn toggle(id: i64) -> ApiResult<Todo> {
 | `set_todo_completed` | `todo_commands` | `id: i64`、`completed: bool` | `Todo` | T10 |
 | `delete_todo` | `todo_commands` | `id: i64` | — | T10 |
 | `todo_counts` | `todo_commands` | — | `TodoCounts`（`{ total, remaining, completed }`） | T10 |
+| `completion_rate` | `todo_commands` | `scope: "all" \| "today"` | `TaskCompletion`（`{ total, completed }`） | T22 |
 | `list_tags` | `tag_commands` | — | `Tag[]` | T33 |
 | `add_tag` | `tag_commands` | `name: String` | `Tag` | T33 |
 | `rename_tag` | `tag_commands` | `id: i64`、`name: String` | `Tag` | T33 |
@@ -132,6 +135,7 @@ fn toggle(id: i64) -> ApiResult<Todo> {
 | `notify_pomodoro_phase` | `notification_commands` | `phase: Phase` | `Outcome`（`"toast"` 或 `"fallback"`） | T14 |
 | `get_uptime` | `system_commands` | — | `Uptime`（`{ bootAt, todaySeconds, totalSeconds }`） | T13 |
 | `app_usage` | `app_event_commands` | `from: i64`、`to: i64`、`limit: i64` | `AppUsage[]`（`{ appName, seconds }`） | T20 |
+| `list_app_events` | `app_event_commands` | `before: i64?`、`limit: i64` | `AppEventPage`（`{ events, more }`） | T23 |
 | `heatmap` | `heatmap_commands` | `from: i64`、`to: i64`、`granularity: "day" \| "week" \| "month"` | `HeatmapBucket[]`（`{ start, focusSeconds, completedTasks }`） | T19 |
 | `list_alarms` | `alarm_commands` | — | `Alarm[]`（`{ id, label, hour, minute, repeatDays, enabled, createdAt }`） | T17 |
 | `add_alarm` | `alarm_commands` | `label: String`、`hour: i64`、`minute: i64`、`repeatDays: i64` | `Alarm` | T17 |

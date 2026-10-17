@@ -1015,6 +1015,11 @@ p {
   background: var(--surface);
 }
 
+/* A page may stack more than one card, e.g. the ranking and the trend. */
+.analytics-section + .analytics-section {
+  margin-top: var(--space-5);
+}
+
 .analytics-head {
   display: flex;
   flex-wrap: wrap;
@@ -1051,7 +1056,7 @@ p {
   white-space: nowrap;
 }
 
-.usage-bar {
+.meter {
   display: block;
   overflow: hidden;
   height: 8px;
@@ -1059,7 +1064,7 @@ p {
   background: var(--accent-soft);
 }
 
-.usage-bar span {
+.meter span {
   display: block;
   height: 100%;
   border-radius: inherit;
@@ -1070,6 +1075,65 @@ p {
 .usage-time {
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
+}
+
+.completion-rate {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.completion-value {
+  font-size: 26px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.trend {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+}
+
+.trend-peak {
+  font-size: 12px;
+}
+
+.trend-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.trend-area {
+  fill: var(--accent-soft);
+}
+
+.trend-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.trend-point {
+  fill: var(--surface);
+  stroke: var(--accent);
+  stroke-width: 1.5;
+}
+
+.trend-ticks {
+  position: relative;
+  height: 18px;
+  font-size: 11px;
+}
+
+.trend-ticks span {
+  position: absolute;
+  top: 0;
+  white-space: nowrap;
 }
 
 .error {

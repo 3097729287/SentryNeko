@@ -3,12 +3,13 @@
 import { useI18n } from "../hooks/useI18n";
 import type { AppEvent } from "../types/appEvent";
 
-/** Time of day of an epoch second, formatted in the language the app runs in. */
-function clock(seconds: number, language: string): string {
-  return new Date(seconds * 1000).toLocaleTimeString(language, {
+/** Local date and time of an epoch second, formatted in the language the app runs in. */
+function stamp(seconds: number, language: string): string {
+  return new Date(seconds * 1000).toLocaleString(language, {
+    day: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-    second: "2-digit",
+    month: "short",
   });
 }
 
@@ -31,7 +32,7 @@ export function AppEventLog({ events }: AppEventLogProps) {
         <li className="event-row" key={event.id}>
           <span className="event-app">{event.appName}</span>
           <span className="event-title">{event.windowTitle ?? t("events.log.untitled")}</span>
-          <span className="event-time muted">{clock(event.startedAt, language)}</span>
+          <span className="event-time muted">{stamp(event.startedAt, language)}</span>
         </li>
       ))}
     </ul>

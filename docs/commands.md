@@ -88,7 +88,9 @@ Every command the frontend may call is listed here. The language pair is the int
 rejects anything outside `Language::ALL` with `INVALID_INPUT`. `emit_test_event` is the
 diagnostic behind the event bus probe; the push it triggers is defined in `docs/events.md`.
 The todo group is the list itself: `list_todos` filters by completion, every mutation answers
-with the stored row, and `todo_counts` feeds the remaining counter. The tag group is reserved —
+with the stored row, `todo_counts` feeds the remaining counter, and `completion_rate` answers how
+many tasks of the `all` or `today` scope are done — the counting rules live in
+`docs/database.md`. The tag group is reserved —
 no page calls it yet: it maintains the name index, links tags to a task through `set_todo_tags`,
 and reads the relation from either side (`todo_tags` for one task, `todos_with_tag` for one tag).
 The pomodoro group persists the timer: `start_pomodoro_session` opens a row when a phase starts,
@@ -108,7 +110,9 @@ instant. The foreground group answers what the ranking shows: `app_usage` takes 
 `to`, UTC epoch seconds) and a `limit`, and ranks applications by the seconds they held the
 foreground inside it. The frontend computes the window for its presets — "today" starts at local
 midnight — and the backend clips stored rows to it, merges an app revisited later in the window,
-and drops the lock and sign-in shells. The heatmap group answers the chart: `heatmap` takes the
+and drops the lock and sign-in shells. The event stream reads the same table: `list_app_events`
+answers one page newest first, and `before` is the id the previous page ended at, so paging stays
+stable while the collector inserts rows. The heatmap group answers the chart: `heatmap` takes the
 window and a `granularity` (`day`, `week` or `month`) and returns one bucket per local day, Monday
 or first of the month — empty ones included — carrying the focus seconds of phases that started
 there and the tasks completed there; the rules live in `docs/database.md`. The alarm group
@@ -134,6 +138,7 @@ with what is now in force. A registry that refuses the write is `PERMISSION_DENI
 | `set_todo_completed` | `todo_commands` | `id: i64`, `completed: bool` | `Todo` | T10 |
 | `delete_todo` | `todo_commands` | `id: i64` | — | T10 |
 | `todo_counts` | `todo_commands` | — | `TodoCounts` (`{ total, remaining, completed }`) | T10 |
+| `completion_rate` | `todo_commands` | `scope: "all" \| "today"` | `TaskCompletion` (`{ total, completed }`) | T22 |
 | `list_tags` | `tag_commands` | — | `Tag[]` | T33 |
 | `add_tag` | `tag_commands` | `name: String` | `Tag` | T33 |
 | `rename_tag` | `tag_commands` | `id: i64`, `name: String` | `Tag` | T33 |
@@ -150,6 +155,7 @@ with what is now in force. A registry that refuses the write is `PERMISSION_DENI
 | `notify_pomodoro_phase` | `notification_commands` | `phase: Phase` | `Outcome` (`"toast"` or `"fallback"`) | T14 |
 | `get_uptime` | `system_commands` | — | `Uptime` (`{ bootAt, todaySeconds, totalSeconds }`) | T13 |
 | `app_usage` | `app_event_commands` | `from: i64`, `to: i64`, `limit: i64` | `AppUsage[]` (`{ appName, seconds }`) | T20 |
+| `list_app_events` | `app_event_commands` | `before: i64?`, `limit: i64` | `AppEventPage` (`{ events, more }`) | T23 |
 | `heatmap` | `heatmap_commands` | `from: i64`, `to: i64`, `granularity: "day" \| "week" \| "month"` | `HeatmapBucket[]` (`{ start, focusSeconds, completedTasks }`) | T19 |
 | `list_alarms` | `alarm_commands` | — | `Alarm[]` (`{ id, label, hour, minute, repeatDays, enabled, createdAt }`) | T17 |
 | `add_alarm` | `alarm_commands` | `label: String`, `hour: i64`, `minute: i64`, `repeatDays: i64` | `Alarm` | T17 |

@@ -1,41 +1,78 @@
-/** Analytics page: app usage ranking, focus trends and task completion rate. */
+/** Analytics page: app usage ranking, task completion rate and focus trend. */
 
 import { useState } from "react";
 
+import { AnalyticsPanel } from "../components/AnalyticsPanel";
+import { FocusTrendChart } from "../components/FocusTrendChart";
 import { SegmentedControl } from "../components/ui/SegmentedControl";
 import { useAppUsage } from "../hooks/useAppEvents";
+import { useCompletionRate } from "../hooks/useCompletionRate";
+import { useFocusTrend } from "../hooks/useFocusTrend";
 import { useI18n } from "../hooks/useI18n";
 import { USAGE_RANGES } from "../types/appEvent";
 import type { UsageRange } from "../types/appEvent";
+import type { HeatmapGranularity } from "../types/heatmap";
+import { COMPLETION_SCOPES } from "../types/todo";
+import type { CompletionScope } from "../types/todo";
+import { TREND_GRANULARITIES } from "../types/trend";
+
+/** The copy a duration is written with, so the usage ranking and the trend share one formatter. */
+interface DurationKeys {
+  /** Used from one hour on. */
+  hours: string;
+  minutes: string;
+}
+
+const USAGE_DURATION: DurationKeys = {
+  hours: "analytics.usage.hours",
+  minutes: "analytics.usage.minutes",
+};
+
+const TREND_DURATION: DurationKeys = {
+  hours: "analytics.trend.totalHours",
+  minutes: "analytics.trend.totalMinutes",
+};
 
 /**
  * Renders the analytics page.
  *
- * The foreground ranking is the first block: it switches between today, the last seven days and
- * the last thirty, and the backend answers each switch with one aggregated query instead of the
- * page crunching rows itself.
+ * The three blocks load on their own, so switching one range never waits for another, and each
+ * switch asks the backend for one aggregated answer instead of the page crunching rows itself.
  */
 export function AnalyticsPage() {
   const { t } = useI18n();
   const [range, setRange] = useState<UsageRange>("today");
+  const [granularity, setGranularity] = useState<HeatmapGranularity>("day");
+  const [scope, setScope] = useState<CompletionScope>("all");
   const { error, loading, usage } = useAppUsage(range);
+  const {
+    completion,
+    error: completionError,
+    loading: completionLoading,
+  } = useCompletionRate(scope);
+  const {
+    buckets,
+    error: trendError,
+    loading: trendLoading,
+    totalSeconds,
+  } = useFocusTrend(granularity);
   const peak = usage[0]?.seconds ?? 0;
+  const percent =
+    completion.total === 0 ? 0 : Math.round((completion.completed / completion.total) * 100);
 
-  const duration = (seconds: number): string => {
+  /** Hours are only shown once there are any, so a short span reads as plain minutes. */
+  const duration = (seconds: number, keys: DurationKeys): string => {
     const hours = Math.floor(seconds / 3_600);
     const minutes = Math.floor((seconds % 3_600) / 60);
 
-    return hours > 0
-      ? t("analytics.usage.hours", { hours, minutes })
-      : t("analytics.usage.minutes", { minutes });
+    return hours > 0 ? t(keys.hours, { hours, minutes }) : t(keys.minutes, { minutes });
   };
 
   return (
     <>
       <h1>{t("nav.analytics")}</h1>
-      <section className="analytics-section">
-        <div className="analytics-head">
-          <h2>{t("analytics.usage.title")}</h2>
+      <AnalyticsPanel
+        action={
           <SegmentedControl
             label={t("analytics.range.label")}
             onChange={setRange}
@@ -45,28 +82,87 @@ export function AnalyticsPage() {
             }))}
             value={range}
           />
-        </div>
-        {loading ? <p className="muted">{t("analytics.loading")}</p> : null}
-        {error !== null ? <p className="error">{t("analytics.usage.error")}</p> : null}
-        {!loading && error === null && usage.length === 0 ? (
+        }
+        error={error === null ? null : t("analytics.usage.error")}
+        loading={loading}
+        title={t("analytics.usage.title")}
+      >
+        {usage.length === 0 ? (
           <p className="muted">{t("analytics.usage.empty")}</p>
-        ) : null}
-        {usage.length > 0 ? (
+        ) : (
           <ul className="usage-list">
             {usage.map((entry) => (
               <li className="usage-row" key={entry.appName}>
                 <span className="usage-app" title={entry.appName}>
                   {entry.appName}
                 </span>
-                <span className="usage-bar">
+                <span className="meter">
                   <span style={{ width: `${Math.round((entry.seconds / peak) * 100)}%` }} />
                 </span>
-                <span className="usage-time">{duration(entry.seconds)}</span>
+                <span className="usage-time">{duration(entry.seconds, USAGE_DURATION)}</span>
               </li>
             ))}
           </ul>
+        )}
+      </AnalyticsPanel>
+      <AnalyticsPanel
+        action={
+          <SegmentedControl
+            label={t("analytics.completion.scope.label")}
+            onChange={setScope}
+            options={COMPLETION_SCOPES.map((value) => ({
+              label: t(`analytics.completion.scope.${value}`),
+              value,
+            }))}
+            value={scope}
+          />
+        }
+        error={completionError === null ? null : t("analytics.completion.error")}
+        loading={completionLoading}
+        title={t("analytics.completion.title")}
+      >
+        {completion.total === 0 ? (
+          <p className="muted">{t("analytics.completion.empty")}</p>
+        ) : (
+          <>
+            <p className="completion-rate">
+              <span className="completion-value">
+                {t("analytics.completion.rate", { percent })}
+              </span>
+              <span className="muted">
+                {t("analytics.completion.counts", {
+                  completed: completion.completed,
+                  total: completion.total,
+                })}
+              </span>
+            </p>
+            <span aria-hidden="true" className="meter">
+              <span style={{ width: `${percent}%` }} />
+            </span>
+          </>
+        )}
+      </AnalyticsPanel>
+      <AnalyticsPanel
+        action={
+          <SegmentedControl
+            label={t("analytics.trend.granularity.label")}
+            onChange={setGranularity}
+            options={TREND_GRANULARITIES.map((value) => ({
+              label: t(`analytics.trend.granularity.${value}`),
+              value,
+            }))}
+            value={granularity}
+          />
+        }
+        error={trendError === null ? null : t("analytics.trend.error")}
+        loading={trendLoading}
+        title={t("analytics.trend.title")}
+      >
+        <FocusTrendChart buckets={buckets} granularity={granularity} />
+        {totalSeconds > 0 ? (
+          <p className="muted">{duration(totalSeconds, TREND_DURATION)}</p>
         ) : null}
-      </section>
+      </AnalyticsPanel>
     </>
   );
 }

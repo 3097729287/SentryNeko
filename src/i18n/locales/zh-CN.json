@@ -43,12 +43,39 @@
     }
   },
   "analytics": {
+    "completion": {
+      "counts": "{{total}} 个任务中已完成 {{completed}} 个",
+      "empty": "这个口径下还没有任务。",
+      "error": "完成率加载失败。",
+      "rate": "{{percent}}%",
+      "scope": {
+        "all": "含历史",
+        "label": "统计口径",
+        "today": "仅当日"
+      },
+      "title": "任务完成率"
+    },
     "loading": "加载中…",
     "range": {
       "label": "时间范围",
       "month": "近 30 天",
       "today": "今天",
       "week": "近 7 天"
+    },
+    "trend": {
+      "empty": "这个时间窗里还没有专注记录。",
+      "error": "趋势加载失败。",
+      "granularity": {
+        "day": "近 30 天",
+        "label": "聚合粒度",
+        "month": "近 12 个月",
+        "week": "近 12 周"
+      },
+      "peak": "单格最高 {{minutes}} 分钟",
+      "point": "{{date}} · 专注 {{minutes}} 分钟",
+      "title": "专注趋势",
+      "totalHours": "窗口内共 {{hours}} 小时 {{minutes}} 分",
+      "totalMinutes": "窗口内共 {{minutes}} 分钟"
     },
     "usage": {
       "empty": "这个范围里还没有前台活动记录。",
@@ -69,19 +96,16 @@
     "toggle": "登录时自动启动 SentryNeko"
   },
   "events": {
+    "error": "事件流加载失败。",
+    "loading": "加载中…",
     "log": {
-      "empty": "还没有收到事件——切到别的应用试试。",
-      "title": "实时前台切换",
+      "empty": "还没有记录到前台应用事件。",
+      "title": "前台应用事件",
       "untitled": "（无窗口标题）"
     },
-    "pomodoro": {
-      "finished": "阶段已结束：{{phase}}",
-      "none": "尚未收到番茄钟阶段结束事件。"
-    },
-    "test": {
-      "send": "发送测试事件",
-      "waiting": "尚未收到测试事件",
-      "received": "已收到测试事件 #{{sequence}}"
+    "more": {
+      "label": "加载更早的事件",
+      "loading": "加载中…"
     }
   },
   "heatmap": {

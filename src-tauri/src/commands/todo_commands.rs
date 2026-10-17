@@ -3,8 +3,9 @@
 use tauri::State;
 
 use crate::db::connection::Db;
-use crate::models::todo::{Todo, TodoCounts};
+use crate::models::todo::{CompletionScope, TaskCompletion, Todo, TodoCounts};
 use crate::utils::response::ApiResponse;
+use crate::utils::time;
 
 /// Lists tasks, open ones first; `completed` narrows the result.
 #[tauri::command]
@@ -40,4 +41,10 @@ pub fn delete_todo(db: State<'_, Db>, id: i64) -> ApiResponse<()> {
 #[tauri::command]
 pub fn todo_counts(db: State<'_, Db>) -> ApiResponse<TodoCounts> {
     TodoCounts::load(&db).into()
+}
+
+/// Counts the tasks of `scope` and how many of them are completed.
+#[tauri::command]
+pub fn completion_rate(db: State<'_, Db>, scope: CompletionScope) -> ApiResponse<TaskCompletion> {
+    TaskCompletion::load(&db, scope, time::now_seconds()).into()
 }

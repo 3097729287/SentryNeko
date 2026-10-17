@@ -16,6 +16,9 @@ const LOCK_SHELLS: [&str; 2] = ["LockApp", "LogonUI"];
 /// Longest ranking the usage query answers with.
 const MAX_RANKING: i64 = 50;
 
+/// Longest page the stream answers with.
+const MAX_PAGE: i64 = 100;
+
 /// One `app_events` row.
 ///
 /// A row opens when an app reaches the foreground and closes when another one takes over, so
@@ -141,6 +144,33 @@ impl AppEvent {
         )
     }
 
+    /// One page of the stream, newest first; `before` is the id the previous page ended at.
+    ///
+    /// Paging on the id rather than an offset keeps the next page stable while the collector
+    /// inserts rows: a row that arrives after the first page is newer than every id already
+    /// handed out, so it cannot shift the rows of the next page.
+    pub fn page(db: &Db, before: Option<i64>, limit: i64) -> ApiResult<AppEventPage> {
+        let limit = limit.clamp(1, MAX_PAGE);
+        let rows = repository::query_all(
+            db,
+            &format!(
+                "SELECT {COLUMNS} FROM app_events
+                 WHERE ?1 IS NULL OR id < ?1
+                 ORDER BY started_at DESC, id DESC
+                 LIMIT {}",
+                limit + 1
+            ),
+            params![before],
+            Self::from_row,
+        )?;
+        let more = rows.len() as i64 > limit;
+
+        Ok(AppEventPage {
+            events: rows.into_iter().take(limit as usize).collect(),
+            more,
+        })
+    }
+
     /// Returns one row; a missing id is `NOT_FOUND`.
     pub fn find(db: &Db, id: i64) -> ApiResult<Self> {
         repository::query_one(
@@ -164,6 +194,15 @@ pub struct AppUsage {
     pub app_name: String,
     /// Seconds inside the window, merged over every row of that app.
     pub seconds: i64,
+}
+
+/// One page of the stream and whether older rows remain.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppEventPage {
+    /// Newest first.
+    pub events: Vec<AppEvent>,
+    pub more: bool,
 }
 
 #[cfg(test)]
@@ -342,6 +381,48 @@ mod tests {
                 .collect::<Vec<_>>(),
             ["long", "middle"]
         );
+    }
+
+    #[test]
+    fn the_stream_is_newest_first() {
+        let db = created();
+        episode(&db, "code", 100, Some(200));
+        episode(&db, "chrome", 300, Some(400));
+
+        let page = AppEvent::page(&db, None, 10).expect("page");
+
+        assert_eq!(
+            page.events
+                .iter()
+                .map(|event| event.app_name.as_str())
+                .collect::<Vec<_>>(),
+            ["chrome", "code"]
+        );
+        assert!(!page.more);
+    }
+
+    #[test]
+    fn a_page_stops_before_the_last_row_it_answered_with() {
+        let db = created();
+        for start in [100, 200, 300] {
+            episode(&db, "code", start, Some(start + 50));
+        }
+
+        let first = AppEvent::page(&db, None, 2).expect("first page");
+        assert_eq!(first.events.len(), 2);
+        assert_eq!(first.events[0].started_at, 300);
+        assert!(first.more);
+
+        let second = AppEvent::page(&db, Some(first.events[1].id), 2).expect("second page");
+        assert_eq!(
+            second
+                .events
+                .iter()
+                .map(|event| event.started_at)
+                .collect::<Vec<_>>(),
+            [100]
+        );
+        assert!(!second.more);
     }
 
     #[test]

@@ -43,12 +43,39 @@
     }
   },
   "analytics": {
+    "completion": {
+      "counts": "{{completed}} of {{total}} tasks done",
+      "empty": "No tasks in this scope yet.",
+      "error": "The completion rate could not be loaded.",
+      "rate": "{{percent}}%",
+      "scope": {
+        "all": "All time",
+        "label": "Scope",
+        "today": "Today"
+      },
+      "title": "Task completion"
+    },
     "loading": "Loading…",
     "range": {
       "label": "Time range",
       "month": "30 days",
       "today": "Today",
       "week": "7 days"
+    },
+    "trend": {
+      "empty": "No focus recorded in this window yet.",
+      "error": "The trend could not be loaded.",
+      "granularity": {
+        "day": "30 days",
+        "label": "Granularity",
+        "month": "12 months",
+        "week": "12 weeks"
+      },
+      "peak": "Best bucket: {{minutes}} min",
+      "point": "{{date}} · {{minutes}} min of focus",
+      "title": "Focus trend",
+      "totalHours": "{{hours}} h {{minutes}} min in this window",
+      "totalMinutes": "{{minutes}} min in this window"
     },
     "usage": {
       "empty": "No foreground activity in this range yet.",
@@ -69,19 +96,16 @@
     "toggle": "Start SentryNeko when I sign in"
   },
   "events": {
+    "error": "The event stream could not be loaded.",
+    "loading": "Loading…",
     "log": {
-      "empty": "Nothing has come in yet — switch to another app.",
-      "title": "Live foreground switches",
+      "empty": "No foreground events recorded yet.",
+      "title": "Foreground app events",
       "untitled": "(no window title)"
     },
-    "pomodoro": {
-      "finished": "Phase finished: {{phase}}",
-      "none": "No pomodoro phase has finished yet."
-    },
-    "test": {
-      "send": "Send a test event",
-      "waiting": "No test event received yet",
-      "received": "Received test event #{{sequence}}"
+    "more": {
+      "label": "Load older events",
+      "loading": "Loading…"
     }
   },
   "heatmap": {
