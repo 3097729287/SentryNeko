@@ -99,7 +99,12 @@ two commands sit in `settings_commands` and are edited on the settings page. The
 group holds the toast channel: `send_test_notification` is the diagnostic, and
 `notify_pomodoro_phase` is what the timer calls when a phase runs out. Both answer `toast`, or
 push `notification-fallback` (see `docs/events.md`) and answer `fallback` when the system refused
-it; the pomodoro timer keeps running either way.
+it; the pomodoro timer keeps running either way. The system group describes the machine rather than
+the data: `get_uptime` answers the boot instant (`bootAt`), the seconds since boot (`totalSeconds`,
+sleep included) and the part of them that falls inside today (`todaySeconds`) — today starts at
+local midnight resolved through the Windows time zone rules, so a boot before midnight counts only
+the part after it, and the counter keeps running through sleep, so a resume does not shift the boot
+instant.
 
 | Command | Module | Arguments | Returns | Task |
 | --- | --- | --- | --- | --- |
@@ -126,3 +131,4 @@ it; the pomodoro timer keeps running either way.
 | `list_pomodoro_sessions` | `pomodoro_commands` | `limit: i64` | `PomodoroSession[]` | T11 |
 | `send_test_notification` | `notification_commands` | — | `Outcome` (`"toast"` or `"fallback"`) | T14 |
 | `notify_pomodoro_phase` | `notification_commands` | `phase: Phase` | `Outcome` (`"toast"` or `"fallback"`) | T14 |
+| `get_uptime` | `system_commands` | — | `Uptime` (`{ bootAt, todaySeconds, totalSeconds }`) | T13 |

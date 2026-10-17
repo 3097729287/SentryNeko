@@ -149,7 +149,8 @@ SentryNeko/
 │       │   ├── alarm_commands.rs     # 闹钟命令
 │       │   ├── app_event_commands.rs # 前台应用事件查询命令
 │       │   ├── event_commands.rs     # 事件总线命令
-│       │   └── settings_commands.rs  # 设置命令
+│       │   ├── settings_commands.rs  # 设置命令
+│       │   └── system_commands.rs    # 系统信息命令（开机时长）
 │       ├── collectors/               # Windows 系统采集层
 │       │   ├── mod.rs                # 采集模块入口
 │       │   ├── foreground_app.rs     # 前台应用采集器（GetForegroundWindow + GetWindowText）

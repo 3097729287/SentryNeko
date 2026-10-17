@@ -1,9 +1,10 @@
 //! Win32 FFI declarations and safe wrappers. All platform-specific code lives here.
 //!
-//! The calls are declared by hand instead of pulling in the `windows` crate: the collector needs
-//! six of them, and a hand-written binding keeps the dependency list short.
+//! The calls are declared by hand instead of pulling in the `windows` crate: the collectors need
+//! a handful of them, and a hand-written binding keeps the dependency list short.
 
 use std::ffi::c_void;
+use std::ptr;
 
 /// Opaque handle type: `HWND` for windows, `HANDLE` for kernel objects.
 type Handle = *mut c_void;
@@ -17,6 +18,34 @@ const PROCESS_QUERY_LIMITED_INFORMATION: u32 = 0x1000;
 /// Longest image path `QueryFullProcessImageNameW` returns, in UTF-16 code units.
 const MAX_IMAGE_PATH_UNITS: usize = 32_768;
 
+/// 100-nanosecond intervals between 1601-01-01 (`FILETIME` origin) and 1970-01-01.
+const UNIX_EPOCH_IN_FILETIME: u64 = 116_444_736_000_000_000;
+
+/// 100-nanosecond intervals in one second.
+const FILETIME_PER_SECOND: u64 = 10_000_000;
+
+/// `SYSTEMTIME`: a broken-down local or universal time, as Windows reports it.
+#[repr(C)]
+#[derive(Debug, Clone, Copy, Default)]
+struct SystemTime {
+    year: u16,
+    month: u16,
+    day_of_week: u16,
+    day: u16,
+    hour: u16,
+    minute: u16,
+    second: u16,
+    milliseconds: u16,
+}
+
+/// `FILETIME`: 100-nanosecond intervals since 1601-01-01, split into two words.
+#[repr(C)]
+#[derive(Debug, Clone, Copy, Default)]
+struct FileTime {
+    low: u32,
+    high: u32,
+}
+
 #[link(name = "user32")]
 extern "system" {
     fn GetForegroundWindow() -> WindowHandle;
@@ -29,6 +58,7 @@ extern "system" {
 #[link(name = "kernel32")]
 extern "system" {
     fn GetCurrentProcessId() -> u32;
+    fn GetTickCount64() -> u64;
     fn OpenProcess(access: u32, inherit: i32, process_id: u32) -> Handle;
     fn CloseHandle(handle: Handle) -> i32;
     fn QueryFullProcessImageNameW(
@@ -36,6 +66,18 @@ extern "system" {
         flags: u32,
         buffer: *mut u16,
         size: *mut u32,
+    ) -> i32;
+    fn FileTimeToSystemTime(file_time: *const FileTime, system_time: *mut SystemTime) -> i32;
+    fn SystemTimeToFileTime(system_time: *const SystemTime, file_time: *mut FileTime) -> i32;
+    fn SystemTimeToTzSpecificLocalTime(
+        zone: *const c_void,
+        universal: *const SystemTime,
+        local: *mut SystemTime,
+    ) -> i32;
+    fn TzSpecificLocalTimeToSystemTime(
+        zone: *const c_void,
+        local: *const SystemTime,
+        universal: *mut SystemTime,
     ) -> i32;
 }
 
@@ -94,6 +136,49 @@ pub fn executable_name(image_path: &str) -> Option<String> {
     (!name.is_empty()).then_some(name)
 }
 
+/// Milliseconds the machine has been up.
+///
+/// `GetTickCount64` follows the interrupt time, which keeps running through sleep and
+/// hibernation; a suspend therefore does not shift the boot instant derived from it.
+#[must_use]
+pub fn milliseconds_since_boot() -> u64 {
+    unsafe { GetTickCount64() }
+}
+
+/// UTC epoch seconds of the local midnight that starts the day `utc_seconds` falls in.
+///
+/// The local time is resolved through the Windows time zone rules rather than a stored offset, so
+/// the answer stays right on the two days a year the offset changes. `None` when Windows cannot
+/// break the instant down.
+#[must_use]
+pub fn local_midnight(utc_seconds: i64) -> Option<i64> {
+    let universal = system_time_of(utc_seconds)?;
+
+    let mut local = SystemTime::default();
+    if unsafe { SystemTimeToTzSpecificLocalTime(ptr::null(), &universal, &mut local) } == 0 {
+        return None;
+    }
+
+    let midnight = SystemTime {
+        hour: 0,
+        minute: 0,
+        second: 0,
+        milliseconds: 0,
+        ..local
+    };
+
+    let mut start = SystemTime::default();
+    if unsafe { TzSpecificLocalTimeToSystemTime(ptr::null(), &midnight, &mut start) } != 0 {
+        if let Some(file_time) = file_time_of(&start) {
+            return seconds_since_epoch(file_time);
+        }
+    }
+
+    // A zone can jump over the midnight hour when its clock moves; the wall clock still says how
+    // much of the day has passed, which is close enough for a fallback.
+    Some(utc_seconds - seconds_of_day(&local))
+}
+
 /// Process id that owns `window`; `None` when Windows reports none.
 fn process_id_of(window: WindowHandle) -> Option<u32> {
     let mut process_id = 0u32;
@@ -145,9 +230,50 @@ fn window_title(window: WindowHandle) -> Option<String> {
     (!title.is_empty()).then(|| title.to_owned())
 }
 
+/// Broken-down universal time of an epoch instant.
+fn system_time_of(utc_seconds: i64) -> Option<SystemTime> {
+    let hundred_nanos = u64::try_from(utc_seconds)
+        .ok()?
+        .checked_mul(FILETIME_PER_SECOND)?
+        .checked_add(UNIX_EPOCH_IN_FILETIME)?;
+    let file_time = FileTime {
+        low: hundred_nanos as u32,
+        high: (hundred_nanos >> 32) as u32,
+    };
+
+    let mut system_time = SystemTime::default();
+    (unsafe { FileTimeToSystemTime(&file_time, &mut system_time) } != 0).then_some(system_time)
+}
+
+/// `FILETIME` of a broken-down time.
+fn file_time_of(system_time: &SystemTime) -> Option<FileTime> {
+    let mut file_time = FileTime::default();
+    (unsafe { SystemTimeToFileTime(system_time, &mut file_time) } != 0).then_some(file_time)
+}
+
+/// Epoch seconds of a `FILETIME`; `None` for an instant before 1970.
+fn seconds_since_epoch(file_time: FileTime) -> Option<i64> {
+    let hundred_nanos = (u64::from(file_time.high) << 32) | u64::from(file_time.low);
+    let seconds = hundred_nanos.checked_sub(UNIX_EPOCH_IN_FILETIME)? / FILETIME_PER_SECOND;
+
+    i64::try_from(seconds).ok()
+}
+
+/// Seconds since local midnight, ignoring an offset change earlier in the day.
+fn seconds_of_day(local: &SystemTime) -> i64 {
+    i64::from(local.hour) * 3_600 + i64::from(local.minute) * 60 + i64::from(local.second)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn now() -> i64 {
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("the clock is after 1970")
+            .as_secs() as i64
+    }
 
     #[test]
     fn the_executable_name_drops_the_directory_and_the_extension() {
@@ -171,5 +297,37 @@ mod tests {
     #[test]
     fn the_current_process_has_an_id() {
         assert_ne!(current_process_id(), 0);
+    }
+
+    #[test]
+    fn the_boot_counter_has_started() {
+        assert!(milliseconds_since_boot() > 0);
+    }
+
+    #[test]
+    fn the_local_midnight_belongs_to_the_current_day() {
+        let now = now();
+        let midnight = local_midnight(now).expect("the day has a start");
+
+        assert!(
+            midnight <= now,
+            "midnight {midnight} is not after now {now}"
+        );
+        assert!(
+            now - midnight < 86_400,
+            "midnight {midnight} is more than a day before {now}"
+        );
+    }
+
+    #[test]
+    fn the_local_midnight_of_a_midnight_is_itself() {
+        let midnight = local_midnight(now()).expect("the day has a start");
+
+        assert_eq!(local_midnight(midnight), Some(midnight));
+    }
+
+    #[test]
+    fn an_instant_before_1970_has_no_epoch_form() {
+        assert!(system_time_of(-1).is_none());
     }
 }

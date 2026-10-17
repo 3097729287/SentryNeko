@@ -87,6 +87,10 @@ fn toggle(id: i64) -> ApiResult<Todo> {
 `settings_commands` 里，并在设置页编辑。通知这一组就是 Toast 通道：`send_test_notification`
 是诊断命令，`notify_pomodoro_phase` 由计时器在阶段结束时调用。两者成功返回 `toast`；系统拒绝
 时推送 `notification-fallback`（见 `docs/events.md`）并返回 `fallback`，番茄钟无论如何都会继续流转。
+系统这一组描述的是机器而不是数据：`get_uptime` 返回开机时刻（`bootAt`）、开机至今的秒数
+（`totalSeconds`，含休眠）以及其中落在今天的那部分（`todaySeconds`）——今天从本地零点算起，
+按 Windows 时区规则换算，所以零点前开机的只计入零点之后的部分；计数器在休眠期间照常走，
+因此恢复后开机时刻不会漂移。
 
 | 命令 | 模块 | 参数 | 返回 | 任务 |
 | --- | --- | --- | --- | --- |
@@ -113,3 +117,4 @@ fn toggle(id: i64) -> ApiResult<Todo> {
 | `list_pomodoro_sessions` | `pomodoro_commands` | `limit: i64` | `PomodoroSession[]` | T11 |
 | `send_test_notification` | `notification_commands` | — | `Outcome`（`"toast"` 或 `"fallback"`） | T14 |
 | `notify_pomodoro_phase` | `notification_commands` | `phase: Phase` | `Outcome`（`"toast"` 或 `"fallback"`） | T14 |
+| `get_uptime` | `system_commands` | — | `Uptime`（`{ bootAt, todaySeconds, totalSeconds }`） | T13 |

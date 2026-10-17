@@ -149,7 +149,8 @@ SentryNeko/
 │       │   ├── alarm_commands.rs     # Alarm commands
 │       │   ├── app_event_commands.rs # Foreground app event query commands
 │       │   ├── event_commands.rs     # Event bus commands
-│       │   └── settings_commands.rs  # Settings commands
+│       │   ├── settings_commands.rs  # Settings commands
+│       │   └── system_commands.rs    # System info commands (uptime)
 │       ├── collectors/               # Windows system collection layer
 │       │   ├── mod.rs                # Collectors module entry
 │       │   ├── foreground_app.rs     # Foreground app collector (GetForegroundWindow + GetWindowText)

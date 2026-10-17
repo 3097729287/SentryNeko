@@ -7,5 +7,6 @@ pub mod heatmap_commands;
 pub mod notification_commands;
 pub mod pomodoro_commands;
 pub mod settings_commands;
+pub mod system_commands;
 pub mod tag_commands;
 pub mod todo_commands;
