@@ -229,7 +229,9 @@ SentryNeko/
 ├── README.md                         # 英文说明（默认）
 ├── README.zh-CN.md                   # 中文说明（本文件）
 ├── TODO.md                           # 英文任务拆分（默认）
-└── TODO.zh-CN.md                     # 中文任务拆分
+├── TODO.zh-CN.md                     # 中文任务拆分
+├── CONTRIBUTING.md                   # 英文贡献指南（默认）
+└── CONTRIBUTING.zh-CN.md             # 中文贡献指南（本文件）
 ```
 
 ## 开发环境
@@ -272,6 +274,7 @@ pnpm tauri build
 | [docs/events.md](docs/events.md) | Tauri 事件定义与触发时机 |
 | [docs/i18n.md](docs/i18n.md) | 文案组织与新增语言步骤 |
 | [TODO.zh-CN.md](TODO.zh-CN.md) | 功能拆解、优先级与依赖关系 |
+| [CONTRIBUTING.zh-CN.md](CONTRIBUTING.zh-CN.md) | 分支约定、提交规范与完成标准 |
 
 ## 许可证
 

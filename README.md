@@ -229,7 +229,9 @@ SentryNeko/
 ├── README.md                         # English docs (default)
 ├── README.zh-CN.md                   # Simplified Chinese docs
 ├── TODO.md                           # English task breakdown (default)
-└── TODO.zh-CN.md                     # Simplified Chinese task breakdown
+├── TODO.zh-CN.md                     # Simplified Chinese task breakdown
+├── CONTRIBUTING.md                   # English contribution guide (default)
+└── CONTRIBUTING.zh-CN.md             # Simplified Chinese contribution guide
 ```
 
 ## Development requirements
@@ -272,6 +274,7 @@ pnpm tauri build
 | [docs/events.md](docs/events.md) | Tauri event definitions and trigger points |
 | [docs/i18n.md](docs/i18n.md) | How copy is organized and how to add a language |
 | [TODO.md](TODO.md) | Task breakdown, priorities and dependencies |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Branching, commit conventions and the definition of done |
 
 ## License
 
