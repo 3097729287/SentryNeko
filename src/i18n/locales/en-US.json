@@ -3,6 +3,13 @@
     "name": "SentryNeko",
     "tagline": "Track your focus and your todos"
   },
+  "events": {
+    "test": {
+      "send": "Send a test event",
+      "waiting": "No test event received yet",
+      "received": "Received test event #{{sequence}}"
+    }
+  },
   "language": {
     "label": "Language"
   }

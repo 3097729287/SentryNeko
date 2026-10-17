@@ -19,3 +19,9 @@ export interface ApiResponse<T> {
 export function isOk<T>(response: ApiResponse<T>): response is ApiResponse<T> & { data: T } {
   return response.code === "OK";
 }
+
+/** Payload of the `test-event` pushed by `emit_test_event` (T08). */
+export interface TestEventPayload {
+  /** Rises with every push, so two of them can be told apart. */
+  sequence: number;
+}

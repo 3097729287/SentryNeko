@@ -85,9 +85,11 @@ Rules (also enforced by `CONTRIBUTING.md`):
 
 Every command the frontend may call is listed here. The language pair is the interface behind
 `src/i18n/`: `get_language` answers with the tag stored in `config.json`, and `set_language`
-rejects anything outside `Language::ALL` with `INVALID_INPUT`.
+rejects anything outside `Language::ALL` with `INVALID_INPUT`. `emit_test_event` is the
+diagnostic behind the event bus probe; the push it triggers is defined in `docs/events.md`.
 
 | Command | Module | Arguments | Returns | Task |
 | --- | --- | --- | --- | --- |
 | `get_language` | `settings_commands` | — | `String` (BCP-47 tag) | T07 |
 | `set_language` | `settings_commands` | `language: String` | `String` (tag in force) | T07 |
+| `emit_test_event` | `event_commands` | — | `TestEvent` (`{ sequence }`) | T08 |

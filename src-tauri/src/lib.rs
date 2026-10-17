@@ -10,10 +10,11 @@ pub mod utils;
 
 use tauri::Manager;
 
-use crate::commands::settings_commands;
+use crate::commands::{event_commands, settings_commands};
 use crate::config::Config;
 use crate::db::connection::Db;
 use crate::db::migrations;
+use crate::services::event_bus::EventBus;
 
 /// Builds and runs the application.
 pub fn run() {
@@ -25,12 +26,14 @@ pub fn run() {
             migrations::migrate(&db)?;
             app.manage(config);
             app.manage(db);
+            app.manage(EventBus::new(app.handle().clone()));
 
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
             settings_commands::get_language,
-            settings_commands::set_language
+            settings_commands::set_language,
+            event_commands::emit_test_event
         ])
         .run(tauri::generate_context!())
         .expect("error while running the SentryNeko application");

@@ -3,6 +3,13 @@
     "name": "SentryNeko",
     "tagline": "记录你的专注与待办"
   },
+  "events": {
+    "test": {
+      "send": "发送测试事件",
+      "waiting": "尚未收到测试事件",
+      "received": "已收到测试事件 #{{sequence}}"
+    }
+  },
   "language": {
     "label": "语言"
   }

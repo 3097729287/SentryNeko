@@ -77,8 +77,10 @@ fn toggle(id: i64) -> ApiResult<Todo> {
 
 前端可以调用的命令都列在这里。语言这两个是 `src/i18n/` 的后端接口：`get_language` 返回
 `config.json` 中的标签，`set_language` 对 `Language::ALL` 之外的标签返回 `INVALID_INPUT`。
+`emit_test_event` 是事件探针背后的诊断命令，它推送的事件定义在 `docs/events.md`。
 
 | 命令 | 模块 | 参数 | 返回 | 任务 |
 | --- | --- | --- | --- | --- |
 | `get_language` | `settings_commands` | — | `String`（BCP-47 标签） | T07 |
 | `set_language` | `settings_commands` | `language: String` | `String`（生效后的标签） | T07 |
+| `emit_test_event` | `event_commands` | — | `TestEvent`（`{ sequence }`） | T08 |

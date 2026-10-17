@@ -146,6 +146,7 @@ SentryNeko/
 │       │   ├── heatmap_commands.rs   # Heatmap data commands
 │       │   ├── alarm_commands.rs     # Alarm commands
 │       │   ├── app_event_commands.rs # Foreground app event query commands
+│       │   ├── event_commands.rs     # Event bus commands
 │       │   └── settings_commands.rs  # Settings commands
 │       ├── collectors/               # Windows system collection layer
 │       │   ├── mod.rs                # Collectors module entry
