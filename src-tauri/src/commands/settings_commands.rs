@@ -1,12 +1,16 @@
 //! Settings commands: read and update persisted user settings.
 
+use std::path::PathBuf;
+
 use tauri::State;
 
 use crate::config::Config;
 use crate::db::connection::Db;
 use crate::models::alarm::AlarmDefaults;
 use crate::models::pomodoro::PomodoroDurations;
+use crate::services::autostart::{Autostart, WindowsRunKey};
 use crate::services::i18n::Language;
+use crate::services::tray::Tray;
 use crate::utils::response::{ApiError, ApiResponse, ApiResult};
 
 /// Reads the pomodoro phase durations.
@@ -39,6 +43,33 @@ pub fn set_alarm_defaults(
     AlarmDefaults::save(&db, defaults).into()
 }
 
+/// Reads whether Windows starts the application when the user signs in.
+#[tauri::command]
+pub fn get_autostart(autostart: State<'_, Autostart<WindowsRunKey>>) -> ApiResponse<bool> {
+    program()
+        .and_then(|program| autostart.enabled(&program))
+        .into()
+}
+
+/// Registers or unregisters the application for a start at login.
+#[tauri::command]
+pub fn set_autostart(
+    enabled: bool,
+    autostart: State<'_, Autostart<WindowsRunKey>>,
+) -> ApiResponse<bool> {
+    program()
+        .and_then(|program| autostart.set(&program, enabled))
+        .into()
+}
+
+/// The executable a login entry has to point at.
+fn program() -> ApiResult<PathBuf> {
+    std::env::current_exe().map_err(|error| {
+        ApiError::internal("the running executable cannot be located")
+            .with_details(error.to_string())
+    })
+}
+
 /// Reads the language stored in `config.json`.
 #[tauri::command]
 pub fn get_language(config: State<'_, Config>) -> ApiResponse<String> {
@@ -47,15 +78,26 @@ pub fn get_language(config: State<'_, Config>) -> ApiResponse<String> {
 
 /// Stores `language` in `config.json` and answers with the tag now in force.
 #[tauri::command]
-pub fn set_language(language: String, config: State<'_, Config>) -> ApiResponse<String> {
-    write_language(&config, &language).into()
+pub fn set_language(
+    language: String,
+    config: State<'_, Config>,
+    tray: State<'_, Tray>,
+) -> ApiResponse<String> {
+    write_language(&config, &language)
+        .map(|chosen| {
+            // The tray menu is native copy, so it follows the choice without a restart.
+            tray.relabel(chosen);
+
+            chosen.code().to_owned()
+        })
+        .into()
 }
 
 fn read_language(config: &Config) -> ApiResult<String> {
     config.language().map(|language| language.code().to_owned())
 }
 
-fn write_language(config: &Config, tag: &str) -> ApiResult<String> {
+fn write_language(config: &Config, tag: &str) -> ApiResult<Language> {
     let language = Language::from_code(tag).ok_or_else(|| {
         ApiError::invalid_input(format!("unknown language tag: {tag}"))
             .with_details(format!("expected one of: {}", known_tags()))
@@ -63,7 +105,7 @@ fn write_language(config: &Config, tag: &str) -> ApiResult<String> {
 
     config.set_language(language)?;
 
-    Ok(language.code().to_owned())
+    Ok(language)
 }
 
 fn known_tags() -> String {

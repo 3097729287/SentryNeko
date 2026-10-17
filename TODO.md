@@ -62,8 +62,8 @@ Status legend: `[ ]` not started　`[~]` in progress　`[x]` done　`[!]` blocke
 | [ ] | T22 | Task completion rate | T10 | Rate definition (all-time vs. today) switchable and documented |
 | [ ] | T23 | Event stream page (`EventsPage`) | T15 | Browse foreground app events newest-first with paging |
 | [ ] | T24 | Analytics page (`AnalyticsPage`) | T20, T21, T22 | Aggregates the stats above; page-level loading and error states implemented |
-| [ ] | T25 | System tray: stay resident when minimized + context menu | T02, T11 | Menu offers start Pomodoro, today's stats, show/hide window; closing the main window does not quit the app |
-| [ ] | T26 | Auto-start with Windows (registry / Task Scheduler) | T25 | `scripts/install_collector.ps1` installs/uninstalls idempotently |
+| [x] | T25 | System tray: stay resident when minimized + context menu | T02, T11 | Menu offers start Pomodoro, today's stats, show/hide window; closing the main window does not quit the app |
+| [x] | T26 | Auto-start with Windows (registry / Task Scheduler) | T25 | A settings switch writes `HKCU\...\Run` for the running executable; switching it on twice leaves one entry, switching it off removes it, and a login start waits in the tray |
 
 ## P3 Reserved (stubs only, not implemented)
 

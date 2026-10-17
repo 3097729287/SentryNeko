@@ -18,8 +18,10 @@ use crate::commands::{
 use crate::config::Config;
 use crate::db::connection::Db;
 use crate::db::schema;
+use crate::services::autostart::{self, Autostart, WindowsRunKey};
 use crate::services::event_bus::EventBus;
 use crate::services::scheduler::RunningScheduler;
+use crate::services::tray;
 
 /// Builds and runs the application.
 pub fn run() {
@@ -36,11 +38,24 @@ pub fn run() {
             app.manage(bus.clone());
             app.manage(RunningCollector::spawn(db.clone(), bus.clone())?);
             app.manage(RunningScheduler::spawn(
-                db,
-                bus,
-                config,
+                db.clone(),
+                bus.clone(),
+                config.clone(),
                 app.handle().clone(),
             )?);
+            app.manage(tray::Tray::install(app.handle(), db, config, bus)?);
+            app.manage(Autostart::new(WindowsRunKey));
+
+            // The window is the face of a resident app: closing it parks it in the tray instead of
+            // ending the process, so the tracking and the alarms keep running.
+            if let Some(window) = app.get_webview_window(tray::WINDOW_LABEL) {
+                tray::hide_on_close(&window);
+            }
+
+            // A login start stays in the tray: nobody asked for a window at that moment.
+            if autostart::launched_at_login() {
+                tray::hide_window(app.handle());
+            }
 
             Ok(())
         })
@@ -65,6 +80,8 @@ pub fn run() {
             settings_commands::set_pomodoro_durations,
             settings_commands::get_alarm_defaults,
             settings_commands::set_alarm_defaults,
+            settings_commands::get_autostart,
+            settings_commands::set_autostart,
             notification_commands::send_test_notification,
             notification_commands::notify_pomodoro_phase,
             pomodoro_commands::start_pomodoro_session,
@@ -92,6 +109,10 @@ pub fn run() {
 
             if let Some(scheduler) = handle.try_state::<RunningScheduler>() {
                 scheduler.stop();
+            }
+
+            if let Some(tray) = handle.try_state::<tray::Tray>() {
+                tray.stop();
             }
         }
     });

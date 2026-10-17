@@ -35,6 +35,7 @@ a new event: add the new name, migrate the listeners, then drop the old one.
 | `notification-fallback` | `NotificationFallback` — `{ kind, reason }` | `send_test_notification` pushes one when the system refuses the toast, so the frontend paints it in the app instead | T14 |
 | `app-switch` | `AppEvent` — `{ id, appName, windowTitle, startedAt, endedAt }` | The foreground collector opened a row, i.e. another app took the foreground. A title change inside the same app updates its row without a push, so one push is one switch | T15 |
 | `pomodoro-finished` | `PomodoroSession` — `{ id, phase, plannedSeconds, actualSeconds, startedAt, endedAt, todoId }` | `finish_pomodoro_session` closed a session, so a history view can refresh without polling; the window that closed it already knows | T15 |
+| `tray-start-pomodoro` | — (payload is `null`) | The tray's `Start Pomodoro` entry: the window has already been shown, and the shell reloads the durations and starts the phase from the store, so it runs exactly like one started on the page | T25 |
 | `alarm-triggered` | `Alarm` — `{ id, label, hour, minute, repeatDays, enabled, createdAt }` | `services/scheduler.rs` reached the alarm's local time: the tone started and, unless the stored defaults say `inApp`, the toast (or its `notification-fallback`) was handed over first. A one-off is already switched off, so the payload carries `enabled: false` | T17, T18 |
 
 The shell (`App.tsx`) subscribes to `app-switch` once and hands every push to

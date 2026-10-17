@@ -57,6 +57,21 @@ struct LastInputInfo {
 /// `MB_ICONASTERISK`: the chime Windows plays for an informational alert.
 const MB_ICONASTERISK: u32 = 0x0000_0040;
 
+/// A registry key handle (`HKEY`).
+type Hkey = isize;
+
+/// `HKEY_CURRENT_USER`, sign-extended the way Windows defines its predefined handles.
+const HKEY_CURRENT_USER: Hkey = 0x8000_0001u32 as i32 as Hkey;
+
+/// Per-user run key: what Windows starts for this account when it signs in.
+const RUN_KEY: &str = r"Software\Microsoft\Windows\CurrentVersion\Run";
+
+const KEY_QUERY_VALUE: u32 = 0x0001;
+const KEY_SET_VALUE: u32 = 0x0002;
+const REG_SZ: u32 = 1;
+const ERROR_SUCCESS: i32 = 0;
+const ERROR_FILE_NOT_FOUND: i32 = 2;
+
 #[link(name = "user32")]
 extern "system" {
     fn GetForegroundWindow() -> WindowHandle;
@@ -93,6 +108,39 @@ extern "system" {
         local: *const SystemTime,
         universal: *mut SystemTime,
     ) -> i32;
+}
+
+#[link(name = "advapi32")]
+extern "system" {
+    fn RegCreateKeyExW(
+        key: Hkey,
+        sub_key: *const u16,
+        reserved: u32,
+        class: *const u16,
+        options: u32,
+        desired: u32,
+        security: *const c_void,
+        result: *mut Hkey,
+        disposition: *mut u32,
+    ) -> i32;
+    fn RegCloseKey(key: Hkey) -> i32;
+    fn RegQueryValueExW(
+        key: Hkey,
+        name: *const u16,
+        reserved: *mut u32,
+        kind: *mut u32,
+        data: *mut u8,
+        bytes: *mut u32,
+    ) -> i32;
+    fn RegSetValueExW(
+        key: Hkey,
+        name: *const u16,
+        reserved: u32,
+        kind: u32,
+        data: *const u8,
+        bytes: u32,
+    ) -> i32;
+    fn RegDeleteValueW(key: Hkey, name: *const u16) -> i32;
 }
 
 /// A local calendar date, as Windows breaks it down.
@@ -353,6 +401,154 @@ fn seconds_of_day(local: &SystemTime) -> i64 {
     i64::from(local.hour) * 3_600 + i64::from(local.minute) * 60 + i64::from(local.second)
 }
 
+/// The command the per-user run key holds under `name`, or `None` when it holds nothing.
+///
+/// `Err` is the platform's reason: a policy that forbids reading the key, or a value of another
+/// type.
+pub fn run_at_login(name: &str) -> Result<Option<String>, String> {
+    let key = RunKey::open()?;
+    let value = wide(name);
+    let mut kind = 0;
+    let mut bytes = 0;
+
+    // The first call asks for the size, the second fills the buffer.
+    let code = unsafe {
+        RegQueryValueExW(
+            key.0,
+            value.as_ptr(),
+            ptr::null_mut(),
+            &mut kind,
+            ptr::null_mut(),
+            &mut bytes,
+        )
+    };
+
+    if code == ERROR_FILE_NOT_FOUND {
+        return Ok(None);
+    }
+
+    if code != ERROR_SUCCESS {
+        return Err(format!("RegQueryValueExW failed with code {code}"));
+    }
+
+    if kind != REG_SZ || bytes == 0 {
+        return Ok(None);
+    }
+
+    let mut data = vec![0u8; bytes as usize];
+    let code = unsafe {
+        RegQueryValueExW(
+            key.0,
+            value.as_ptr(),
+            ptr::null_mut(),
+            &mut kind,
+            data.as_mut_ptr(),
+            &mut bytes,
+        )
+    };
+
+    if code != ERROR_SUCCESS {
+        return Err(format!("RegQueryValueExW failed with code {code}"));
+    }
+
+    Ok(Some(text_of(&data[..(bytes as usize).min(data.len())])))
+}
+
+/// Registers `command` under `name` to run at login, replacing what the key held.
+pub fn set_run_at_login(name: &str, command: &str) -> Result<(), String> {
+    let key = RunKey::open()?;
+    let value = wide(name);
+    let data = wide(command);
+    let bytes = u32::try_from(data.len() * 2)
+        .map_err(|_| "the command is too long for the registry".to_owned())?;
+
+    let code = unsafe {
+        RegSetValueExW(
+            key.0,
+            value.as_ptr(),
+            0,
+            REG_SZ,
+            data.as_ptr().cast::<u8>(),
+            bytes,
+        )
+    };
+
+    if code != ERROR_SUCCESS {
+        return Err(format!("RegSetValueExW failed with code {code}"));
+    }
+
+    Ok(())
+}
+
+/// Removes the entry under `name`; removing one that is not there is not a failure.
+pub fn clear_run_at_login(name: &str) -> Result<(), String> {
+    let key = RunKey::open()?;
+    let value = wide(name);
+
+    let code = unsafe { RegDeleteValueW(key.0, value.as_ptr()) };
+
+    if code != ERROR_SUCCESS && code != ERROR_FILE_NOT_FOUND {
+        return Err(format!("RegDeleteValueW failed with code {code}"));
+    }
+
+    Ok(())
+}
+
+/// The per-user run key, closed when it goes out of scope.
+struct RunKey(Hkey);
+
+impl RunKey {
+    /// Opens the key for reading and writing, creating it when the profile does not have one.
+    fn open() -> Result<Self, String> {
+        let sub_key = wide(RUN_KEY);
+        let mut handle: Hkey = 0;
+        let mut disposition = 0;
+
+        let code = unsafe {
+            RegCreateKeyExW(
+                HKEY_CURRENT_USER,
+                sub_key.as_ptr(),
+                0,
+                ptr::null(),
+                0,
+                KEY_QUERY_VALUE | KEY_SET_VALUE,
+                ptr::null(),
+                &mut handle,
+                &mut disposition,
+            )
+        };
+
+        if code != ERROR_SUCCESS {
+            return Err(format!("RegCreateKeyExW failed with code {code}"));
+        }
+
+        Ok(Self(handle))
+    }
+}
+
+impl Drop for RunKey {
+    fn drop(&mut self) {
+        unsafe { RegCloseKey(self.0) };
+    }
+}
+
+/// A string as a NUL-terminated UTF-16 buffer, the shape the registry API takes.
+fn wide(text: &str) -> Vec<u16> {
+    text.encode_utf16().chain(std::iter::once(0)).collect()
+}
+
+/// Reads a `REG_SZ` buffer back, dropping the terminator.
+fn text_of(bytes: &[u8]) -> String {
+    let units: Vec<u16> = bytes
+        .chunks_exact(2)
+        .map(|pair| u16::from_le_bytes([pair[0], pair[1]]))
+        .collect();
+
+    String::from_utf16_lossy(&units)
+        .trim_end_matches('\0')
+        .to_owned()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -471,5 +667,23 @@ mod tests {
     #[test]
     fn an_instant_before_1970_has_no_epoch_form() {
         assert!(system_time_of(-1).is_none());
+    }
+
+    /// The FFI only fails at run time, so the round trip is checked on demand rather than on every
+    /// `cargo test`: `cargo test a_run_value_round_trips -- --ignored`.
+    #[test]
+    #[ignore = "writes one value under the current user's run key and removes it again"]
+    fn a_run_value_round_trips_through_the_registry() {
+        let name = "SentryNeko-round-trip";
+        let command = r#""C:\Program Files\SentryNeko\sentry-neko.exe" --autostart"#;
+
+        clear_run_at_login(name).expect("clearing a value that is not there succeeds");
+        assert_eq!(run_at_login(name).expect("read"), None);
+
+        set_run_at_login(name, command).expect("written");
+        assert_eq!(run_at_login(name).expect("read").as_deref(), Some(command));
+
+        clear_run_at_login(name).expect("removed");
+        assert_eq!(run_at_login(name).expect("read"), None);
     }
 }

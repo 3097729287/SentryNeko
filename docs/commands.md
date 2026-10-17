@@ -118,7 +118,10 @@ maintains the reminders the scheduler watches: `list_alarms`, `add_alarm`, `upda
 does, on the thread that owns the clock, so an alarm fires whether or not the page is open. How an
 alarm rings is a setting rather than a column, so it lives with the durations: `get_alarm_defaults`
 and `set_alarm_defaults` carry the ring length and the notification method, and the scheduler reads
-them when an alarm fires — editing one therefore moves every alarm, not only the next.
+them when an alarm fires — editing one therefore moves every alarm, not only the next. The two
+auto-start commands own the other piece of machine state: `get_autostart` reports whether the
+per-user run key starts this executable, and `set_autostart` writes or removes that entry, answering
+with what is now in force. A registry that refuses the write is `PERMISSION_DENIED`.
 
 | Command | Module | Arguments | Returns | Task |
 | --- | --- | --- | --- | --- |
@@ -155,3 +158,5 @@ them when an alarm fires — editing one therefore moves every alarm, not only t
 | `delete_alarm` | `alarm_commands` | `id: i64` | — | T17 |
 | `get_alarm_defaults` | `settings_commands` | — | `AlarmDefaults` (`{ ringSeconds, method }`) | T18 |
 | `set_alarm_defaults` | `settings_commands` | `defaults: AlarmDefaults` | `AlarmDefaults` | T18 |
+| `get_autostart` | `settings_commands` | — | `bool` — whether the login entry starts this executable | T26 |
+| `set_autostart` | `settings_commands` | `enabled: bool` | `bool` — the state now in force | T26 |

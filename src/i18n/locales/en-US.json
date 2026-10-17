@@ -62,6 +62,12 @@
     "name": "SentryNeko",
     "tagline": "Track your focus and your todos"
   },
+  "autostart": {
+    "description": "Windows starts SentryNeko when you sign in, so tracking and alarms are already running. The window stays in the tray until you open it.",
+    "error": "The login entry could not be updated.",
+    "title": "Start with Windows",
+    "toggle": "Start SentryNeko when I sign in"
+  },
   "events": {
     "log": {
       "empty": "Nothing has come in yet — switch to another app.",
