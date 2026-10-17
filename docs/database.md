@@ -78,6 +78,9 @@ answers "which tags" without a join, while `todo_tags` is the index the other di
 `idx_todo_tags_tag_id` finds every task carrying a tag. `Todo::set_tags` writes both sides in one
 transaction, and `Tag::delete` removes its id from the cache of every task that listed it.
 
+The pomodoro durations are a single `settings` row: key `pomodoro.durations`, value the JSON form
+of `PomodoroDurations`. A missing row means the defaults apply.
+
 ## Schema creation
 
 `ensure` runs the script in a transaction on every start: a missing table or index is created, an

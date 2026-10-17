@@ -73,6 +73,9 @@ app.manage(db);
 标签」；`todo_tags` 是另一个方向的索引，`idx_todo_tags_tag_id` 用来查「哪些任务带某个标签」。
 `Todo::set_tags` 在一个事务里同时写两边，`Tag::delete` 会把 id 从所有仍列着它的任务缓存里删掉。
 
+番茄钟时长是 `settings` 里的一行：键 `pomodoro.durations`，值是 `PomodoroDurations` 的 JSON；
+这一行不存在时按默认值处理。
+
 ## 建表
 
 `ensure` 每次启动都在事务里执行整份脚本：缺的表和索引会建出来，已存在的保持原样。这里不做

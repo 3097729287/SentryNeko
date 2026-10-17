@@ -26,6 +26,26 @@
   "pages": {
     "empty": "暂无内容。"
   },
+  "pomodoro": {
+    "error": "计时器无法连接后端。",
+    "pause": "暂停",
+    "phase": {
+      "focus": "专注",
+      "longBreak": "长休息",
+      "shortBreak": "短休息"
+    },
+    "reset": "重置",
+    "settings": {
+      "focus": "专注（分钟）",
+      "locked": "停止计时后才能修改时长。",
+      "longBreak": "长休息（分钟）",
+      "save": "保存",
+      "saved": "已保存",
+      "shortBreak": "短休息（分钟）",
+      "title": "时长"
+    },
+    "start": "开始"
+  },
   "todo": {
     "add": "添加",
     "delete": "删除任务",

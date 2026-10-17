@@ -10,7 +10,9 @@ pub mod utils;
 
 use tauri::Manager;
 
-use crate::commands::{event_commands, settings_commands, tag_commands, todo_commands};
+use crate::commands::{
+    event_commands, pomodoro_commands, settings_commands, tag_commands, todo_commands,
+};
 use crate::config::Config;
 use crate::db::connection::Db;
 use crate::db::schema;
@@ -46,7 +48,12 @@ pub fn run() {
             tag_commands::delete_tag,
             tag_commands::set_todo_tags,
             tag_commands::todo_tags,
-            tag_commands::todos_with_tag
+            tag_commands::todos_with_tag,
+            pomodoro_commands::get_pomodoro_durations,
+            pomodoro_commands::set_pomodoro_durations,
+            pomodoro_commands::start_pomodoro_session,
+            pomodoro_commands::finish_pomodoro_session,
+            pomodoro_commands::list_pomodoro_sessions
         ])
         .run(tauri::generate_context!())
         .expect("error while running the SentryNeko application");

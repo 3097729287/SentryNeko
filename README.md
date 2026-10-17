@@ -190,6 +190,7 @@ SentryNeko/
 │   │   ├── TodoItem.tsx              # Single todo item
 │   │   ├── AddTodoForm.tsx           # Add-todo form
 │   │   ├── PomodoroTimer.tsx         # Pomodoro timer
+│   │   ├── PomodoroSettings.tsx      # Phase duration form
 │   │   ├── HeatmapChart.tsx          # Heatmap component
 │   │   ├── AlarmList.tsx             # Alarm list
 │   │   ├── AppEventLog.tsx           # Foreground app event log list

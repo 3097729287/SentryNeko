@@ -81,6 +81,8 @@ fn toggle(id: i64) -> ApiResult<Todo> {
 就是清单本身：`list_todos` 按完成状态筛选，写操作都返回落库后的整行，`todo_counts` 供剩余
 计数使用。标签这一组属于预留，目前没有页面调用：它维护名称索引，`set_todo_tags` 建立任务与
 标签的关联，并从两个方向读取关系（`todo_tags` 查某任务的标签，`todos_with_tag` 查某标签下的任务）。
+番茄钟这一组负责持久化：时长存在 `settings` 里，`start_pomodoro_session` 在阶段开始时插入一行，
+`finish_pomodoro_session` 用实际秒数收尾——倒计时本身由前端按时间戳推进，不依赖 tick 计数。
 
 | 命令 | 模块 | 参数 | 返回 | 任务 |
 | --- | --- | --- | --- | --- |
@@ -100,3 +102,8 @@ fn toggle(id: i64) -> ApiResult<Todo> {
 | `set_todo_tags` | `tag_commands` | `id: i64`、`tagIds: i64[]` | `Todo` | T33 |
 | `todo_tags` | `tag_commands` | `todoId: i64` | `Tag[]` | T33 |
 | `todos_with_tag` | `tag_commands` | `tagId: i64` | `Todo[]` | T33 |
+| `get_pomodoro_durations` | `pomodoro_commands` | — | `PomodoroDurations`（`{ focusSeconds, shortBreakSeconds, longBreakSeconds }`） | T11 |
+| `set_pomodoro_durations` | `pomodoro_commands` | `durations: PomodoroDurations` | `PomodoroDurations` | T11 |
+| `start_pomodoro_session` | `pomodoro_commands` | `phase: Phase`、`plannedSeconds: i64`、`todoId: i64?` | `PomodoroSession` | T11 |
+| `finish_pomodoro_session` | `pomodoro_commands` | `id: i64`、`actualSeconds: i64` | `PomodoroSession` | T11 |
+| `list_pomodoro_sessions` | `pomodoro_commands` | `limit: i64` | `PomodoroSession[]` | T11 |

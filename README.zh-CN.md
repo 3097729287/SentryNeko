@@ -190,6 +190,7 @@ SentryNeko/
 │   │   ├── TodoItem.tsx              # 单个待办项
 │   │   ├── AddTodoForm.tsx           # 添加待办表单
 │   │   ├── PomodoroTimer.tsx         # 番茄钟计时器
+│   │   ├── PomodoroSettings.tsx      # 阶段时长设置表单
 │   │   ├── HeatmapChart.tsx          # 热力图组件
 │   │   ├── AlarmList.tsx             # 闹钟列表
 │   │   ├── AppEventLog.tsx           # 前台应用事件日志列表

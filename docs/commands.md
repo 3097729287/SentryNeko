@@ -91,6 +91,9 @@ The todo group is the list itself: `list_todos` filters by completion, every mut
 with the stored row, and `todo_counts` feeds the remaining counter. The tag group is reserved —
 no page calls it yet: it maintains the name index, links tags to a task through `set_todo_tags`,
 and reads the relation from either side (`todo_tags` for one task, `todos_with_tag` for one tag).
+The pomodoro group persists the timer: the durations live in `settings`, `start_pomodoro_session`
+opens a row when a phase starts, and `finish_pomodoro_session` closes it with the seconds actually
+spent — the countdown itself runs in the frontend from timestamps, not from a tick count.
 
 | Command | Module | Arguments | Returns | Task |
 | --- | --- | --- | --- | --- |
@@ -110,3 +113,8 @@ and reads the relation from either side (`todo_tags` for one task, `todos_with_t
 | `set_todo_tags` | `tag_commands` | `id: i64`, `tagIds: i64[]` | `Todo` | T33 |
 | `todo_tags` | `tag_commands` | `todoId: i64` | `Tag[]` | T33 |
 | `todos_with_tag` | `tag_commands` | `tagId: i64` | `Todo[]` | T33 |
+| `get_pomodoro_durations` | `pomodoro_commands` | — | `PomodoroDurations` (`{ focusSeconds, shortBreakSeconds, longBreakSeconds }`) | T11 |
+| `set_pomodoro_durations` | `pomodoro_commands` | `durations: PomodoroDurations` | `PomodoroDurations` | T11 |
+| `start_pomodoro_session` | `pomodoro_commands` | `phase: Phase`, `plannedSeconds: i64`, `todoId: i64?` | `PomodoroSession` | T11 |
+| `finish_pomodoro_session` | `pomodoro_commands` | `id: i64`, `actualSeconds: i64` | `PomodoroSession` | T11 |
+| `list_pomodoro_sessions` | `pomodoro_commands` | `limit: i64` | `PomodoroSession[]` | T11 |

@@ -26,6 +26,26 @@
   "pages": {
     "empty": "Nothing here yet."
   },
+  "pomodoro": {
+    "error": "The timer could not reach the backend.",
+    "pause": "Pause",
+    "phase": {
+      "focus": "Focus",
+      "longBreak": "Long break",
+      "shortBreak": "Short break"
+    },
+    "reset": "Reset",
+    "settings": {
+      "focus": "Focus (minutes)",
+      "locked": "Stop the timer to change the durations.",
+      "longBreak": "Long break (minutes)",
+      "save": "Save",
+      "saved": "Saved",
+      "shortBreak": "Short break (minutes)",
+      "title": "Durations"
+    },
+    "start": "Start"
+  },
   "todo": {
     "add": "Add",
     "delete": "Delete task",
