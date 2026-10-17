@@ -87,9 +87,17 @@ Every command the frontend may call is listed here. The language pair is the int
 `src/i18n/`: `get_language` answers with the tag stored in `config.json`, and `set_language`
 rejects anything outside `Language::ALL` with `INVALID_INPUT`. `emit_test_event` is the
 diagnostic behind the event bus probe; the push it triggers is defined in `docs/events.md`.
+The todo group is the list itself: `list_todos` filters by completion, every mutation answers
+with the stored row, and `todo_counts` feeds the remaining counter.
 
 | Command | Module | Arguments | Returns | Task |
 | --- | --- | --- | --- | --- |
 | `get_language` | `settings_commands` | — | `String` (BCP-47 tag) | T07 |
 | `set_language` | `settings_commands` | `language: String` | `String` (tag in force) | T07 |
 | `emit_test_event` | `event_commands` | — | `TestEvent` (`{ sequence }`) | T08 |
+| `list_todos` | `todo_commands` | `completed: bool?` | `Todo[]` | T10 |
+| `add_todo` | `todo_commands` | `title: String` | `Todo` | T10 |
+| `rename_todo` | `todo_commands` | `id: i64`, `title: String` | `Todo` | T10 |
+| `set_todo_completed` | `todo_commands` | `id: i64`, `completed: bool` | `Todo` | T10 |
+| `delete_todo` | `todo_commands` | `id: i64` | — | T10 |
+| `todo_counts` | `todo_commands` | — | `TodoCounts` (`{ total, remaining, completed }`) | T10 |

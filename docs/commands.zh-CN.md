@@ -77,10 +77,18 @@ fn toggle(id: i64) -> ApiResult<Todo> {
 
 前端可以调用的命令都列在这里。语言这两个是 `src/i18n/` 的后端接口：`get_language` 返回
 `config.json` 中的标签，`set_language` 对 `Language::ALL` 之外的标签返回 `INVALID_INPUT`。
-`emit_test_event` 是事件探针背后的诊断命令，它推送的事件定义在 `docs/events.md`。
+`emit_test_event` 是事件探针背后的诊断命令，它推送的事件定义在 `docs/events.md`。待办这一组
+就是清单本身：`list_todos` 按完成状态筛选，写操作都返回落库后的整行，`todo_counts` 供剩余
+计数使用。
 
 | 命令 | 模块 | 参数 | 返回 | 任务 |
 | --- | --- | --- | --- | --- |
 | `get_language` | `settings_commands` | — | `String`（BCP-47 标签） | T07 |
 | `set_language` | `settings_commands` | `language: String` | `String`（生效后的标签） | T07 |
 | `emit_test_event` | `event_commands` | — | `TestEvent`（`{ sequence }`） | T08 |
+| `list_todos` | `todo_commands` | `completed: bool?` | `Todo[]` | T10 |
+| `add_todo` | `todo_commands` | `title: String` | `Todo` | T10 |
+| `rename_todo` | `todo_commands` | `id: i64`、`title: String` | `Todo` | T10 |
+| `set_todo_completed` | `todo_commands` | `id: i64`、`completed: bool` | `Todo` | T10 |
+| `delete_todo` | `todo_commands` | `id: i64` | — | T10 |
+| `todo_counts` | `todo_commands` | — | `TodoCounts`（`{ total, remaining, completed }`） | T10 |
