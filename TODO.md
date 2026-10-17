@@ -42,7 +42,7 @@ Status legend: `[ ]` not started　`[~]` in progress　`[x]` done　`[!]` blocke
 
 | Status | ID | Task | Depends on | Acceptance criteria |
 | --- | --- | --- | --- | --- |
-| [ ] | T10 | Todo list: CRUD + toggle completion + filters + remaining count | T04, T09 | All `todo_commands.rs` commands usable; filtering (all / active / completed) and counting correct |
+| [x] | T10 | Todo list: CRUD + toggle completion + filters + remaining count | T04, T09 | All `todo_commands.rs` commands usable; filtering (all / active / completed) and counting correct |
 | [ ] | T11 | Pomodoro timer: focus/break countdown + custom durations + start/pause/reset | T04, T09 | Countdown driven by timestamps (unaffected by render throttling); phase transitions correct; sessions persisted |
 | [ ] | T12 | Foreground app collector (Win32 FFI) | T04, T05 | `collectors/foreground_app.rs` + `utils/windows.rs` capture app name and window title, filter out our own process, and avoid duplicate rows for the same switch |
 | [ ] | T13 | Boot time collection and today's uptime | T12 | Reads system boot time; correct across midnight and sleep/resume |

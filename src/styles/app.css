@@ -332,6 +332,155 @@ p {
   transform: translateY(1px);
 }
 
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Todo */
+
+.todo-form {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
+}
+
+.todo-input {
+  flex: 1;
+  min-width: 0;
+  padding: 9px var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 13.5px;
+}
+
+.todo-input::placeholder {
+  color: var(--text-muted);
+}
+
+.todo-input:focus-visible {
+  border-color: var(--accent);
+}
+
+.todo-panel {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.todo-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.todo-filters {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.todo-filter {
+  padding: 4px 12px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.todo-filter:hover {
+  color: var(--text);
+}
+
+.todo-filter[aria-pressed="true"] {
+  background: var(--nav-active-bg);
+  box-shadow: var(--nav-active-shadow);
+  color: var(--text);
+}
+
+.todo-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.todo-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 9px var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.todo-item[data-completed="true"] .todo-title {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.todo-check {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.todo-title {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13.5px;
+  text-align: start;
+  cursor: text;
+}
+
+.todo-delete {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.todo-delete:hover {
+  background: var(--surface-hover);
+  color: #f2555a;
+}
+
+.todo-delete svg {
+  width: 10px;
+  height: 10px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.2;
+}
+
+.todo-error {
+  color: #f2555a;
+  font-size: 13px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .nav-indicator {
     transition: none;

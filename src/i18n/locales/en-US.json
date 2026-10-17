@@ -26,6 +26,22 @@
   "pages": {
     "empty": "Nothing here yet."
   },
+  "todo": {
+    "add": "Add",
+    "delete": "Delete task",
+    "edit": "Edit task",
+    "empty": "No tasks here.",
+    "error": "The list could not be loaded.",
+    "filter": {
+      "all": "All",
+      "active": "Active",
+      "completed": "Completed"
+    },
+    "loading": "Loading…",
+    "placeholder": "What needs doing?",
+    "remaining": "{{remaining}} left",
+    "toggle": "Mark as done"
+  },
   "window": {
     "minimize": "Minimize",
     "maximize": "Maximize",
