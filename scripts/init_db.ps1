@@ -1,0 +1,83 @@
+# Creates the SentryNeko SQLite schema without starting the app.
+# The DDL and the recorded schema version must stay in step with
+# src-tauri/src/db/migrations.rs — cargo test fails when they drift apart.
+# Safe to run repeatedly: every statement is idempotent.
+
+[CmdletBinding()]
+param(
+    [string]$DatabasePath = (Join-Path $env:APPDATA 'com.sentryneko.desktop\sentryneko.db')
+)
+
+$ErrorActionPreference = 'Stop'
+
+$sqlite = Get-Command sqlite3 -ErrorAction SilentlyContinue
+if (-not $sqlite) {
+    throw 'sqlite3.exe was not found on PATH. Install the SQLite command line tools, or just start the app once: it migrates the database on first run.'
+}
+
+$directory = Split-Path -Parent $DatabasePath
+if ($directory -and -not (Test-Path $directory)) {
+    New-Item -ItemType Directory -Path $directory -Force | Out-Null
+}
+
+$schema = @'
+PRAGMA foreign_keys = ON;
+
+CREATE TABLE IF NOT EXISTS todos (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    title      TEXT    NOT NULL,
+    completed  INTEGER NOT NULL DEFAULT 0 CHECK (completed IN (0, 1)),
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS pomodoro_sessions (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    phase           TEXT    NOT NULL CHECK (phase IN ('focus', 'short_break', 'long_break')),
+    planned_seconds INTEGER NOT NULL,
+    actual_seconds  INTEGER,
+    started_at      INTEGER NOT NULL,
+    ended_at        INTEGER,
+    todo_id         INTEGER REFERENCES todos (id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS app_events (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    app_name     TEXT    NOT NULL,
+    window_title TEXT,
+    started_at   INTEGER NOT NULL,
+    ended_at     INTEGER
+);
+
+CREATE TABLE IF NOT EXISTS alarms (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    label       TEXT    NOT NULL DEFAULT '',
+    hour        INTEGER NOT NULL CHECK (hour BETWEEN 0 AND 23),
+    minute      INTEGER NOT NULL CHECK (minute BETWEEN 0 AND 59),
+    repeat_days INTEGER NOT NULL DEFAULT 0,
+    enabled     INTEGER NOT NULL DEFAULT 1 CHECK (enabled IN (0, 1)),
+    created_at  INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS settings (
+    key        TEXT    PRIMARY KEY,
+    value      TEXT    NOT NULL,
+    updated_at INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_todos_completed
+    ON todos (completed, created_at);
+
+CREATE INDEX IF NOT EXISTS idx_pomodoro_sessions_started_at
+    ON pomodoro_sessions (started_at);
+
+CREATE INDEX IF NOT EXISTS idx_app_events_started_at
+    ON app_events (started_at);
+
+PRAGMA user_version = 1;
+'@
+
+$schema | & $sqlite.Source $DatabasePath
+
+Write-Host "Database ready: $DatabasePath"
+& $sqlite.Source $DatabasePath "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name;"

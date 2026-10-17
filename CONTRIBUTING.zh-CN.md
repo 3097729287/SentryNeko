@@ -107,6 +107,7 @@ pnpm build
 | --- | --- |
 | 新增或修改 Tauri 命令 | `docs/commands.md` + `docs/commands.zh-CN.md` |
 | 新增或修改 Tauri 事件 | `docs/events.md` + `docs/events.zh-CN.md` |
+| 表、列、迁移或连接池参数 | `docs/database.md` + `docs/database.zh-CN.md` |
 | 文案、locale key、语言列表 | `docs/i18n.md` + `docs/i18n.zh-CN.md` |
 | 分层、数据流、模块职责 | `docs/architecture.md` + `docs/architecture.zh-CN.md` |
 | 范围、优先级、里程碑 | `TODO.md` + `TODO.zh-CN.md` |

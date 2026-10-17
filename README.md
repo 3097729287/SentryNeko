@@ -28,7 +28,7 @@ Runtime requirement: [WebView2 Runtime](https://developer.microsoft.com/microsof
 | Desktop framework | Tauri 2.x |
 | Backend | Rust (Win32 FFI, SQLite, scheduling, Toast notifications) |
 | Frontend | React + TypeScript + Vite |
-| Database | SQLite (local file, managed via a connection pool) |
+| Database | SQLite via rusqlite, r2d2 connection pool, versioned migrations |
 | i18n | i18next / react-i18next (Simplified Chinese, English) |
 | State management | Frontend stores + Tauri event subscriptions |
 
@@ -216,6 +216,7 @@ SentryNeko/
 │
 ├── docs/                             # Documentation (English + Simplified Chinese)
 │   ├── commands.md                   # Tauri command reference
+│   ├── database.md                   # Schema, migrations and the connection pool
 │   ├── events.md                     # Tauri event definitions
 │   ├── i18n.md                       # i18n guide
 │   └── architecture.md               # Architecture notes
@@ -279,6 +280,7 @@ pnpm tauri build
 | --- | --- |
 | [docs/architecture.md](docs/architecture.md) | Layered architecture, data flow and module responsibilities |
 | [docs/commands.md](docs/commands.md) | Tauri command signatures and response format |
+| [docs/database.md](docs/database.md) | Schema, migrations, the connection pool and `scripts/init_db.ps1` |
 | [docs/events.md](docs/events.md) | Tauri event definitions and trigger points |
 | [docs/i18n.md](docs/i18n.md) | How copy is organized and how to add a language |
 | [TODO.md](TODO.md) | Task breakdown, priorities and dependencies |

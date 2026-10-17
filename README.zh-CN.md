@@ -28,7 +28,7 @@ SentryNeko 是一款面向 Windows 的个人效率与时间追踪应用。它把
 | 桌面框架 | Tauri 2.x |
 | 后端 | Rust（Win32 FFI、SQLite、定时调度、Toast 通知） |
 | 前端 | React + TypeScript + Vite |
-| 数据库 | SQLite（本地文件，连接池管理） |
+| 数据库 | SQLite（rusqlite 驱动、r2d2 连接池、版本化迁移） |
 | 国际化 | i18next / react-i18next（简体中文、英文） |
 | 状态管理 | 前端 store 层 + Tauri 事件订阅 |
 
@@ -216,6 +216,7 @@ SentryNeko/
 │
 ├── docs/                             # 文档（中英双语）
 │   ├── commands.md                   # Tauri 命令文档
+│   ├── database.md                   # 表结构、迁移与连接池
 │   ├── events.md                     # Tauri 事件定义文档
 │   ├── i18n.md                       # 国际化说明文档
 │   └── architecture.md               # 架构说明
@@ -279,6 +280,7 @@ pnpm tauri build
 | --- | --- |
 | [docs/architecture.zh-CN.md](docs/architecture.zh-CN.md) | 分层架构、数据流与模块职责 |
 | [docs/commands.zh-CN.md](docs/commands.zh-CN.md) | Tauri 命令签名与返回格式 |
+| [docs/database.zh-CN.md](docs/database.zh-CN.md) | 表结构、迁移、连接池与 `scripts/init_db.ps1` |
 | [docs/events.zh-CN.md](docs/events.zh-CN.md) | Tauri 事件定义与触发时机 |
 | [docs/i18n.zh-CN.md](docs/i18n.zh-CN.md) | 文案组织与新增语言步骤 |
 | [TODO.zh-CN.md](TODO.zh-CN.md) | 功能拆解、优先级与依赖关系 |
