@@ -8,8 +8,9 @@ pub mod models;
 pub mod services;
 pub mod utils;
 
-use tauri::Manager;
+use tauri::{Manager, RunEvent};
 
+use crate::collectors::foreground_app::RunningCollector;
 use crate::commands::{
     event_commands, notification_commands, pomodoro_commands, settings_commands, tag_commands,
     todo_commands,
@@ -21,7 +22,7 @@ use crate::services::event_bus::EventBus;
 
 /// Builds and runs the application.
 pub fn run() {
-    tauri::Builder::default()
+    let app = tauri::Builder::default()
         .plugin(tauri_plugin_notification::init())
         .setup(|app| {
             let directory = app.path().app_data_dir()?;
@@ -29,8 +30,9 @@ pub fn run() {
             let db = Db::open(config.database_path()?)?;
             schema::ensure(&db)?;
             app.manage(config);
-            app.manage(db);
+            app.manage(db.clone());
             app.manage(EventBus::new(app.handle().clone()));
+            app.manage(RunningCollector::spawn(db)?);
 
             Ok(())
         })
@@ -59,6 +61,15 @@ pub fn run() {
             pomodoro_commands::finish_pomodoro_session,
             pomodoro_commands::list_pomodoro_sessions
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running the SentryNeko application");
+        .build(tauri::generate_context!())
+        .expect("error while building the SentryNeko application");
+
+    app.run(|handle, event| {
+        // Closing the app ends the collector's open row instead of leaving it open forever.
+        if matches!(event, RunEvent::Exit) {
+            if let Some(collector) = handle.try_state::<RunningCollector>() {
+                collector.stop();
+            }
+        }
+    });
 }

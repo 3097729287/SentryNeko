@@ -81,6 +81,22 @@ transaction, and `Tag::delete` removes its id from the cache of every task that 
 The pomodoro durations are a single `settings` row: key `pomodoro.durations`, value the JSON form
 of `PomodoroDurations`. A missing row means the defaults apply.
 
+`app_events` is written by the foreground collector (`collectors/foreground_app.rs`), which samples
+the foreground window once a second:
+
+- A row opens on the sample where an app reaches the foreground (`started_at`) and closes on the
+  sample where another app takes over (`ended_at`). `ended_at IS NULL` means the row is still
+  running — normally only until the application quits, which closes it.
+- `app_name` is the executable file name without its extension (`chrome`, `Code`), so one app keeps
+  one value across versions and install paths.
+- A window title that changes while the same app stays in front updates `window_title` in place.
+  One row is one continuous app stretch, so a window that rewrites its caption every second cannot
+  flood the table.
+- Windows owned by SentryNeko itself are skipped and the row before them is closed: time spent in
+  this app is not activity worth recording.
+- A sample that finds nothing to attribute — no foreground window, a locked screen, a process that
+  cannot be opened — closes the open row the same way.
+
 ## Schema creation
 
 `ensure` runs the script in a transaction on every start: a missing table or index is created, an
