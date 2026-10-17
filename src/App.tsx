@@ -3,6 +3,7 @@ import { HashRouter, Navigate, NavLink, Outlet, Route, Routes, useLocation } fro
 
 import { I18nProvider } from "./components/I18nProvider";
 import { TitleBar } from "./components/TitleBar";
+import { ToastHost } from "./components/ToastHost";
 import { useI18n } from "./hooks/useI18n";
 import { AlarmsPage } from "./pages/AlarmsPage";
 import { AnalyticsPage } from "./pages/AnalyticsPage";
@@ -78,6 +79,7 @@ function Shell() {
       <main className="content">
         <Outlet />
       </main>
+      <ToastHost />
     </div>
   );
 }

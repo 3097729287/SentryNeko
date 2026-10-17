@@ -32,6 +32,7 @@ a new event: add the new name, migrate the listeners, then drop the old one.
 | Event | Payload | Trigger | Task |
 | --- | --- | --- | --- |
 | `test-event` | `TestEvent` — `{ sequence: u64 }` | `emit_test_event` pushes one on demand; `sequence` rises with every push | T08 |
+| `notification-fallback` | `NotificationFallback` — `{ kind, reason }` | `send_test_notification` pushes one when the system refuses the toast, so the frontend paints it in the app instead | T14 |
 
 ## Payload rules
 

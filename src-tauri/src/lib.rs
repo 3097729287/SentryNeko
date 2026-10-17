@@ -11,7 +11,8 @@ pub mod utils;
 use tauri::Manager;
 
 use crate::commands::{
-    event_commands, pomodoro_commands, settings_commands, tag_commands, todo_commands,
+    event_commands, notification_commands, pomodoro_commands, settings_commands, tag_commands,
+    todo_commands,
 };
 use crate::config::Config;
 use crate::db::connection::Db;
@@ -21,6 +22,7 @@ use crate::services::event_bus::EventBus;
 /// Builds and runs the application.
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_notification::init())
         .setup(|app| {
             let directory = app.path().app_data_dir()?;
             let config = Config::open(&directory)?;
@@ -51,6 +53,7 @@ pub fn run() {
             tag_commands::todos_with_tag,
             settings_commands::get_pomodoro_durations,
             settings_commands::set_pomodoro_durations,
+            notification_commands::send_test_notification,
             pomodoro_commands::start_pomodoro_session,
             pomodoro_commands::finish_pomodoro_session,
             pomodoro_commands::list_pomodoro_sessions

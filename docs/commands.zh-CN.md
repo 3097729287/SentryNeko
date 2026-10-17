@@ -83,7 +83,9 @@ fn toggle(id: i64) -> ApiResult<Todo> {
 标签的关联，并从两个方向读取关系（`todo_tags` 查某任务的标签，`todos_with_tag` 查某标签下的任务）。
 番茄钟这一组负责持久化：`start_pomodoro_session` 在阶段开始时插入一行，`finish_pomodoro_session`
 用实际秒数收尾——倒计时本身由前端按时间戳推进，不依赖 tick 计数。时长属于设置，读写命令放在
-`settings_commands` 里，并在设置页编辑。
+`settings_commands` 里，并在设置页编辑。通知这一组只有一个诊断命令：`send_test_notification`
+发一条 Toast，成功返回 `toast`；系统拒绝时推送 `notification-fallback`（见 `docs/events.md`）
+并返回 `fallback`。
 
 | 命令 | 模块 | 参数 | 返回 | 任务 |
 | --- | --- | --- | --- | --- |
@@ -108,3 +110,4 @@ fn toggle(id: i64) -> ApiResult<Todo> {
 | `start_pomodoro_session` | `pomodoro_commands` | `phase: Phase`、`plannedSeconds: i64`、`todoId: i64?` | `PomodoroSession` | T11 |
 | `finish_pomodoro_session` | `pomodoro_commands` | `id: i64`、`actualSeconds: i64` | `PomodoroSession` | T11 |
 | `list_pomodoro_sessions` | `pomodoro_commands` | `limit: i64` | `PomodoroSession[]` | T11 |
+| `send_test_notification` | `notification_commands` | — | `Outcome`（`"toast"` 或 `"fallback"`） | T14 |

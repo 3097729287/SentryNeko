@@ -23,6 +23,14 @@
     "analytics": "Analytics",
     "settings": "Settings"
   },
+  "notification": {
+    "dismiss": "Dismiss",
+    "fallback": {
+      "alarm": "The alarm went off, but the system blocked the notification.",
+      "pomodoro": "The pomodoro phase ended, but the system blocked the notification.",
+      "test": "System notifications are blocked; this one is shown in the app instead."
+    }
+  },
   "pages": {
     "empty": "Nothing here yet."
   },

@@ -23,6 +23,14 @@
     "analytics": "统计",
     "settings": "设置"
   },
+  "notification": {
+    "dismiss": "关闭",
+    "fallback": {
+      "alarm": "闹钟已响，但系统拦截了通知。",
+      "pomodoro": "番茄钟阶段结束，但系统拦截了通知。",
+      "test": "系统通知不可用，这条改在应用内显示。"
+    }
+  },
   "pages": {
     "empty": "暂无内容。"
   },

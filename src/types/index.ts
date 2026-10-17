@@ -25,3 +25,13 @@ export interface TestEventPayload {
   /** Rises with every push, so two of them can be told apart. */
   sequence: number;
 }
+
+/** What a notification was about; the in-app toast picks its copy from this. */
+export type NotificationKind = "test" | "pomodoro" | "alarm";
+
+/** Payload of the `notification-fallback` push (T14). */
+export interface NotificationFallbackPayload {
+  kind: NotificationKind;
+  /** Platform message describing why the toast was refused. */
+  reason: string;
+}

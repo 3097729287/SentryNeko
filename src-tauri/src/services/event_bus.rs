@@ -5,12 +5,15 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use serde::Serialize;
 use tauri::{AppHandle, Emitter};
 
+use crate::services::notification::NotificationKind;
 use crate::utils::response::{ApiError, ApiResult};
 
 /// Event names the backend pushes to the frontend; each one is documented in `docs/events.md`.
 pub mod names {
     /// Pushed by `emit_test_event` so the wiring can be verified end to end.
     pub const TEST_EVENT: &str = "test-event";
+    /// Pushed when the system refused a toast, so the frontend paints one itself.
+    pub const NOTIFICATION_FALLBACK: &str = "notification-fallback";
 }
 
 /// Payload of [`names::TEST_EVENT`].
@@ -19,6 +22,16 @@ pub mod names {
 pub struct TestEvent {
     /// Rises with every push, so the UI can tell two of them apart.
     pub sequence: u64,
+}
+
+/// Payload of [`names::NOTIFICATION_FALLBACK`].
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NotificationFallback {
+    /// What the missed notification was about; the toast picks its copy from this.
+    pub kind: NotificationKind,
+    /// Platform message describing why the toast was refused.
+    pub reason: String,
 }
 
 /// What the bus pushes to: the Tauri handle in the application, a recorder in tests.
@@ -64,6 +77,14 @@ impl EventBus {
             .emit(names::TEST_EVENT, serde_json::to_value(payload)?)?;
 
         Ok(payload)
+    }
+
+    /// Pushes [`names::NOTIFICATION_FALLBACK`] when a toast could not be shown.
+    pub fn emit_notification_fallback(&self, fallback: NotificationFallback) -> ApiResult<()> {
+        self.sink.emit(
+            names::NOTIFICATION_FALLBACK,
+            serde_json::to_value(fallback)?,
+        )
     }
 }
 

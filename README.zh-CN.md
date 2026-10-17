@@ -196,6 +196,7 @@ SentryNeko/
 │   │   ├── AppEventLog.tsx           # 前台应用事件日志列表
 │   │   ├── LanguageSwitcher.tsx      # 语言选择（设置页使用）
 │   │   ├── TitleBar.tsx              # 自绘标题栏（拖拽、最小化、最大化、关闭）
+│   │   ├── ToastHost.tsx             # 系统通知被拒时的应用内提示
 │   │   ├── I18nProvider.tsx          # 国际化 Provider 组件
 │   │   └── ui/                       # 公共组件库
 │   │       └── SegmentedControl.tsx  # 公共分段控件（带滑动高亮）

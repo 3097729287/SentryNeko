@@ -196,6 +196,7 @@ SentryNeko/
 │   │   ├── AppEventLog.tsx           # Foreground app event log list
 │   │   ├── LanguageSwitcher.tsx      # Language picker used by the settings page
 │   │   ├── TitleBar.tsx              # Custom title bar: drag, minimize, maximize, close
+│   │   ├── ToastHost.tsx             # In-app toast for a refused system notification
 │   │   ├── I18nProvider.tsx          # i18n provider component
 │   │   └── ui/                       # Shared component library
 │   │       └── SegmentedControl.tsx  # Segmented switch with a sliding highlight

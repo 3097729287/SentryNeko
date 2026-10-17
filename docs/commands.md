@@ -94,7 +94,9 @@ and reads the relation from either side (`todo_tags` for one task, `todos_with_t
 The pomodoro group persists the timer: `start_pomodoro_session` opens a row when a phase starts,
 and `finish_pomodoro_session` closes it with the seconds actually spent — the countdown itself
 runs in the frontend from timestamps, not from a tick count. The durations are settings, so their
-two commands sit in `settings_commands` and are edited on the settings page.
+two commands sit in `settings_commands` and are edited on the settings page. The notification
+group is one diagnostic: `send_test_notification` shows a toast and answers `toast`, or pushes
+`notification-fallback` (see `docs/events.md`) and answers `fallback` when the system refused it.
 
 | Command | Module | Arguments | Returns | Task |
 | --- | --- | --- | --- | --- |
@@ -119,3 +121,4 @@ two commands sit in `settings_commands` and are edited on the settings page.
 | `start_pomodoro_session` | `pomodoro_commands` | `phase: Phase`, `plannedSeconds: i64`, `todoId: i64?` | `PomodoroSession` | T11 |
 | `finish_pomodoro_session` | `pomodoro_commands` | `id: i64`, `actualSeconds: i64` | `PomodoroSession` | T11 |
 | `list_pomodoro_sessions` | `pomodoro_commands` | `limit: i64` | `PomodoroSession[]` | T11 |
+| `send_test_notification` | `notification_commands` | — | `Outcome` (`"toast"` or `"fallback"`) | T14 |

@@ -30,6 +30,7 @@ useTauriEvent<TestEventPayload>(BACKEND_EVENTS.testEvent, (payload) => {
 | 事件 | 载荷 | 触发时机 | 任务 |
 | --- | --- | --- | --- |
 | `test-event` | `TestEvent` —— `{ sequence: u64 }` | `emit_test_event` 按需推送一条，`sequence` 每次递增 | T08 |
+| `notification-fallback` | `NotificationFallback` —— `{ kind, reason }` | `send_test_notification` 在系统拒绝 Toast 时推一条，前端改为在应用内显示 | T14 |
 
 ## 载荷规则
 
