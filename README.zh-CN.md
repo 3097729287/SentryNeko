@@ -297,6 +297,7 @@ pnpm tauri build
 | [docs/database.zh-CN.md](docs/database.zh-CN.md) | 表结构、迁移、连接池与 `scripts/init_db.ps1` |
 | [docs/events.zh-CN.md](docs/events.zh-CN.md) | Tauri 事件定义与触发时机 |
 | [docs/i18n.zh-CN.md](docs/i18n.zh-CN.md) | 文案组织与新增语言步骤 |
+| [docs/tray.zh-CN.md](docs/tray.zh-CN.md) | 系统托盘：关闭即隐藏、菜单项与实时今日行 |
 | [TODO.zh-CN.md](TODO.zh-CN.md) | 功能拆解、优先级与依赖关系 |
 | [CONTRIBUTING.zh-CN.md](CONTRIBUTING.zh-CN.md) | 分支约定、提交规范与完成标准 |
 

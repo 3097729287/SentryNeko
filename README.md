@@ -297,6 +297,7 @@ pnpm tauri build
 | [docs/database.md](docs/database.md) | Schema, the connection pool and `scripts/init_db.ps1` |
 | [docs/events.md](docs/events.md) | Tauri event definitions and trigger points |
 | [docs/i18n.md](docs/i18n.md) | How copy is organized and how to add a language |
+| [docs/tray.md](docs/tray.md) | System tray: close-to-tray, menu entries and the live today line |
 | [TODO.md](TODO.md) | Task breakdown, priorities and dependencies |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Branching, commit conventions and the definition of done |
 

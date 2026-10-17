@@ -1,5 +1,14 @@
 import { useLayoutEffect, useRef, useState } from "react";
-import { HashRouter, Navigate, NavLink, Outlet, Route, Routes, useLocation } from "react-router-dom";
+import {
+  HashRouter,
+  Navigate,
+  NavLink,
+  Outlet,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 
 import { AlarmRinging } from "./components/AlarmRinging";
 import { I18nProvider } from "./components/I18nProvider";
@@ -16,6 +25,7 @@ import { PomodoroPage } from "./pages/PomodoroPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { TodosPage } from "./pages/TodosPage";
 import { useAppEventStore } from "./stores/appEventStore";
+import { usePomodoroStore } from "./stores/pomodoroStore";
 import type { AppEvent } from "./types/appEvent";
 
 /** Every page of the shell, in navigation order; each label doubles as the page heading. */
@@ -34,6 +44,9 @@ const PAGES = [
 function Shell() {
   const { t, language } = useI18n();
   const recordAppSwitch = useAppEventStore((state) => state.record);
+  const loadPomodoro = usePomodoroStore((state) => state.load);
+  const startPomodoro = usePomodoroStore((state) => state.start);
+  const navigate = useNavigate();
   const navRef = useRef<HTMLElement>(null);
   const { pathname } = useLocation();
   // Null until the first measurement: the highlight must appear already in place instead of
@@ -42,6 +55,16 @@ function Shell() {
 
   // The shell owns the push, so the live tail keeps growing while another page is mounted.
   useTauriEvent<AppEvent>(BACKEND_EVENTS.appSwitch, recordAppSwitch);
+
+  // The tray only asks; the timer belongs to the store, which outlives the page. The durations are
+  // reloaded first so a focus phase honours the settings without visiting the page.
+  useTauriEvent<null>(BACKEND_EVENTS.trayStartPomodoro, () => {
+    void (async () => {
+      await loadPomodoro();
+      await startPomodoro();
+      navigate("/pomodoro");
+    })();
+  });
 
   // The sliding highlight is placed from the active link, so no geometry is hard-coded.
   useLayoutEffect(() => {

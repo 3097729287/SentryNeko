@@ -33,6 +33,7 @@ useTauriEvent<TestEventPayload>(BACKEND_EVENTS.testEvent, (payload) => {
 | `notification-fallback` | `NotificationFallback` —— `{ kind, reason }` | `send_test_notification` 在系统拒绝 Toast 时推一条，前端改为在应用内显示 | T14 |
 | `app-switch` | `AppEvent` —— `{ id, appName, windowTitle, startedAt, endedAt }` | 前台采集器开了一行，也就是另一个应用来到前台。同一个应用内标题变化只更新该行、不推送，因此一次推送对应一次切换 | T15 |
 | `pomodoro-finished` | `PomodoroSession` —— `{ id, phase, plannedSeconds, actualSeconds, startedAt, endedAt, todoId }` | `finish_pomodoro_session` 关闭一个会话，历史视图无需轮询即可刷新；关闭它的那个窗口本来就已经知道 | T15 |
+| `tray-start-pomodoro` | —（载荷为 `null`） | 托盘的 `开始番茄钟`：窗口已经先显示出来，外壳重新加载时长并从 store 启动这一轮，所以它和从页面上启动的完全一致 | T25 |
 | `alarm-triggered` | `Alarm` —— `{ id, label, hour, minute, repeatDays, enabled, createdAt }` | `services/scheduler.rs` 走到闹钟的本地时间：提示音开始，并且除非存下的默认设置是 `inApp`，Toast（或它的 `notification-fallback`）都已先发出。单次闹钟此时已自动关闭，因此载荷里 `enabled` 为 `false` | T17、T18 |
 
 外壳（`App.tsx`）只订阅一次 `app-switch`，把每条推送交给 `stores/appEventStore.ts` 保存最近几条；

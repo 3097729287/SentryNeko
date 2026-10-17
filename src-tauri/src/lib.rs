@@ -20,6 +20,7 @@ use crate::db::connection::Db;
 use crate::db::schema;
 use crate::services::event_bus::EventBus;
 use crate::services::scheduler::RunningScheduler;
+use crate::services::tray;
 
 /// Builds and runs the application.
 pub fn run() {
@@ -36,11 +37,18 @@ pub fn run() {
             app.manage(bus.clone());
             app.manage(RunningCollector::spawn(db.clone(), bus.clone())?);
             app.manage(RunningScheduler::spawn(
-                db,
-                bus,
-                config,
+                db.clone(),
+                bus.clone(),
+                config.clone(),
                 app.handle().clone(),
             )?);
+            app.manage(tray::Tray::install(app.handle(), db, config, bus)?);
+
+            // The window is the face of a resident app: closing it parks it in the tray instead of
+            // ending the process, so the tracking and the alarms keep running.
+            if let Some(window) = app.get_webview_window(tray::WINDOW_LABEL) {
+                tray::hide_on_close(&window);
+            }
 
             Ok(())
         })
@@ -92,6 +100,10 @@ pub fn run() {
 
             if let Some(scheduler) = handle.try_state::<RunningScheduler>() {
                 scheduler.stop();
+            }
+
+            if let Some(tray) = handle.try_state::<tray::Tray>() {
+                tray.stop();
             }
         }
     });

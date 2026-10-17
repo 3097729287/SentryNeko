@@ -24,6 +24,8 @@ pub mod names {
     pub const POMODORO_FINISHED: &str = "pomodoro-finished";
     /// Pushed when an alarm goes off, carrying the row it belongs to.
     pub const ALARM_TRIGGERED: &str = "alarm-triggered";
+    /// Pushed when the tray's "start Pomodoro" entry is clicked, with no payload.
+    pub const TRAY_START_POMODORO: &str = "tray-start-pomodoro";
 }
 
 /// Payload of [`names::TEST_EVENT`].
@@ -157,6 +159,12 @@ impl EventBus {
         self.sink
             .emit(names::ALARM_TRIGGERED, serde_json::to_value(alarm)?)
     }
+
+    /// Pushes [`names::TRAY_START_POMODORO`], which carries nothing: the frontend owns the timer.
+    pub fn emit_tray_start_pomodoro(&self) -> ApiResult<()> {
+        self.sink
+            .emit(names::TRAY_START_POMODORO, serde_json::Value::Null)
+    }
 }
 
 #[cfg(test)]
@@ -235,6 +243,19 @@ mod tests {
         assert_eq!(pushed[0].1["appName"], serde_json::json!("code"));
         assert_eq!(pushed[0].1["windowTitle"], serde_json::json!("main.rs"));
         assert_eq!(pushed[0].1["endedAt"], serde_json::json!(null));
+    }
+
+    #[test]
+    fn a_tray_click_pushes_an_empty_start() {
+        let recorder = Recorder::default();
+        let bus = EventBus::new(recorder.clone());
+
+        bus.emit_tray_start_pomodoro().expect("pushed");
+
+        let pushed = recorder.pushed();
+        assert_eq!(pushed.len(), 1);
+        assert_eq!(pushed[0].0, names::TRAY_START_POMODORO);
+        assert!(pushed[0].1.is_null(), "the click carries no payload");
     }
 
     #[test]
