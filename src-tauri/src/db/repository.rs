@@ -95,7 +95,7 @@ pub fn transaction<T>(
 mod tests {
     use super::*;
     use crate::db::connection::Db;
-    use crate::db::migrations;
+    use crate::db::schema;
     use crate::utils::response::ApiCode;
 
     fn todo_row(row: &Row<'_>) -> ApiResult<(i64, String, bool)> {
@@ -104,7 +104,7 @@ mod tests {
 
     fn migrated() -> Db {
         let db = Db::open_in_memory().expect("in-memory database opens");
-        migrations::migrate(&db).expect("schema migrates");
+        schema::ensure(&db).expect("schema is created");
         db
     }
 

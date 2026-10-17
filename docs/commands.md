@@ -88,7 +88,9 @@ Every command the frontend may call is listed here. The language pair is the int
 rejects anything outside `Language::ALL` with `INVALID_INPUT`. `emit_test_event` is the
 diagnostic behind the event bus probe; the push it triggers is defined in `docs/events.md`.
 The todo group is the list itself: `list_todos` filters by completion, every mutation answers
-with the stored row, and `todo_counts` feeds the remaining counter.
+with the stored row, and `todo_counts` feeds the remaining counter. The tag group is reserved —
+no page calls it yet: it maintains the name index, links tags to a task through `set_todo_tags`,
+and reads the relation from either side (`todo_tags` for one task, `todos_with_tag` for one tag).
 
 | Command | Module | Arguments | Returns | Task |
 | --- | --- | --- | --- | --- |
@@ -101,3 +103,10 @@ with the stored row, and `todo_counts` feeds the remaining counter.
 | `set_todo_completed` | `todo_commands` | `id: i64`, `completed: bool` | `Todo` | T10 |
 | `delete_todo` | `todo_commands` | `id: i64` | — | T10 |
 | `todo_counts` | `todo_commands` | — | `TodoCounts` (`{ total, remaining, completed }`) | T10 |
+| `list_tags` | `tag_commands` | — | `Tag[]` | T33 |
+| `add_tag` | `tag_commands` | `name: String` | `Tag` | T33 |
+| `rename_tag` | `tag_commands` | `id: i64`, `name: String` | `Tag` | T33 |
+| `delete_tag` | `tag_commands` | `id: i64` | — | T33 |
+| `set_todo_tags` | `tag_commands` | `id: i64`, `tagIds: i64[]` | `Todo` | T33 |
+| `todo_tags` | `tag_commands` | `todoId: i64` | `Tag[]` | T33 |
+| `todos_with_tag` | `tag_commands` | `tagId: i64` | `Todo[]` | T33 |

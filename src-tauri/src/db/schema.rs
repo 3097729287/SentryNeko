@@ -1,32 +1,31 @@
-//! Schema creation and versioned migrations.
+//! Schema creation: one idempotent script, run at every start.
+//!
+//! Nothing is versioned — the app has not shipped yet, so a database is created once and a schema
+//! change is a local rebuild instead of a migration.
 
 use crate::db::connection::Db;
 use crate::db::repository;
 use crate::utils::response::ApiResult;
 
-/// One schema step; `sql` runs once, inside a transaction.
-pub struct Migration {
-    pub version: u32,
-    pub name: &'static str,
-    pub sql: &'static str,
-}
-
 /// Tables owned by the schema, in creation order.
-pub const TABLES: [&str; 5] = [
+pub const TABLES: [&str; 7] = [
     "todos",
     "pomodoro_sessions",
     "app_events",
     "alarms",
     "settings",
+    "tags",
+    "todo_tags",
 ];
 
-const INITIAL_SCHEMA: &str = r"
+const SCHEMA: &str = r"
 CREATE TABLE IF NOT EXISTS todos (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
     title      TEXT    NOT NULL,
     completed  INTEGER NOT NULL DEFAULT 0 CHECK (completed IN (0, 1)),
     created_at INTEGER NOT NULL,
-    updated_at INTEGER NOT NULL
+    updated_at INTEGER NOT NULL,
+    tag_ids    TEXT    NOT NULL DEFAULT '[]'
 );
 
 CREATE TABLE IF NOT EXISTS pomodoro_sessions (
@@ -63,6 +62,18 @@ CREATE TABLE IF NOT EXISTS settings (
     updated_at INTEGER NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS tags (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    name       TEXT    NOT NULL COLLATE NOCASE UNIQUE,
+    created_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS todo_tags (
+    todo_id INTEGER NOT NULL REFERENCES todos (id) ON DELETE CASCADE,
+    tag_id  INTEGER NOT NULL REFERENCES tags (id) ON DELETE CASCADE,
+    PRIMARY KEY (todo_id, tag_id)
+);
+
 CREATE INDEX IF NOT EXISTS idx_todos_completed
     ON todos (completed, created_at);
 
@@ -71,45 +82,18 @@ CREATE INDEX IF NOT EXISTS idx_pomodoro_sessions_started_at
 
 CREATE INDEX IF NOT EXISTS idx_app_events_started_at
     ON app_events (started_at);
+
+CREATE INDEX IF NOT EXISTS idx_todo_tags_tag_id
+    ON todo_tags (tag_id);
 ";
 
-/// Append-only history; never edit a shipped entry, add a new version instead.
-pub const MIGRATIONS: &[Migration] = &[Migration {
-    version: 1,
-    name: "initial_schema",
-    sql: INITIAL_SCHEMA,
-}];
+/// Creates every missing table and index; running it again changes nothing.
+pub fn ensure(db: &Db) -> ApiResult<()> {
+    repository::transaction(db, |transaction| {
+        transaction.execute_batch(SCHEMA)?;
 
-/// Version a fully migrated database reports.
-pub fn latest_version() -> u32 {
-    MIGRATIONS.last().map_or(0, |migration| migration.version)
-}
-
-/// Applies every pending migration and returns the resulting schema version.
-pub fn migrate(db: &Db) -> ApiResult<u32> {
-    let applied = current_version(db)?;
-
-    for migration in MIGRATIONS
-        .iter()
-        .filter(|migration| migration.version > applied)
-    {
-        repository::transaction(db, |transaction| {
-            transaction.execute_batch(migration.sql)?;
-            transaction.pragma_update(None, "user_version", migration.version)?;
-            Ok(())
-        })?;
-    }
-
-    Ok(latest_version().max(applied))
-}
-
-/// Schema version recorded in the database file (`PRAGMA user_version`).
-pub fn current_version(db: &Db) -> ApiResult<u32> {
-    let connection = db.connection()?;
-    let version =
-        connection.pragma_query_value(None, "user_version", |row| row.get::<_, u32>(0))?;
-
-    Ok(version)
+        Ok(())
+    })
 }
 
 #[cfg(test)]
@@ -118,41 +102,19 @@ mod tests {
     use crate::db::connection::Db;
     use crate::utils::response::{ApiCode, ApiError};
 
-    fn migrated() -> Db {
+    fn created() -> Db {
         let db = Db::open_in_memory().expect("in-memory database opens");
-        migrate(&db).expect("schema migrates");
+        ensure(&db).expect("schema is created");
+
         db
     }
 
     #[test]
-    fn versions_start_at_one_and_only_move_forward() {
-        let mut previous = 0;
-
-        for migration in MIGRATIONS {
-            assert_eq!(
-                migration.version,
-                previous + 1,
-                "{} skips a version",
-                migration.name
-            );
-            assert!(
-                !migration.sql.trim().is_empty(),
-                "{} has no sql",
-                migration.name
-            );
-            previous = migration.version;
-        }
-
-        assert_eq!(latest_version(), previous);
-    }
-
-    #[test]
-    fn migrate_creates_every_table_and_is_idempotent() {
+    fn ensure_creates_every_table_and_is_idempotent() {
         let db = Db::open_in_memory().expect("in-memory database opens");
 
-        assert_eq!(migrate(&db).expect("first run"), latest_version());
-        assert_eq!(migrate(&db).expect("second run"), latest_version());
-        assert_eq!(current_version(&db).expect("version"), latest_version());
+        ensure(&db).expect("first run");
+        ensure(&db).expect("second run");
 
         let connection = db.connection().expect("connection");
         for table in TABLES {
@@ -169,7 +131,7 @@ mod tests {
 
     #[test]
     fn foreign_keys_are_enforced() {
-        let db = migrated();
+        let db = created();
 
         let error = db
             .connection()
@@ -204,17 +166,12 @@ mod tests {
     #[test]
     fn maintenance_script_creates_the_same_schema() {
         let script = maintenance_script();
-        let version = format!("PRAGMA user_version = {};", latest_version());
-        assert!(
-            script.contains(&version),
-            "scripts/init_db.ps1 does not record {version}"
-        );
 
-        let db = migrated();
+        let db = created();
         let connection = db.connection().expect("connection");
         connection
             .execute_batch(&maintenance_script_sql(&script))
-            .expect("the script's statements run against a migrated database");
+            .expect("the script's statements run against a created database");
 
         let mut expected = TABLES;
         expected.sort_unstable();
@@ -233,6 +190,5 @@ mod tests {
             .expect("the rows are readable");
 
         assert_eq!(actual, expected);
-        assert_eq!(current_version(&db).expect("version"), latest_version());
     }
 }

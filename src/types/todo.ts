@@ -7,6 +7,8 @@ export interface Todo {
   /** UTC epoch seconds. */
   createdAt: number;
   updatedAt: number;
+  /** Ids of the tags the task carries, see `types/tag.ts`. */
+  tagIds: readonly number[];
 }
 
 /** Totals shown beside the list. */

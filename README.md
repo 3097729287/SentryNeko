@@ -28,7 +28,7 @@ Runtime requirement: [WebView2 Runtime](https://developer.microsoft.com/microsof
 | Desktop framework | Tauri 2.x |
 | Backend | Rust (Win32 FFI, SQLite, scheduling, Toast notifications) |
 | Frontend | React + TypeScript + Vite |
-| Database | SQLite via rusqlite, r2d2 connection pool, versioned migrations |
+| Database | SQLite via rusqlite, r2d2 connection pool, one idempotent schema script |
 | i18n | i18next / react-i18next (Simplified Chinese, English) |
 | State management | Frontend stores + Tauri event subscriptions |
 
@@ -129,11 +129,12 @@ SentryNeko/
 │       ├── db/
 │       │   ├── mod.rs                # Database module entry
 │       │   ├── connection.rs         # SQLite connection pool setup
-│       │   ├── migrations.rs         # Schema creation / migration scripts
+│       │   ├── schema.rs             # Schema creation script (idempotent)
 │       │   └── repository.rs         # Generic data access layer (CRUD)
 │       ├── models/
 │       │   ├── mod.rs                # Models module entry
 │       │   ├── todo.rs               # Todo model
+│       │   ├── tag.rs                # Tag model (reserved: labels for tasks)
 │       │   ├── pomodoro.rs           # Pomodoro model
 │       │   ├── heatmap.rs            # Heatmap data model
 │       │   ├── alarm.rs              # Alarm model
@@ -142,6 +143,7 @@ SentryNeko/
 │       ├── commands/                 # Tauri command layer
 │       │   ├── mod.rs                # Commands module entry
 │       │   ├── todo_commands.rs      # Todo CRUD commands
+│       │   ├── tag_commands.rs       # Tag commands (reserved)
 │       │   ├── pomodoro_commands.rs  # Pomodoro commands
 │       │   ├── heatmap_commands.rs   # Heatmap data commands
 │       │   ├── alarm_commands.rs     # Alarm commands
@@ -215,6 +217,7 @@ SentryNeko/
 │   └── types/
 │       ├── index.ts                  # Global type definitions
 │       ├── todo.ts                   # Todo types
+│       ├── tag.ts                    # Tag types (reserved)
 │       ├── pomodoro.ts               # Pomodoro types
 │       ├── heatmap.ts                # Heatmap types
 │       ├── alarm.ts                  # Alarm types
@@ -223,7 +226,7 @@ SentryNeko/
 │
 ├── docs/                             # Documentation (English + Simplified Chinese)
 │   ├── commands.md                   # Tauri command reference
-│   ├── database.md                   # Schema, migrations and the connection pool
+│   ├── database.md                   # Schema, the connection pool and scripts/init_db.ps1
 │   ├── events.md                     # Tauri event definitions
 │   ├── i18n.md                       # i18n guide
 │   └── architecture.md               # Architecture notes
@@ -288,7 +291,7 @@ pnpm tauri build
 | --- | --- |
 | [docs/architecture.md](docs/architecture.md) | Layered architecture, data flow and module responsibilities |
 | [docs/commands.md](docs/commands.md) | Tauri command signatures and response format |
-| [docs/database.md](docs/database.md) | Schema, migrations, the connection pool and `scripts/init_db.ps1` |
+| [docs/database.md](docs/database.md) | Schema, the connection pool and `scripts/init_db.ps1` |
 | [docs/events.md](docs/events.md) | Tauri event definitions and trigger points |
 | [docs/i18n.md](docs/i18n.md) | How copy is organized and how to add a language |
 | [TODO.md](TODO.md) | Task breakdown, priorities and dependencies |

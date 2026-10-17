@@ -9,7 +9,7 @@ use crate::utils::response::{ApiError, ApiResult};
 use crate::utils::time;
 
 /// Columns every query selects, in the order [`Todo::from_row`] reads them.
-const COLUMNS: &str = "id, title, completed, created_at, updated_at";
+const COLUMNS: &str = "id, title, completed, created_at, updated_at, tag_ids";
 
 /// A task the user maintains.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -20,6 +20,8 @@ pub struct Todo {
     pub completed: bool,
     pub created_at: i64,
     pub updated_at: i64,
+    /// Ids of the tags the task carries, cached from the `todo_tags` link table.
+    pub tag_ids: Vec<i64>,
 }
 
 /// Totals shown beside the list.
@@ -40,6 +42,7 @@ impl Todo {
             completed: row.get(2)?,
             created_at: row.get(3)?,
             updated_at: row.get(4)?,
+            tag_ids: parse_tag_ids(&row.get::<_, String>(5)?)?,
         })
     }
 
@@ -109,6 +112,67 @@ impl Todo {
 
         require_changed(changed, id)
     }
+
+    /// Replaces the tags of a task; the cached id list and the link table move together.
+    pub fn set_tags(db: &Db, id: i64, tag_ids: &[i64]) -> ApiResult<Self> {
+        Self::find(db, id)?;
+
+        let mut ids = tag_ids.to_vec();
+        ids.sort_unstable();
+        ids.dedup();
+
+        for tag_id in &ids {
+            let known = repository::exists(db, "SELECT 1 FROM tags WHERE id = ?1", [*tag_id])?;
+
+            if !known {
+                return Err(ApiError::not_found(format!("no tag with id {tag_id}")));
+            }
+        }
+
+        let stored = serde_json::to_string(&ids)?;
+
+        repository::transaction(db, |transaction| {
+            transaction.execute(
+                "UPDATE todos SET tag_ids = ?1, updated_at = ?2 WHERE id = ?3",
+                params![stored, time::now_seconds(), id],
+            )?;
+            transaction.execute("DELETE FROM todo_tags WHERE todo_id = ?1", [id])?;
+
+            for tag_id in &ids {
+                transaction.execute(
+                    "INSERT INTO todo_tags (todo_id, tag_id) VALUES (?1, ?2)",
+                    params![id, tag_id],
+                )?;
+            }
+
+            Ok(())
+        })?;
+
+        Self::find(db, id)
+    }
+
+    /// Lists the tasks carrying one tag; the reverse lookup through the link table.
+    pub fn list_by_tag(db: &Db, tag_id: i64) -> ApiResult<Vec<Self>> {
+        repository::query_all(
+            db,
+            &format!(
+                "SELECT {COLUMNS} FROM todos
+                   INNER JOIN todo_tags ON todo_tags.todo_id = todos.id
+                  WHERE todo_tags.tag_id = ?1
+                  ORDER BY completed, id DESC"
+            ),
+            [tag_id],
+            Self::from_row,
+        )
+    }
+}
+
+/// Reads the cached id list; a malformed column is reported as `INTERNAL`.
+fn parse_tag_ids(raw: &str) -> ApiResult<Vec<i64>> {
+    serde_json::from_str(raw).map_err(|error| {
+        ApiError::internal("the cached tag ids are not a JSON array of numbers")
+            .with_details(error.to_string())
+    })
 }
 
 impl TodoCounts {
@@ -154,12 +218,12 @@ fn require_changed(changed: usize, id: i64) -> ApiResult<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::db::migrations;
+    use crate::db::schema;
     use crate::utils::response::ApiCode;
 
     fn migrated() -> Db {
         let db = Db::open_in_memory().expect("in-memory database opens");
-        migrations::migrate(&db).expect("schema migrates");
+        schema::ensure(&db).expect("schema is created");
         db
     }
 
@@ -265,5 +329,54 @@ mod tests {
                 completed: 0
             }
         );
+    }
+
+    #[test]
+    fn set_tags_sorts_dedups_and_keeps_the_link_table_in_step() {
+        let db = migrated();
+        let todo = Todo::add(&db, "tagged").expect("stored");
+        let work = crate::models::tag::Tag::add(&db, "work").expect("stored");
+        let home = crate::models::tag::Tag::add(&db, "home").expect("stored");
+
+        let tagged = Todo::set_tags(&db, todo.id, &[work.id, home.id, work.id]).expect("linked");
+        assert_eq!(
+            tagged.tag_ids,
+            [work.id, home.id],
+            "ids are sorted and deduplicated"
+        );
+        assert_eq!(
+            repository::count(&db, "SELECT COUNT(*) FROM todo_tags", []).expect("count"),
+            2
+        );
+
+        let cleared = Todo::set_tags(&db, todo.id, &[]).expect("cleared");
+        assert!(cleared.tag_ids.is_empty());
+        assert_eq!(
+            repository::count(&db, "SELECT COUNT(*) FROM todo_tags", []).expect("count"),
+            0
+        );
+    }
+
+    #[test]
+    fn set_tags_rejects_unknown_ids_and_malformed_caches_are_reported() {
+        let db = migrated();
+        let todo = Todo::add(&db, "tagged").expect("stored");
+
+        let unknown_tag = Todo::set_tags(&db, todo.id, &[404]).expect_err("unknown tag");
+        assert_eq!(unknown_tag.code(), ApiCode::NotFound);
+
+        let unknown_todo = Todo::set_tags(&db, 404, &[]).expect_err("unknown task");
+        assert_eq!(unknown_todo.code(), ApiCode::NotFound);
+
+        repository::execute(
+            &db,
+            "UPDATE todos SET tag_ids = 'not json' WHERE id = ?1",
+            [todo.id],
+        )
+        .expect("the cache is overwritten by hand");
+
+        let error = Todo::find(&db, todo.id).expect_err("the cache cannot be read");
+        assert_eq!(error.code(), ApiCode::Internal);
+        assert!(error.details().is_some());
     }
 }

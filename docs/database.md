@@ -2,15 +2,15 @@
 
 **English** | [简体中文](database.zh-CN.md)
 
-SQLite through `rusqlite` with an `r2d2` connection pool. The schema is created by versioned
-migrations — nothing creates tables by hand.
+SQLite through `rusqlite` with an `r2d2` connection pool. One idempotent script creates the
+schema — nothing creates tables by hand.
 
 ## Layers
 
 | File | Responsibility |
 | --- | --- |
 | `db/connection.rs` | `Db` handle, pool settings, connection pragmas, `ApiError` mapping |
-| `db/migrations.rs` | Versioned DDL guarded by `PRAGMA user_version` |
+| `db/schema.rs` | The whole DDL, applied idempotently on every start |
 | `db/repository.rs` | Generic CRUD helpers every model builds on |
 
 `Db` is cloned into Tauri managed state at startup, so commands receive it through `State<Db>`:
@@ -18,7 +18,7 @@ migrations — nothing creates tables by hand.
 ```rust
 let directory = app.path().app_data_dir()?;
 let db = Db::open(directory.join(DATABASE_FILE_NAME))?;
-migrations::migrate(&db)?;
+schema::ensure(&db)?;
 app.manage(db);
 ```
 
@@ -61,22 +61,28 @@ Rules:
 
 ## Schema
 
-Version 1 holds five tables:
+The schema holds seven tables:
 
 | Table | Holds | Key columns |
 | --- | --- | --- |
-| `todos` | Tasks the user maintains | `title`, `completed`, `created_at`, `updated_at` |
+| `todos` | Tasks the user maintains | `title`, `completed`, `created_at`, `updated_at`, `tag_ids` |
 | `pomodoro_sessions` | One focus or break interval | `phase`, `planned_seconds`, `actual_seconds`, `started_at`, `ended_at`, `todo_id` |
 | `app_events` | Foreground application activity | `app_name`, `window_title`, `started_at`, `ended_at` |
 | `alarms` | Recurring reminders | `label`, `hour`, `minute`, `repeat_days`, `enabled`, `created_at` |
 | `settings` | Key/value application settings | `key`, `value`, `updated_at` |
+| `tags` | Tag names a task can carry | `name` (unique, case-insensitive), `created_at` |
+| `todo_tags` | Link between a task and a tag | `todo_id`, `tag_id` |
 
-## Migrations
+Tags are stored twice on purpose: `todos.tag_ids` is a JSON array of tag ids, so one task row
+answers "which tags" without a join, while `todo_tags` is the index the other direction reads —
+`idx_todo_tags_tag_id` finds every task carrying a tag. `Todo::set_tags` writes both sides in one
+transaction, and `Tag::delete` removes its id from the cache of every task that listed it.
 
-`MIGRATIONS` is append-only: a shipped version is never edited, a change arrives as a new
-`Migration` with the next `version`. Each one runs in a transaction that also sets
-`PRAGMA user_version`, so a crash leaves the database on the last complete version and
-re-running `migrate` is a no-op.
+## Schema creation
+
+`ensure` runs the script in a transaction on every start: a missing table or index is created, an
+existing one is left alone. Nothing is versioned, because the app has not shipped — a schema
+change is a local rebuild rather than a migration.
 
 ## Repository helpers
 
@@ -103,15 +109,16 @@ powershell -ExecutionPolicy Bypass -File scripts/init_db.ps1 [-DatabasePath <fil
 ```
 
 It needs `sqlite3` on `PATH`; without it the script stops with a message pointing at the app,
-which migrates on first run either way. Every statement uses `IF NOT EXISTS`, so running it
-repeatedly is safe.
+which creates the schema on first run either way. Every statement uses `IF NOT EXISTS`, so
+running it repeatedly is safe.
 
-A test extracts the SQL from the script and runs it against a migrated database, asserting that
-both sides create the same tables and record the same `user_version`.
+A test extracts the SQL from the script and runs it against a created database, asserting that
+both sides end up with the same tables.
 
 ## Adding a table or a column
 
-1. Append a `Migration` with the next version in `db/migrations.rs`; version 1 stays as shipped.
-2. Mirror the DDL in `scripts/init_db.ps1` with the same `IF NOT EXISTS` guards and bump its
-   `PRAGMA user_version`.
+1. Add the DDL to `db/schema.rs`.
+2. Mirror it in `scripts/init_db.ps1`, with the same `IF NOT EXISTS` guards.
 3. Run `cargo test` — the script check fails while the two sides disagree.
+4. Rebuild your local database: run `scripts/init_db.ps1` against a fresh file or delete the old
+   one. An existing database is not upgraded, since no version has shipped yet.

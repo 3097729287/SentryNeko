@@ -10,10 +10,10 @@ pub mod utils;
 
 use tauri::Manager;
 
-use crate::commands::{event_commands, settings_commands, todo_commands};
+use crate::commands::{event_commands, settings_commands, tag_commands, todo_commands};
 use crate::config::Config;
 use crate::db::connection::Db;
-use crate::db::migrations;
+use crate::db::schema;
 use crate::services::event_bus::EventBus;
 
 /// Builds and runs the application.
@@ -23,7 +23,7 @@ pub fn run() {
             let directory = app.path().app_data_dir()?;
             let config = Config::open(&directory)?;
             let db = Db::open(config.database_path()?)?;
-            migrations::migrate(&db)?;
+            schema::ensure(&db)?;
             app.manage(config);
             app.manage(db);
             app.manage(EventBus::new(app.handle().clone()));
@@ -39,7 +39,14 @@ pub fn run() {
             todo_commands::rename_todo,
             todo_commands::set_todo_completed,
             todo_commands::delete_todo,
-            todo_commands::todo_counts
+            todo_commands::todo_counts,
+            tag_commands::list_tags,
+            tag_commands::add_tag,
+            tag_commands::rename_tag,
+            tag_commands::delete_tag,
+            tag_commands::set_todo_tags,
+            tag_commands::todo_tags,
+            tag_commands::todos_with_tag
         ])
         .run(tauri::generate_context!())
         .expect("error while running the SentryNeko application");

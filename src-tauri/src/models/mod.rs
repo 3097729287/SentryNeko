@@ -4,5 +4,6 @@ pub mod alarm;
 pub mod app_event;
 pub mod heatmap;
 pub mod pomodoro;
+pub mod tag;
 pub mod todo;
 pub mod user;

@@ -1,6 +1,6 @@
 # Creates the SentryNeko SQLite schema without starting the app.
-# The DDL and the recorded schema version must stay in step with
-# src-tauri/src/db/migrations.rs — cargo test fails when they drift apart.
+# The DDL must stay in step with src-tauri/src/db/schema.rs —
+# cargo test fails when the two sides drift apart.
 # Safe to run repeatedly: every statement is idempotent.
 
 [CmdletBinding()]
@@ -28,7 +28,8 @@ CREATE TABLE IF NOT EXISTS todos (
     title      TEXT    NOT NULL,
     completed  INTEGER NOT NULL DEFAULT 0 CHECK (completed IN (0, 1)),
     created_at INTEGER NOT NULL,
-    updated_at INTEGER NOT NULL
+    updated_at INTEGER NOT NULL,
+    tag_ids    TEXT    NOT NULL DEFAULT '[]'
 );
 
 CREATE TABLE IF NOT EXISTS pomodoro_sessions (
@@ -65,6 +66,18 @@ CREATE TABLE IF NOT EXISTS settings (
     updated_at INTEGER NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS tags (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    name       TEXT    NOT NULL COLLATE NOCASE UNIQUE,
+    created_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS todo_tags (
+    todo_id INTEGER NOT NULL REFERENCES todos (id) ON DELETE CASCADE,
+    tag_id  INTEGER NOT NULL REFERENCES tags (id) ON DELETE CASCADE,
+    PRIMARY KEY (todo_id, tag_id)
+);
+
 CREATE INDEX IF NOT EXISTS idx_todos_completed
     ON todos (completed, created_at);
 
@@ -74,7 +87,8 @@ CREATE INDEX IF NOT EXISTS idx_pomodoro_sessions_started_at
 CREATE INDEX IF NOT EXISTS idx_app_events_started_at
     ON app_events (started_at);
 
-PRAGMA user_version = 1;
+CREATE INDEX IF NOT EXISTS idx_todo_tags_tag_id
+    ON todo_tags (tag_id);
 '@
 
 $schema | & $sqlite.Source $DatabasePath

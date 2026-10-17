@@ -129,11 +129,12 @@ SentryNeko/
 │       ├── db/
 │       │   ├── mod.rs                # 数据库模块入口
 │       │   ├── connection.rs         # SQLite 连接池初始化
-│       │   ├── migrations.rs         # 建表/迁移脚本
+│       │   ├── schema.rs             # 幂等建表脚本
 │       │   └── repository.rs         # 通用数据访问层（CRUD）
 │       ├── models/
 │       │   ├── mod.rs                # 模型模块入口
 │       │   ├── todo.rs               # 待办任务模型
+│       │   ├── tag.rs                # 标签模型（预留：任务标签）
 │       │   ├── pomodoro.rs           # 番茄钟模型
 │       │   ├── heatmap.rs            # 热力图数据模型
 │       │   ├── alarm.rs              # 闹钟模型
@@ -142,6 +143,7 @@ SentryNeko/
 │       ├── commands/                 # Tauri 命令层
 │       │   ├── mod.rs                # 命令模块入口
 │       │   ├── todo_commands.rs      # 待办 CRUD 命令
+│       │   ├── tag_commands.rs       # 标签命令（预留）
 │       │   ├── pomodoro_commands.rs  # 番茄钟命令
 │       │   ├── heatmap_commands.rs   # 热力图数据命令
 │       │   ├── alarm_commands.rs     # 闹钟命令
@@ -215,6 +217,7 @@ SentryNeko/
 │   └── types/
 │       ├── index.ts                  # 全局类型定义
 │       ├── todo.ts                   # 待办类型
+│       ├── tag.ts                    # 标签类型（预留）
 │       ├── pomodoro.ts               # 番茄钟类型
 │       ├── heatmap.ts                # 热力图类型
 │       ├── alarm.ts                  # 闹钟类型

@@ -2,14 +2,14 @@
 
 [English](database.md) | **简体中文**
 
-SQLite，驱动为 `rusqlite`，连接由 `r2d2` 池管理；表结构一律由版本化迁移创建，不手工建表。
+SQLite，驱动为 `rusqlite`，连接由 `r2d2` 池管理；表结构由一份幂等脚本创建，不手工建表。
 
 ## 分层
 
 | 文件 | 职责 |
 | --- | --- |
 | `db/connection.rs` | `Db` 句柄、连接池参数、连接 PRAGMA、`ApiError` 映射 |
-| `db/migrations.rs` | 由 `PRAGMA user_version` 守卫的版本化 DDL |
+| `db/schema.rs` | 完整的 DDL，每次启动幂等执行 |
 | `db/repository.rs` | 所有模型共用的通用 CRUD 助手 |
 
 启动时 `Db` 被托管进 Tauri 状态，命令通过 `State<Db>` 取用：
@@ -17,7 +17,7 @@ SQLite，驱动为 `rusqlite`，连接由 `r2d2` 池管理；表结构一律由�
 ```rust
 let directory = app.path().app_data_dir()?;
 let db = Db::open(directory.join(DATABASE_FILE_NAME))?;
-migrations::migrate(&db)?;
+schema::ensure(&db)?;
 app.manage(db);
 ```
 
@@ -57,21 +57,26 @@ app.manage(db);
 
 ## 表结构
 
-版本 1 共五张表：
+表结构共七张表：
 
 | 表 | 存放 | 关键列 |
 | --- | --- | --- |
-| `todos` | 用户维护的任务 | `title`、`completed`、`created_at`、`updated_at` |
+| `todos` | 用户维护的任务 | `title`、`completed`、`created_at`、`updated_at`、`tag_ids` |
 | `pomodoro_sessions` | 一次专注或休息区间 | `phase`、`planned_seconds`、`actual_seconds`、`started_at`、`ended_at`、`todo_id` |
 | `app_events` | 前台应用活动 | `app_name`、`window_title`、`started_at`、`ended_at` |
 | `alarms` | 周期提醒 | `label`、`hour`、`minute`、`repeat_days`、`enabled`、`created_at` |
 | `settings` | 键值型设置 | `key`、`value`、`updated_at` |
+| `tags` | 任务可携带的标签名 | `name`（唯一、大小写不敏感）、`created_at` |
+| `todo_tags` | 任务与标签的关联 | `todo_id`、`tag_id` |
 
-## 迁移
+标签刻意存两份：`todos.tag_ids` 是标签 id 的 JSON 数组，任务行不必 join 就能回答「带哪些
+标签」；`todo_tags` 是另一个方向的索引，`idx_todo_tags_tag_id` 用来查「哪些任务带某个标签」。
+`Todo::set_tags` 在一个事务里同时写两边，`Tag::delete` 会把 id 从所有仍列着它的任务缓存里删掉。
 
-`MIGRATIONS` 只允许追加：已发布的版本永不修改，变更以新的 `Migration` 与下一个 `version`
-到来。每条迁移都在事务里执行，并同时写入 `PRAGMA user_version`，因此崩溃只会停在最后一个
-完整版本，重复调用 `migrate` 也是空操作。
+## 建表
+
+`ensure` 每次启动都在事务里执行整份脚本：缺的表和索引会建出来，已存在的保持原样。这里不做
+版本管理——应用尚未发布，改表结构就是本地重建，而不是写迁移。
 
 ## 仓储助手
 
@@ -98,14 +103,14 @@ powershell -ExecutionPolicy Bypass -File scripts/init_db.ps1 [-DatabasePath <fil
 ```
 
 脚本需要 `PATH` 上有 `sqlite3`；没有时脚本会直接停止，并提示改用应用本身——应用首次启动也会
-迁移。所有语句都带 `IF NOT EXISTS`，重复执行安全。
+建表。所有语句都带 `IF NOT EXISTS`，重复执行安全。
 
-有一个测试会从脚本里抽出 SQL，在已迁移的库上执行，断言两侧建出的表相同、记录的
-`user_version` 相同。
+有一个测试会从脚本里抽出 SQL，在已建表的库上执行，断言两侧最终得到的表相同。
 
 ## 新增表或列
 
-1. 在 `db/migrations.rs` 追加下一个 `version` 的 `Migration`；版本 1 保持发布时的样子。
-2. 在 `scripts/init_db.ps1` 里同步同样的 DDL（一样的 `IF NOT EXISTS`），并更新其中的
-   `PRAGMA user_version`。
+1. 在 `db/schema.rs` 里加上 DDL。
+2. 在 `scripts/init_db.ps1` 里同步同样的 DDL（一样的 `IF NOT EXISTS`）。
 3. 跑 `cargo test`——两侧不一致时脚本检查会失败。
+4. 重建本地库：对空文件跑 `scripts/init_db.ps1`，或直接删掉旧库。已存在的库不会被升级，因为
+   还没有发布过版本。
