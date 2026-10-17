@@ -1,0 +1,2 @@
+/** Alarm types. */
+export {};

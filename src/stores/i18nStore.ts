@@ -1,0 +1,2 @@
+/** Language state store. */
+export {};

@@ -1,0 +1,2 @@
+/** Heatmap aggregation types. */
+export {};

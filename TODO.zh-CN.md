@@ -28,7 +28,7 @@
 
 | 状态 | 编号 | 任务 | 依赖 | 验收要点 |
 | --- | --- | --- | --- | --- |
-| [ ] | T01 | 项目脚手架：Tauri 2 + React + TS + Vite | 无 | `package.json`/`vite.config.ts`/`tsconfig.json`/`index.html` 齐备，前后端目录与 README 目录结构一致 |
+| [x] | T01 | 项目脚手架：Tauri 2 + React + TS + Vite | 无 | `package.json`/`vite.config.ts`/`tsconfig.json`/`index.html` 齐备，前后端目录与 README 目录结构一致 |
 | [ ] | T02 | Tauri 配置与权限：`tauri.conf.json` + `capabilities/default.json` + 图标 | T01 | 窗口尺寸/标题/打包目标（msi、nsis）配置完成，IPC 白名单最小化 |
 | [ ] | T03 | 统一命令响应与错误约定 | T01 | `utils/response.rs` 定义统一结构，前端 `types/index.ts` 有对应类型，命令层无裸返回 |
 | [ ] | T04 | SQLite 接入：连接池 + 迁移 + 通用仓储 | T02 | `db/{connection,migrations,repository}.rs` 可用，`scripts/init_db.ps1` 幂等建表 |

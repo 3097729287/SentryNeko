@@ -1,0 +1,1 @@
+//! Windows Toast notification delivery.

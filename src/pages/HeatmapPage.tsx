@@ -1,0 +1,2 @@
+/** Heatmap page. */
+export {};

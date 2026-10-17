@@ -1,0 +1,8 @@
+//! Tauri command layer exposed to the frontend over IPC.
+
+pub mod alarm_commands;
+pub mod app_event_commands;
+pub mod heatmap_commands;
+pub mod pomodoro_commands;
+pub mod settings_commands;
+pub mod todo_commands;

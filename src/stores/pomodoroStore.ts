@@ -1,0 +1,2 @@
+/** Pomodoro state store. */
+export {};
