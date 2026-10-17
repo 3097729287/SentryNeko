@@ -33,7 +33,7 @@ Status legend: `[ ]` not started　`[~]` in progress　`[x]` done　`[!]` blocke
 | [x] | T03 | Unified command response and error conventions | T01 | `utils/response.rs` defines the shared envelope, `types/index.ts` mirrors it, and no command returns a bare value |
 | [ ] | T04 | SQLite integration: connection pool + migrations + generic repository | T02 | `db/{connection,migrations,repository}.rs` usable; `scripts/init_db.ps1` creates tables idempotently |
 | [ ] | T05 | Config read/write: database path, language, persisted settings | T04 | `config.rs` creates the config on first run; settings survive a restart |
-| [ ] | T06 | Backend i18n skeleton (localized error messages) | T03 | `services/i18n.rs` supports zh-CN / en-US with error-code → message mapping |
+| [x] | T06 | Backend i18n skeleton (localized error messages) | T03 | `services/i18n.rs` supports zh-CN / en-US with error-code → message mapping |
 | [ ] | T07 | Frontend i18n skeleton (i18next + persisted language) | T05 | `i18n/`, `zh-CN.json` and `en-US.json` ready; `ja-JP.json` stubbed |
 | [ ] | T08 | Event bus + frontend event listener wrapper | T03 | `services/event_bus.rs` and `hooks/useTauriEvent.ts` connected; one test event can be emitted and received |
 | [ ] | T09 | Frontend routing and page skeleton | T07, T08 | `App.tsx` routing works; 8 pages and 4 stores stubbed; `Dashboard` reachable |
