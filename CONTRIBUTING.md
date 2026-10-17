@@ -107,7 +107,7 @@ Anything touching foreground-app collection, notifications, tray behavior or aut
 | --- | --- |
 | New or changed Tauri command | `docs/commands.md` + `docs/commands.zh-CN.md` |
 | New or changed Tauri event | `docs/events.md` + `docs/events.zh-CN.md` |
-| Table, column, migration or connection pool setting | `docs/database.md` + `docs/database.zh-CN.md` |
+| Table, column, migration, pool setting or config field | `docs/database.md` + `docs/database.zh-CN.md` |
 | Copy, locale key, language list | `docs/i18n.md` + `docs/i18n.zh-CN.md` |
 | Layer, data flow, module responsibility | `docs/architecture.md` + `docs/architecture.zh-CN.md` |
 | Scope, priority, milestone | `TODO.md` + `TODO.zh-CN.md` |

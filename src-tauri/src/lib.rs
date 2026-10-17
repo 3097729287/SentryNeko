@@ -10,7 +10,8 @@ pub mod utils;
 
 use tauri::Manager;
 
-use crate::db::connection::{Db, DATABASE_FILE_NAME};
+use crate::config::Config;
+use crate::db::connection::Db;
 use crate::db::migrations;
 
 /// Builds and runs the application.
@@ -18,8 +19,10 @@ pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
             let directory = app.path().app_data_dir()?;
-            let db = Db::open(directory.join(DATABASE_FILE_NAME))?;
+            let config = Config::open(&directory)?;
+            let db = Db::open(config.database_path()?)?;
             migrations::migrate(&db)?;
+            app.manage(config);
             app.manage(db);
 
             Ok(())

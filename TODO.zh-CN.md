@@ -32,7 +32,7 @@
 | [x] | T02 | Tauri 配置与权限：`tauri.conf.json` + `capabilities/default.json` + 图标 | T01 | 窗口尺寸/标题/打包目标（msi、nsis）配置完成，IPC 白名单最小化 |
 | [x] | T03 | 统一命令响应与错误约定 | T01 | `utils/response.rs` 定义统一结构，前端 `types/index.ts` 有对应类型，命令层无裸返回 |
 | [x] | T04 | SQLite 接入：连接池 + 迁移 + 通用仓储 | T02 | `db/{connection,migrations,repository}.rs` 可用，`scripts/init_db.ps1` 幂等建表 |
-| [ ] | T05 | 配置读写：数据库路径、语言、设置项持久化 | T04 | `config.rs` 首次运行自建配置，重启后设置不丢失 |
+| [x] | T05 | 配置读写：数据库路径、语言、设置项持久化 | T04 | `config.rs` 首次运行自建配置，重启后设置不丢失 |
 | [x] | T06 | 后端 i18n 骨架（错误消息多语言） | T03 | `services/i18n.rs` 支持 zh-CN / en-US，错误码 → 文案映射 |
 | [ ] | T07 | 前端 i18n 骨架（i18next + 语言持久化） | T05 | `i18n/`、`zh-CN.json`、`en-US.json` 就绪，`ja-JP.json` 占位 |
 | [ ] | T08 | 事件总线 + 前端事件监听封装 | T03 | `services/event_bus.rs` 与 `hooks/useTauriEvent.ts` 打通，可推送/接收一条测试事件 |

@@ -25,11 +25,35 @@ app.manage(db);
 
 | 项 | 取值 |
 | --- | --- |
-| 文件 | `<应用数据目录>/sentryneko.db`，即 `%APPDATA%\com.sentryneko.desktop\sentryneko.db` |
+| 文件 | `<应用数据目录>/sentryneko.db`（即 `%APPDATA%\com.sentryneko.desktop\sentryneko.db`），除非 `config.json` 另指路径 |
 | 连接池 | 4 条连接，取用超时 5 秒 |
 | 每条连接 | `foreign_keys = ON`、`journal_mode = WAL`、`synchronous = NORMAL`、`busy_timeout = 5000 ms` |
 | 时间戳 | UTC 纪元秒 |
 | 失败 | `ApiCode::DATABASE`，SQLite 的报错原文放在 `details` |
+
+## 配置
+
+`config.rs` 在数据库旁边维护一个小 JSON 文件，首次运行自动创建：
+
+```json
+{
+  "databasePath": "C:\\Users\\you\\AppData\\Roaming\\com.sentryneko.desktop\\sentryneko.db",
+  "language": "en-US"
+}
+```
+
+| 字段 | 含义 | 默认值 |
+| --- | --- | --- |
+| `databasePath` | 应用打开的 SQLite 文件 | `<应用数据目录>/sentryneko.db` |
+| `language` | 语言标签，见 `docs/i18n.md` | `en-US` |
+
+规则：
+
+- `databasePath` 为相对路径时，相对 `config.json` 所在目录解析；字段缺失则用默认值。
+- `language` 为未知标签时回落到 `Language::DEFAULT`，文件保持原样。
+- 文件无法解析时报 `IO`，解析器原文放进 `details`，且绝不覆盖原文件——手工修好或删除即可恢复。
+- 写入先落到 `config.json.tmp` 再改名就位，进程崩溃不会截断配置文件。
+- `settings`（下面那张表）存用户偏好；`config.json` 存「打开数据库之前就必须知道」的东西。
 
 ## 表结构
 

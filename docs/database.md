@@ -26,11 +26,38 @@ app.manage(db);
 
 | Setting | Value |
 | --- | --- |
-| File | `<app data dir>/sentryneko.db`, i.e. `%APPDATA%\com.sentryneko.desktop\sentryneko.db` |
+| File | `<app data dir>/sentryneko.db` (i.e. `%APPDATA%\com.sentryneko.desktop\sentryneko.db`) unless `config.json` points elsewhere |
 | Pool | 4 connections, 5 s checkout timeout |
 | Per connection | `foreign_keys = ON`, `journal_mode = WAL`, `synchronous = NORMAL`, `busy_timeout = 5000 ms` |
 | Timestamps | UTC epoch seconds |
 | Failures | `ApiCode::DATABASE`, with the SQLite message in `details` |
+
+## Configuration
+
+`config.rs` keeps a small JSON file beside the database and creates it on first run:
+
+```json
+{
+  "databasePath": "C:\\Users\\you\\AppData\\Roaming\\com.sentryneko.desktop\\sentryneko.db",
+  "language": "en-US"
+}
+```
+
+| Field | Meaning | Default |
+| --- | --- | --- |
+| `databasePath` | SQLite file the application opens | `<app data dir>/sentryneko.db` |
+| `language` | Language tag, listed in `docs/i18n.md` | `en-US` |
+
+Rules:
+
+- A relative `databasePath` resolves against the directory holding `config.json`; an absent
+  field falls back to its default.
+- An unknown `language` tag falls back to `Language::DEFAULT` and leaves the file as it is.
+- A file that does not parse is reported as `IO` with the parser message in `details` and is
+  never overwritten — fix or delete it by hand to recover.
+- Writes land in `config.json.tmp` and are renamed into place, so a crash cannot truncate the file.
+- `settings` (the table below) holds user preferences; `config.json` holds what has to be known
+  before the database can be opened.
 
 ## Schema
 
