@@ -3,8 +3,25 @@
 use tauri::State;
 
 use crate::config::Config;
+use crate::db::connection::Db;
+use crate::models::pomodoro::PomodoroDurations;
 use crate::services::i18n::Language;
 use crate::utils::response::{ApiError, ApiResponse, ApiResult};
+
+/// Reads the pomodoro phase durations.
+#[tauri::command]
+pub fn get_pomodoro_durations(db: State<'_, Db>) -> ApiResponse<PomodoroDurations> {
+    PomodoroDurations::load(&db).into()
+}
+
+/// Stores the pomodoro phase durations.
+#[tauri::command]
+pub fn set_pomodoro_durations(
+    db: State<'_, Db>,
+    durations: PomodoroDurations,
+) -> ApiResponse<PomodoroDurations> {
+    PomodoroDurations::save(&db, durations).into()
+}
 
 /// Reads the language stored in `config.json`.
 #[tauri::command]

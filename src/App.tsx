@@ -2,7 +2,6 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { HashRouter, Navigate, NavLink, Outlet, Route, Routes, useLocation } from "react-router-dom";
 
 import { I18nProvider } from "./components/I18nProvider";
-import { LanguageSwitcher } from "./components/LanguageSwitcher";
 import { TitleBar } from "./components/TitleBar";
 import { useI18n } from "./hooks/useI18n";
 import { AlarmsPage } from "./pages/AlarmsPage";
@@ -75,9 +74,6 @@ function Shell() {
             </NavLink>
           ))}
         </nav>
-        <div className="sidebar-footer">
-          <LanguageSwitcher />
-        </div>
       </aside>
       <main className="content">
         <Outlet />

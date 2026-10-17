@@ -1,25 +1,10 @@
-//! Pomodoro commands: the phase durations and the sessions they produce.
+//! Pomodoro commands: the sessions a phase leaves behind.
 
 use tauri::State;
 
 use crate::db::connection::Db;
-use crate::models::pomodoro::{Phase, PomodoroDurations, PomodoroSession};
+use crate::models::pomodoro::{Phase, PomodoroSession};
 use crate::utils::response::ApiResponse;
-
-/// Reads the duration of every phase.
-#[tauri::command]
-pub fn get_pomodoro_durations(db: State<'_, Db>) -> ApiResponse<PomodoroDurations> {
-    PomodoroDurations::load(&db).into()
-}
-
-/// Stores the duration of every phase.
-#[tauri::command]
-pub fn set_pomodoro_durations(
-    db: State<'_, Db>,
-    durations: PomodoroDurations,
-) -> ApiResponse<PomodoroDurations> {
-    PomodoroDurations::save(&db, durations).into()
-}
 
 /// Opens a session when a phase starts.
 #[tauri::command]

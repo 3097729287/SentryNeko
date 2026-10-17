@@ -49,8 +49,8 @@ pub fn run() {
             tag_commands::set_todo_tags,
             tag_commands::todo_tags,
             tag_commands::todos_with_tag,
-            pomodoro_commands::get_pomodoro_durations,
-            pomodoro_commands::set_pomodoro_durations,
+            settings_commands::get_pomodoro_durations,
+            settings_commands::set_pomodoro_durations,
             pomodoro_commands::start_pomodoro_session,
             pomodoro_commands::finish_pomodoro_session,
             pomodoro_commands::list_pomodoro_sessions

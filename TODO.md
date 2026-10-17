@@ -48,7 +48,7 @@ Status legend: `[ ]` not started　`[~]` in progress　`[x]` done　`[!]` blocke
 | [ ] | T13 | Boot time collection and today's uptime | T12 | Reads system boot time; correct across midnight and sleep/resume |
 | [ ] | T14 | System notifications: Windows Toast | T03 | `services/notification.rs` can send a notification and falls back to an in-app toast on failure |
 | [ ] | T15 | Event push wiring: app switch / Pomodoro completion / alarm trigger | T08, T12 | The UI refreshes in real time without polling; event payloads have type definitions and docs |
-| [ ] | T16 | Settings page: Pomodoro settings + language settings | T07, T11 | `settings_commands.rs` wired to `SettingsPage`; changes take effect immediately and persist |
+| [x] | T16 | Settings page: Pomodoro settings + language settings | T07, T11 | `settings_commands.rs` wired to `SettingsPage`; changes take effect immediately and persist |
 
 ## P2 Important, not urgent
 

@@ -194,7 +194,7 @@ SentryNeko/
 │   │   ├── HeatmapChart.tsx          # Heatmap component
 │   │   ├── AlarmList.tsx             # Alarm list
 │   │   ├── AppEventLog.tsx           # Foreground app event log list
-│   │   ├── LanguageSwitcher.tsx      # Language switcher component
+│   │   ├── LanguageSwitcher.tsx      # Language picker used by the settings page
 │   │   ├── TitleBar.tsx              # Custom title bar: drag, minimize, maximize, close
 │   │   ├── I18nProvider.tsx          # i18n provider component
 │   │   └── ui/                       # Shared component library

@@ -9,8 +9,8 @@ export function LanguageSwitcher() {
 
   return (
     <label className="language-switcher">
-      <span>{t("language.label")}</span>
       <select
+        aria-label={t("language.label")}
         value={language}
         onChange={(event) => {
           const next = event.target.value;

@@ -194,7 +194,7 @@ SentryNeko/
 │   │   ├── HeatmapChart.tsx          # 热力图组件
 │   │   ├── AlarmList.tsx             # 闹钟列表
 │   │   ├── AppEventLog.tsx           # 前台应用事件日志列表
-│   │   ├── LanguageSwitcher.tsx      # 语言切换组件
+│   │   ├── LanguageSwitcher.tsx      # 语言选择（设置页使用）
 │   │   ├── TitleBar.tsx              # 自绘标题栏（拖拽、最小化、最大化、关闭）
 │   │   ├── I18nProvider.tsx          # 国际化 Provider 组件
 │   │   └── ui/                       # 公共组件库
