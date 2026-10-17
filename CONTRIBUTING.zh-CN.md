@@ -51,7 +51,7 @@ test(heatmap): cover week boundary aggregation
 
 使用的类型：`feat`、`fix`、`docs`、`refactor`、`test`、`chore`、`perf`。
 
-**scope 名称**与模块对应：`pomodoro`、`todo`、`collector`、`alarm`、`heatmap`、`tray`、`i18n`、`db`、`response`。
+**scope 名称**与模块对应：`pomodoro`、`todo`、`collector`、`alarm`、`heatmap`、`tray`、`i18n`、`db`、`response`，前端外壳（路由、布局、页面）用 `ui`。
 
 ## 完成标准
 

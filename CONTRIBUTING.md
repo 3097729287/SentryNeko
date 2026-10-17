@@ -51,7 +51,7 @@ test(heatmap): cover week boundary aggregation
 
 Types in use: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `perf`.
 
-**Scope names** follow the modules: `pomodoro`, `todo`, `collector`, `alarm`, `heatmap`, `tray`, `i18n`, `db`, `response`.
+**Scope names** follow the modules: `pomodoro`, `todo`, `collector`, `alarm`, `heatmap`, `tray`, `i18n`, `db`, `response`, plus `ui` for the frontend shell (router, layout, pages).
 
 ## Definition of done
 

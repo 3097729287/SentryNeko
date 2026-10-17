@@ -36,7 +36,7 @@ Status legend: `[ ]` not started　`[~]` in progress　`[x]` done　`[!]` blocke
 | [x] | T06 | Backend i18n skeleton (localized error messages) | T03 | `services/i18n.rs` supports zh-CN / en-US with error-code → message mapping |
 | [x] | T07 | Frontend i18n skeleton (i18next + persisted language) | T05 | `i18n/`, `zh-CN.json` and `en-US.json` ready; `ja-JP.json` stubbed |
 | [x] | T08 | Event bus + frontend event listener wrapper | T03 | `services/event_bus.rs` and `hooks/useTauriEvent.ts` connected; one test event can be emitted and received |
-| [ ] | T09 | Frontend routing and page skeleton | T07, T08 | `App.tsx` routing works; 8 pages and 4 stores stubbed; `Dashboard` reachable |
+| [x] | T09 | Frontend routing and page skeleton | T07, T08 | `App.tsx` routing works; 8 pages and 4 stores stubbed; `Dashboard` reachable |
 
 ## P1 Urgent (MVP closed loop)
 

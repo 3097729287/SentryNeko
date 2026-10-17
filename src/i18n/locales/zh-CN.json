@@ -12,5 +12,15 @@
   },
   "language": {
     "label": "语言"
+  },
+  "nav": {
+    "dashboard": "仪表盘",
+    "todos": "待办",
+    "pomodoro": "番茄钟",
+    "heatmap": "热力图",
+    "alarms": "闹钟",
+    "events": "事件流",
+    "analytics": "统计",
+    "settings": "设置"
   }
 }

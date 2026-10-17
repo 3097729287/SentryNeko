@@ -12,5 +12,15 @@
   },
   "language": {
     "label": "Language"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "todos": "Todos",
+    "pomodoro": "Pomodoro",
+    "heatmap": "Heatmap",
+    "alarms": "Alarms",
+    "events": "Events",
+    "analytics": "Analytics",
+    "settings": "Settings"
   }
 }
