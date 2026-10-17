@@ -24,28 +24,35 @@ const PAGES = [
   { path: "/settings", label: "nav.settings", Page: SettingsPage },
 ] as const;
 
-/** Window frame shared by every page: brand, language choice and navigation. */
+/** Window frame shared by every page: brand, navigation and language choice. */
 function Shell() {
   const { t } = useI18n();
 
   return (
-    <>
-      <header>
-        <h1>{t("app.name")}</h1>
-        <p>{t("app.tagline")}</p>
-        <LanguageSwitcher />
-      </header>
-      <nav>
-        {PAGES.map(({ path, label }) => (
-          <NavLink end={path === "/"} key={path} to={path}>
-            {t(label)}
-          </NavLink>
-        ))}
-      </nav>
-      <main>
+    <div className="app-shell">
+      <aside className="sidebar">
+        <div className="brand">
+          <span className="brand-mark">
+            <span aria-hidden="true" className="brand-dot" />
+            <span className="brand-name">{t("app.name")}</span>
+          </span>
+          <p className="brand-tagline">{t("app.tagline")}</p>
+        </div>
+        <nav className="nav">
+          {PAGES.map(({ path, label }) => (
+            <NavLink className="nav-link" end={path === "/"} key={path} to={path}>
+              {t(label)}
+            </NavLink>
+          ))}
+        </nav>
+        <div className="sidebar-footer">
+          <LanguageSwitcher />
+        </div>
+      </aside>
+      <main className="content">
         <Outlet />
       </main>
-    </>
+    </div>
   );
 }
 

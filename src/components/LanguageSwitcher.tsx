@@ -8,7 +8,7 @@ export function LanguageSwitcher() {
   const { t, language, languages, setLanguage } = useI18n();
 
   return (
-    <label>
+    <label className="language-switcher">
       <span>{t("language.label")}</span>
       <select
         value={language}

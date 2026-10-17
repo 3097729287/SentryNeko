@@ -22,19 +22,22 @@ export function EventsPage() {
   return (
     <>
       <h1>{t("nav.events")}</h1>
-      <p>
+      <div className="card">
         <button
+          className="btn"
           type="button"
           onClick={() => {
             void emitTestEvent();
           }}
         >
           {t("events.test.send")}
-        </button>{" "}
-        {sequence === null
-          ? t("events.test.waiting")
-          : t("events.test.received", { sequence })}
-      </p>
+        </button>
+        <p className="muted">
+          {sequence === null
+            ? t("events.test.waiting")
+            : t("events.test.received", { sequence })}
+        </p>
+      </div>
     </>
   );
 }

@@ -22,5 +22,8 @@
     "events": "事件流",
     "analytics": "统计",
     "settings": "设置"
+  },
+  "pages": {
+    "empty": "暂无内容。"
   }
 }

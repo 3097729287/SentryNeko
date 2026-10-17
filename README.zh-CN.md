@@ -206,6 +206,8 @@ SentryNeko/
 │   │   ├── pomodoroStore.ts          # 番茄钟状态
 │   │   ├── appEventStore.ts          # 前台应用事件状态
 │   │   └── i18nStore.ts              # 语言状态管理
+│   ├── styles/
+│   │   └── app.css                   # 设计令牌与窗口外壳样式
 │   └── types/
 │       ├── index.ts                  # 全局类型定义
 │       ├── todo.ts                   # 待办类型

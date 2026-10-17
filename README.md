@@ -206,6 +206,8 @@ SentryNeko/
 │   │   ├── pomodoroStore.ts          # Pomodoro state
 │   │   ├── appEventStore.ts          # Foreground app event state
 │   │   └── i18nStore.ts              # Language state
+│   ├── styles/
+│   │   └── app.css                   # Design tokens and the window shell styles
 │   └── types/
 │       ├── index.ts                  # Global type definitions
 │       ├── todo.ts                   # Todo types

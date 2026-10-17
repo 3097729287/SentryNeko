@@ -22,5 +22,8 @@
     "events": "Events",
     "analytics": "Analytics",
     "settings": "Settings"
+  },
+  "pages": {
+    "empty": "Nothing here yet."
   }
 }

@@ -6,5 +6,12 @@ import { useI18n } from "../hooks/useI18n";
 export function HeatmapPage() {
   const { t } = useI18n();
 
-  return <h1>{t("nav.heatmap")}</h1>;
+  return (
+    <>
+      <h1>{t("nav.heatmap")}</h1>
+      <div className="empty">
+        <p>{t("pages.empty")}</p>
+      </div>
+    </>
+  );
 }

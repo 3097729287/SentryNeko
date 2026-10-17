@@ -86,6 +86,7 @@ A change is ready for review when every box is ticked:
 - Share the Tauri event listener wrapper from `hooks/useTauriEvent.ts` instead of calling `listen` directly, so subscriptions are cleaned up on unmount.
 - Countdowns and durations are derived from timestamps, never from accumulated `setInterval` ticks.
 - Charts must handle loading, empty and error states.
+- Styles live in `src/styles/app.css`: design tokens on `:root`, then the shell and the shared primitives. No inline styles.
 
 ## Testing
 

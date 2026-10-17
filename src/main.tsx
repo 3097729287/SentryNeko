@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 
 import App from "./App";
 import { loadLanguage } from "./stores/i18nStore";
+import "./styles/app.css";
 
 async function render(): Promise<void> {
   // The chosen language lives in `config.json`; resolving it before the first paint keeps
