@@ -82,10 +82,11 @@ fn toggle(id: i64) -> ApiResult<Todo> {
 计数使用。标签这一组属于预留，目前没有页面调用：它维护名称索引，`set_todo_tags` 建立任务与
 标签的关联，并从两个方向读取关系（`todo_tags` 查某任务的标签，`todos_with_tag` 查某标签下的任务）。
 番茄钟这一组负责持久化：`start_pomodoro_session` 在阶段开始时插入一行，`finish_pomodoro_session`
-用实际秒数收尾——倒计时本身由前端按时间戳推进，不依赖 tick 计数。时长属于设置，读写命令放在
-`settings_commands` 里，并在设置页编辑。通知这一组只有一个诊断命令：`send_test_notification`
-发一条 Toast，成功返回 `toast`；系统拒绝时推送 `notification-fallback`（见 `docs/events.md`）
-并返回 `fallback`。
+用实际秒数收尾——倒计时本身由前端按时间戳推进，不依赖 tick 计数，且由 store 驱动而非页面，
+因此切换页面不会中断。时长属于设置，读写命令放在
+`settings_commands` 里，并在设置页编辑。通知这一组就是 Toast 通道：`send_test_notification`
+是诊断命令，`notify_pomodoro_phase` 由计时器在阶段结束时调用。两者成功返回 `toast`；系统拒绝
+时推送 `notification-fallback`（见 `docs/events.md`）并返回 `fallback`，番茄钟无论如何都会继续流转。
 
 | 命令 | 模块 | 参数 | 返回 | 任务 |
 | --- | --- | --- | --- | --- |
@@ -111,3 +112,4 @@ fn toggle(id: i64) -> ApiResult<Todo> {
 | `finish_pomodoro_session` | `pomodoro_commands` | `id: i64`、`actualSeconds: i64` | `PomodoroSession` | T11 |
 | `list_pomodoro_sessions` | `pomodoro_commands` | `limit: i64` | `PomodoroSession[]` | T11 |
 | `send_test_notification` | `notification_commands` | — | `Outcome`（`"toast"` 或 `"fallback"`） | T14 |
+| `notify_pomodoro_phase` | `notification_commands` | `phase: Phase` | `Outcome`（`"toast"` 或 `"fallback"`） | T14 |

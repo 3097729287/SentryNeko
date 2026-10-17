@@ -7,6 +7,7 @@ use serde::Serialize;
 use tauri::{AppHandle, Runtime};
 use tauri_plugin_notification::NotificationExt;
 
+use crate::models::pomodoro::Phase;
 use crate::services::event_bus::{EventBus, NotificationFallback};
 use crate::services::i18n::Language;
 use crate::utils::response::ApiResult;
@@ -41,6 +42,28 @@ impl Notification {
             body: body.to_owned(),
             kind: NotificationKind::Test,
             title: "SentryNeko".to_owned(),
+        }
+    }
+
+    /// The copy shown when a pomodoro phase runs out and the next one starts on its own.
+    #[must_use]
+    pub fn pomodoro(language: Language, finished: Phase) -> Self {
+        let (title, body) = match (language, finished) {
+            (Language::ZhCn, Phase::Focus) => ("专注结束", "休息一下，下一阶段会自动开始。"),
+            (Language::ZhCn, Phase::ShortBreak) => ("短休息结束", "已回到专注。"),
+            (Language::ZhCn, Phase::LongBreak) => ("长休息结束", "已回到专注。"),
+            (Language::EnUs, Phase::Focus) => (
+                "Focus finished",
+                "Take a break; the next phase starts on its own.",
+            ),
+            (Language::EnUs, Phase::ShortBreak) => ("Short break finished", "Back to focus."),
+            (Language::EnUs, Phase::LongBreak) => ("Long break finished", "Back to focus."),
+        };
+
+        Self {
+            body: body.to_owned(),
+            kind: NotificationKind::Pomodoro,
+            title: title.to_owned(),
         }
     }
 }
@@ -195,6 +218,19 @@ mod tests {
             .expect_err("the fallback cannot be pushed");
 
         assert_eq!(error.code(), ApiCode::Internal);
+    }
+
+    #[test]
+    fn the_pomodoro_copy_follows_the_language_and_the_phase() {
+        for phase in Phase::ALL {
+            let english = Notification::pomodoro(Language::EnUs, phase);
+            let chinese = Notification::pomodoro(Language::ZhCn, phase);
+
+            assert_eq!(english.kind, NotificationKind::Pomodoro);
+            assert!(!english.title.is_empty());
+            assert!(!english.body.is_empty());
+            assert_ne!(english.title, chinese.title, "{phase:?} is not translated");
+        }
     }
 
     #[test]

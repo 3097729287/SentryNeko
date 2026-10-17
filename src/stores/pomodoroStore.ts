@@ -4,7 +4,7 @@ import { invoke, isTauri } from "@tauri-apps/api/core";
 import { create } from "zustand";
 
 import { isOk } from "../types";
-import type { ApiCode, ApiResponse } from "../types";
+import type { ApiCode, ApiResponse, NotificationOutcome } from "../types";
 import type { PomodoroDurations, PomodoroPhase, PomodoroSession } from "../types/pomodoro";
 import { phaseAfter, phaseSeconds } from "../types/pomodoro";
 
@@ -47,6 +47,41 @@ async function request<T>(command: string, args: Record<string, unknown> = {}): 
   }
 
   return invoke<ApiResponse<T>>(command, args);
+}
+
+/** How often the clock is sampled; the remaining time comes from the timestamp, not the ticks. */
+const TICK_INTERVAL_MS = 250;
+
+let ticker: number | null = null;
+
+/**
+ * Runs the clock outside React: the countdown keeps going while another page is mounted, so a
+ * finished phase still notifies and hands over to the next one.
+ */
+function startTicker(): void {
+  if (ticker !== null) {
+    return;
+  }
+
+  ticker = window.setInterval(() => {
+    const state = usePomodoroStore.getState();
+
+    if (state.endsAt === null) {
+      stopTicker();
+      return;
+    }
+
+    void state.tick(Date.now());
+  }, TICK_INTERVAL_MS);
+}
+
+function stopTicker(): void {
+  if (ticker === null) {
+    return;
+  }
+
+  window.clearInterval(ticker);
+  ticker = null;
 }
 
 export const usePomodoroStore = create<PomodoroState>((set, get) => ({
@@ -106,6 +141,7 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
     }
 
     set({ endsAt: Date.now() + get().remainingMs, sessionId: id });
+    startTicker();
   },
 
   pause: () => {
@@ -116,6 +152,7 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
     }
 
     set({ endsAt: null, remainingMs: Math.max(0, endsAt - Date.now()) });
+    stopTicker();
   },
 
   reset: async () => {
@@ -124,6 +161,7 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
     const spent = Math.max(0, Math.round((totalMs - remainingMs) / 1000));
 
     set({ error: null, endsAt: null, remainingMs: totalMs });
+    stopTicker();
 
     if (sessionId === null) {
       return;
@@ -160,6 +198,7 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
       remainingMs: phaseSeconds(durations, phase) * 1000,
       sessionId: null,
     });
+    stopTicker();
 
     if (sessionId === null) {
       return;
@@ -210,7 +249,14 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
       return;
     }
 
+    // Cleared before the first await, so the next tick of the interval cannot run this twice.
+    set({ endsAt: null, remainingMs: 0 });
+
     const { durations, focusCount, phase, sessionId } = get();
+    const finishedFocus = phase === "focus" ? focusCount + 1 : focusCount;
+    const next = phaseAfter(phase, finishedFocus);
+    const nextMs = phaseSeconds(durations, next) * 1000;
+    let failure: ApiCode | null = null;
 
     // The phase ran to its end, so the stored row records the full planned length.
     if (sessionId !== null) {
@@ -220,19 +266,45 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
       });
 
       if (!isOk(response)) {
-        set({ error: response.code });
+        failure = response.code;
       }
     }
 
-    const finishedFocus = phase === "focus" ? focusCount + 1 : focusCount;
-    const next = phaseAfter(phase, finishedFocus);
+    const notified = await request<NotificationOutcome>("notify_pomodoro_phase", { phase });
+
+    if (!isOk(notified) && failure === null) {
+      failure = notified.code;
+    }
+
+    // A reset or a phase pick while the calls were in flight wins over the hand-over.
+    if (get().sessionId !== sessionId) {
+      return;
+    }
+
+    // The next phase opens its own row and starts running, so nobody has to press anything.
+    const started = await request<PomodoroSession>("start_pomodoro_session", {
+      phase: next,
+      plannedSeconds: Math.max(1, Math.round(nextMs / 1000)),
+    });
+
+    if (!isOk(started)) {
+      set({
+        error: failure ?? started.code,
+        focusCount: finishedFocus,
+        phase: next,
+        remainingMs: nextMs,
+      });
+      stopTicker();
+      return;
+    }
 
     set({
-      endsAt: null,
+      endsAt: Date.now() + nextMs,
+      error: failure,
       focusCount: finishedFocus,
       phase: next,
-      remainingMs: phaseSeconds(durations, next) * 1000,
-      sessionId: null,
+      remainingMs: nextMs,
+      sessionId: started.data.id,
     });
   },
 }));

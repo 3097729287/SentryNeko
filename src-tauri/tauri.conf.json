@@ -21,7 +21,8 @@
         "resizable": true,
         "decorations": false,
         "center": true,
-        "visible": true
+        "visible": true,
+        "backgroundThrottling": "disabled"
       }
     ],
     "security": {

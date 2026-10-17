@@ -26,6 +26,9 @@ export interface TestEventPayload {
   sequence: number;
 }
 
+/** Which path a notification delivery took; mirrors `services::notification::Outcome`. */
+export type NotificationOutcome = "toast" | "fallback";
+
 /** What a notification was about; the in-app toast picks its copy from this. */
 export type NotificationKind = "test" | "pomodoro" | "alarm";
 

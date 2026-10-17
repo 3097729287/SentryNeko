@@ -93,10 +93,13 @@ no page calls it yet: it maintains the name index, links tags to a task through 
 and reads the relation from either side (`todo_tags` for one task, `todos_with_tag` for one tag).
 The pomodoro group persists the timer: `start_pomodoro_session` opens a row when a phase starts,
 and `finish_pomodoro_session` closes it with the seconds actually spent — the countdown itself
-runs in the frontend from timestamps, not from a tick count. The durations are settings, so their
+runs in the frontend from timestamps, not from a tick count, and is driven from the store rather
+than the page, so switching pages does not stop it. The durations are settings, so their
 two commands sit in `settings_commands` and are edited on the settings page. The notification
-group is one diagnostic: `send_test_notification` shows a toast and answers `toast`, or pushes
-`notification-fallback` (see `docs/events.md`) and answers `fallback` when the system refused it.
+group holds the toast channel: `send_test_notification` is the diagnostic, and
+`notify_pomodoro_phase` is what the timer calls when a phase runs out. Both answer `toast`, or
+push `notification-fallback` (see `docs/events.md`) and answer `fallback` when the system refused
+it; the pomodoro timer keeps running either way.
 
 | Command | Module | Arguments | Returns | Task |
 | --- | --- | --- | --- | --- |
@@ -122,3 +125,4 @@ group is one diagnostic: `send_test_notification` shows a toast and answers `toa
 | `finish_pomodoro_session` | `pomodoro_commands` | `id: i64`, `actualSeconds: i64` | `PomodoroSession` | T11 |
 | `list_pomodoro_sessions` | `pomodoro_commands` | `limit: i64` | `PomodoroSession[]` | T11 |
 | `send_test_notification` | `notification_commands` | — | `Outcome` (`"toast"` or `"fallback"`) | T14 |
+| `notify_pomodoro_phase` | `notification_commands` | `phase: Phase` | `Outcome` (`"toast"` or `"fallback"`) | T14 |

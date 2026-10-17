@@ -1,38 +1,15 @@
 /** The countdown itself: phase, remaining time and start / pause / reset. */
 
-import { useEffect } from "react";
-
 import { useI18n } from "../hooks/useI18n";
 import { usePomodoro } from "../hooks/usePomodoro";
 import { POMODORO_PHASES, phaseSeconds } from "../types/pomodoro";
 import { SegmentedControl } from "./ui/SegmentedControl";
 
-/** Ticks the store and renders the clock. */
+/** Renders the clock; the store runs the timer, so leaving this page does not stop it. */
 export function PomodoroTimer() {
   const { t } = useI18n();
-  const {
-    durations,
-    endsAt,
-    error,
-    pause,
-    phase,
-    remainingMs,
-    reset,
-    selectPhase,
-    start,
-    tick,
-  } = usePomodoro();
-
-  // The store derives the remaining time from a timestamp, so a late tick only delays the paint.
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      void tick(Date.now());
-    }, 250);
-
-    return () => {
-      window.clearInterval(timer);
-    };
-  }, [tick]);
+  const { durations, endsAt, error, pause, phase, remainingMs, reset, selectPhase, start } =
+    usePomodoro();
 
   const running = endsAt !== null;
   const totalMs = Math.max(1, phaseSeconds(durations, phase) * 1000);

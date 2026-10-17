@@ -1,9 +1,11 @@
-//! Notification commands: the diagnostic that proves the toast channel works.
+//! Notification commands: the toast channel the pomodoro timer and the settings probe use.
 
 use tauri::{AppHandle, State};
 
 use crate::config::Config;
+use crate::models::pomodoro::Phase;
 use crate::services::event_bus::EventBus;
+use crate::services::i18n::Language;
 use crate::services::notification::{Notification, Notifier, Outcome};
 use crate::utils::response::{ApiResponse, ApiResult};
 
@@ -14,11 +16,31 @@ pub fn send_test_notification(
     config: State<'_, Config>,
     bus: State<'_, EventBus>,
 ) -> ApiResponse<Outcome> {
-    show_test(&app, &config, &bus).into()
+    notify(&app, &config, &bus, Notification::test).into()
 }
 
-fn show_test(app: &AppHandle, config: &Config, bus: &EventBus) -> ApiResult<Outcome> {
+/// Tells the user a pomodoro phase ran out; the timer moves on whether or not this succeeds.
+#[tauri::command]
+pub fn notify_pomodoro_phase(
+    app: AppHandle,
+    config: State<'_, Config>,
+    bus: State<'_, EventBus>,
+    phase: Phase,
+) -> ApiResponse<Outcome> {
+    notify(&app, &config, &bus, |language| {
+        Notification::pomodoro(language, phase)
+    })
+    .into()
+}
+
+/// Builds the copy for the interface language, then hands the toast to the system.
+fn notify(
+    app: &AppHandle,
+    config: &Config,
+    bus: &EventBus,
+    build: impl FnOnce(Language) -> Notification,
+) -> ApiResult<Outcome> {
     let language = config.language()?;
 
-    Notifier::new(app.clone()).send(bus, &Notification::test(language))
+    Notifier::new(app.clone()).send(bus, &build(language))
 }

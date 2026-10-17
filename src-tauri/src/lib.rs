@@ -54,6 +54,7 @@ pub fn run() {
             settings_commands::get_pomodoro_durations,
             settings_commands::set_pomodoro_durations,
             notification_commands::send_test_notification,
+            notification_commands::notify_pomodoro_phase,
             pomodoro_commands::start_pomodoro_session,
             pomodoro_commands::finish_pomodoro_session,
             pomodoro_commands::list_pomodoro_sessions
