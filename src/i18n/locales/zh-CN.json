@@ -95,6 +95,52 @@
     "title": "开机自启",
     "toggle": "登录时自动启动 SentryNeko"
   },
+  "dashboard": {
+    "alarm": {
+      "empty": "还没有启用的闹钟。",
+      "everyday": "每天",
+      "once": "单次",
+      "open": "去闹钟",
+      "title": "下一个闹钟",
+      "untitled": "闹钟"
+    },
+    "apps": {
+      "empty": "今天还没有前台记录。",
+      "open": "去统计",
+      "title": "今日应用"
+    },
+    "error": "仪表盘加载失败。",
+    "focus": {
+      "average": "近 7 天日均 {{value}}",
+      "completed": "今日完成 {{count}} 个任务",
+      "title": "今日专注"
+    },
+    "hours": "小时",
+    "loading": "加载中…",
+    "minutes": "分",
+    "pomodoro": {
+      "idle": "未开始",
+      "open": "去计时",
+      "running": "进行中",
+      "title": "番茄钟"
+    },
+    "pulse": {
+      "label": "最近 7 天的专注时长",
+      "point": "{{day}} · {{minutes}} 分钟"
+    },
+    "rate": {
+      "counts": "{{total}} 个任务中已完成 {{completed}} 个",
+      "empty": "今天还没有任务。",
+      "title": "今日完成率",
+      "value": "{{percent}}%"
+    },
+    "todos": {
+      "completed": "已完成 {{count}} 个",
+      "open": "去待办",
+      "remaining": "项待办",
+      "title": "待办"
+    }
+  },
   "events": {
     "error": "事件流加载失败。",
     "loading": "加载中…",
@@ -148,9 +194,6 @@
       "pomodoro": "番茄钟阶段结束，但系统拦截了通知。",
       "test": "系统通知不可用，这条改在应用内显示。"
     }
-  },
-  "pages": {
-    "empty": "暂无内容。"
   },
   "pomodoro": {
     "error": "计时器无法连接后端。",
