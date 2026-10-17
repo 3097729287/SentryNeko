@@ -214,7 +214,7 @@ SentryNeko/
 │       ├── appEvent.ts               # Foreground app event types
 │       └── i18n.ts                   # i18n type definitions
 │
-├── docs/                             # Documentation
+├── docs/                             # Documentation (English + Simplified Chinese)
 │   ├── commands.md                   # Tauri command reference
 │   ├── events.md                     # Tauri event definitions
 │   ├── i18n.md                       # i18n guide
@@ -256,8 +256,7 @@ SentryNeko/
 # 1. Install frontend dependencies
 pnpm install
 
-# 2. Generate the application icons (re-run after editing src-tauri/app-icon.svg;
-#    generated files are not tracked, only the SVG source is)
+# 2. Generate the application icons (they are generated artifacts, only app-icon.svg is tracked)
 pnpm icons
 
 # 3. Initialize the local database (optional, tables are created on first run)
@@ -284,6 +283,8 @@ pnpm tauri build
 | [docs/i18n.md](docs/i18n.md) | How copy is organized and how to add a language |
 | [TODO.md](TODO.md) | Task breakdown, priorities and dependencies |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Branching, commit conventions and the definition of done |
+
+> Files under `docs/` are bilingual: each one has a Simplified Chinese counterpart named `<name>.zh-CN.md`, for example [docs/commands.zh-CN.md](docs/commands.zh-CN.md).
 
 ## License
 

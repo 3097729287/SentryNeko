@@ -62,7 +62,7 @@ test(heatmap): cover week boundary aggregation
 - [ ] `cargo test` 通过；新增的纯逻辑（聚合、时间分桶、调度）需带测试。
 - [ ] `pnpm lint`、`pnpm build` 通过。前端 TypeScript 为严格模式：不使用 `any`，不加无说明的 `@ts-ignore`。
 - [ ] 用户可触发的路径上不使用 `unwrap()` / `expect()`，一律返回统一错误响应。
-- [ ] Tauri 命令返回 `utils/response.rs` 的统一结构，签名同步写入 `docs/commands.md`。
+- [ ] Tauri 命令返回 `utils/response.rs` 的统一结构，签名同步写入 `docs/commands.md` + `docs/commands.zh-CN.md`。
 - [ ] 新增 Tauri 事件在 `docs/events.md` 中记录负载类型与触发时机。
 - [ ] 所有面向用户的文案同时存在于 `src/i18n/locales/zh-CN.json` 与 `en-US.json`；后端错误以错误码返回并在 `services/i18n.rs` 中映射。界面不得硬编码文案。
 - [ ] 行为、范围或优先级有变化时，同一提交内更新 `README.md` / `TODO.md` / `docs/*.md` 的对应章节。
@@ -105,14 +105,14 @@ pnpm build
 
 | 改动内容 | 需要更新 |
 | --- | --- |
-| 新增或修改 Tauri 命令 | `docs/commands.md` |
-| 新增或修改 Tauri 事件 | `docs/events.md` |
-| 文案、locale key、语言列表 | `docs/i18n.md` |
-| 分层、数据流、模块职责 | `docs/architecture.md` |
+| 新增或修改 Tauri 命令 | `docs/commands.md` + `docs/commands.zh-CN.md` |
+| 新增或修改 Tauri 事件 | `docs/events.md` + `docs/events.zh-CN.md` |
+| 文案、locale key、语言列表 | `docs/i18n.md` + `docs/i18n.zh-CN.md` |
+| 分层、数据流、模块职责 | `docs/architecture.md` + `docs/architecture.zh-CN.md` |
 | 范围、优先级、里程碑 | `TODO.md` + `TODO.zh-CN.md` |
 | 功能列表、搭建步骤、目录结构 | `README.md` + `README.zh-CN.md` |
 
-**双语约定：** README、TODO、CONTRIBUTING 均维护英文（默认）与简体中文两份。改动其中一份时，必须在同一提交内更新另一份，并保持两份文件结构一致——同样的标题、同样的顺序、同样的表格。
+**双语约定：** README、TODO、CONTRIBUTING 以及 `docs/` 下的每个文件均维护英文（默认）与简体中文两份——`<name>.md` 与 `<name>.zh-CN.md`。改动其中一份时，必须在同一提交内更新另一份，并保持两份文件结构一致——同样的标题、同样的顺序、同样的表格。
 
 ## 反馈问题
 

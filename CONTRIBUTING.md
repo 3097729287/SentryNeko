@@ -62,7 +62,7 @@ A change is ready for review when every box is ticked:
 - [ ] `cargo test` passes; new pure logic (aggregation, time bucketing, scheduling) comes with tests.
 - [ ] `pnpm lint` and `pnpm build` pass. In the frontend, TypeScript is strict — no `any`, no `@ts-ignore` without a comment explaining why.
 - [ ] No `unwrap()` / `expect()` on any path a user can trigger; return the unified error response instead.
-- [ ] Tauri commands return the shared envelope from `utils/response.rs`; their signature is added to `docs/commands.md`.
+- [ ] Tauri commands return the shared envelope from `utils/response.rs`; their signature is added to `docs/commands.md` + `docs/commands.zh-CN.md`.
 - [ ] New Tauri events are documented in `docs/events.md` with payload type and trigger point.
 - [ ] Every user-visible string exists in both `src/i18n/locales/zh-CN.json` and `en-US.json`; backend errors are returned as codes mapped in `services/i18n.rs`. No hardcoded UI copy.
 - [ ] Behavior, scope or priority changed → the relevant section of `README.md` / `TODO.md` / `docs/*.md` is updated in the same commit.
@@ -105,14 +105,14 @@ Anything touching foreground-app collection, notifications, tray behavior or aut
 
 | Change | Update |
 | --- | --- |
-| New or changed Tauri command | `docs/commands.md` |
-| New or changed Tauri event | `docs/events.md` |
-| Copy, locale key, language list | `docs/i18n.md` |
-| Layer, data flow, module responsibility | `docs/architecture.md` |
+| New or changed Tauri command | `docs/commands.md` + `docs/commands.zh-CN.md` |
+| New or changed Tauri event | `docs/events.md` + `docs/events.zh-CN.md` |
+| Copy, locale key, language list | `docs/i18n.md` + `docs/i18n.zh-CN.md` |
+| Layer, data flow, module responsibility | `docs/architecture.md` + `docs/architecture.zh-CN.md` |
 | Scope, priority, milestone | `TODO.md` + `TODO.zh-CN.md` |
 | Feature list, setup steps, structure | `README.md` + `README.zh-CN.md` |
 
-**Bilingual policy:** README, TODO and CONTRIBUTING are maintained in both English (default) and Simplified Chinese. When you change one, update its counterpart in the same commit and keep the two files structurally identical — same headings, same order, same tables.
+**Bilingual policy:** README, TODO, CONTRIBUTING and every file under `docs/` are maintained in both English (default) and Simplified Chinese — `<name>.md` and `<name>.zh-CN.md`. When you change one, update its counterpart in the same commit and keep the two files structurally identical — same headings, same order, same tables.
 
 ## Reporting bugs
 

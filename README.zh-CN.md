@@ -214,7 +214,7 @@ SentryNeko/
 │       ├── appEvent.ts               # 前台应用事件类型
 │       └── i18n.ts                   # 国际化类型定义
 │
-├── docs/                             # 文档
+├── docs/                             # 文档（中英双语）
 │   ├── commands.md                   # Tauri 命令文档
 │   ├── events.md                     # Tauri 事件定义文档
 │   ├── i18n.md                       # 国际化说明文档
@@ -256,8 +256,7 @@ SentryNeko/
 # 1. 安装前端依赖
 pnpm install
 
-# 2. 生成应用图标（修改 src-tauri/app-icon.svg 后重新执行；
-#    图标为生成产物不入库，仓库只保留 SVG 源文件）
+# 2. 生成应用图标（图标为生成产物，仓库只保留 app-icon.svg 源文件）
 pnpm icons
 
 # 3. 初始化本地数据库（可选，首次运行会自动建表）
@@ -278,12 +277,14 @@ pnpm tauri build
 
 | 文档 | 内容 |
 | --- | --- |
-| [docs/architecture.md](docs/architecture.md) | 分层架构、数据流与模块职责 |
-| [docs/commands.md](docs/commands.md) | Tauri 命令签名与返回格式 |
-| [docs/events.md](docs/events.md) | Tauri 事件定义与触发时机 |
-| [docs/i18n.md](docs/i18n.md) | 文案组织与新增语言步骤 |
+| [docs/architecture.zh-CN.md](docs/architecture.zh-CN.md) | 分层架构、数据流与模块职责 |
+| [docs/commands.zh-CN.md](docs/commands.zh-CN.md) | Tauri 命令签名与返回格式 |
+| [docs/events.zh-CN.md](docs/events.zh-CN.md) | Tauri 事件定义与触发时机 |
+| [docs/i18n.zh-CN.md](docs/i18n.zh-CN.md) | 文案组织与新增语言步骤 |
 | [TODO.zh-CN.md](TODO.zh-CN.md) | 功能拆解、优先级与依赖关系 |
 | [CONTRIBUTING.zh-CN.md](CONTRIBUTING.zh-CN.md) | 分支约定、提交规范与完成标准 |
+
+> `docs/` 下的文档均为双语：每份都有一个英文默认版 `<name>.md` 和对应的简体中文版 `<name>.zh-CN.md`，本表指向中文版。
 
 ## 许可证
 
