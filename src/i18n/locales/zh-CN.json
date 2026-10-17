@@ -1,5 +1,9 @@
 {
   "app": {
-    "name": "SentryNeko"
+    "name": "SentryNeko",
+    "tagline": "记录你的专注与待办"
+  },
+  "language": {
+    "label": "语言"
   }
 }

@@ -224,7 +224,8 @@ SentryNeko/
 ├── scripts/
 │   ├── init_db.ps1                   # 初始化数据库脚本（PowerShell）
 │   ├── dev.ps1                       # 一键启动开发环境（PowerShell）
-│   └── install_collector.ps1         # 安装系统采集器（注册开机自启/权限配置）
+│   ├── install_collector.ps1         # 安装系统采集器（注册开机自启/权限配置）
+│   └── check_locales.mjs             # locale 键集合校验，由 `pnpm lint` 执行
 │
 ├── package.json
 ├── pnpm-lock.yaml

@@ -83,9 +83,11 @@ Rules (also enforced by `CONTRIBUTING.md`):
 
 ## Command index
 
-No commands are registered yet — the first one arrives with T04/T05, and every
-command added from then on is listed here.
+Every command the frontend may call is listed here. The language pair is the interface behind
+`src/i18n/`: `get_language` answers with the tag stored in `config.json`, and `set_language`
+rejects anything outside `Language::ALL` with `INVALID_INPUT`.
 
 | Command | Module | Arguments | Returns | Task |
 | --- | --- | --- | --- | --- |
-| — | — | — | — | — |
+| `get_language` | `settings_commands` | — | `String` (BCP-47 tag) | T07 |
+| `set_language` | `settings_commands` | `language: String` | `String` (tag in force) | T07 |

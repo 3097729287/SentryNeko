@@ -75,8 +75,10 @@ fn toggle(id: i64) -> ApiResult<Todo> {
 
 ## 命令索引
 
-目前还没有注册任何命令——第一条会随 T04/T05 到来，此后新增的命令都会列在这里。
+前端可以调用的命令都列在这里。语言这两个是 `src/i18n/` 的后端接口：`get_language` 返回
+`config.json` 中的标签，`set_language` 对 `Language::ALL` 之外的标签返回 `INVALID_INPUT`。
 
 | 命令 | 模块 | 参数 | 返回 | 任务 |
 | --- | --- | --- | --- | --- |
-| — | — | — | — | — |
+| `get_language` | `settings_commands` | — | `String`（BCP-47 标签） | T07 |
+| `set_language` | `settings_commands` | `language: String` | `String`（生效后的标签） | T07 |

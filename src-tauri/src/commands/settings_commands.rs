@@ -1,1 +1,92 @@
 //! Settings commands: read and update persisted user settings.
+
+use tauri::State;
+
+use crate::config::Config;
+use crate::services::i18n::Language;
+use crate::utils::response::{ApiError, ApiResponse, ApiResult};
+
+/// Reads the language stored in `config.json`.
+#[tauri::command]
+pub fn get_language(config: State<'_, Config>) -> ApiResponse<String> {
+    read_language(&config).into()
+}
+
+/// Stores `language` in `config.json` and answers with the tag now in force.
+#[tauri::command]
+pub fn set_language(language: String, config: State<'_, Config>) -> ApiResponse<String> {
+    write_language(&config, &language).into()
+}
+
+fn read_language(config: &Config) -> ApiResult<String> {
+    config.language().map(|language| language.code().to_owned())
+}
+
+fn write_language(config: &Config, tag: &str) -> ApiResult<String> {
+    let language = Language::from_code(tag).ok_or_else(|| {
+        ApiError::invalid_input(format!("unknown language tag: {tag}"))
+            .with_details(format!("expected one of: {}", known_tags()))
+    })?;
+
+    config.set_language(language)?;
+
+    Ok(language.code().to_owned())
+}
+
+fn known_tags() -> String {
+    Language::ALL
+        .iter()
+        .map(|language| language.code())
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::utils::response::ApiCode;
+    use tempfile::TempDir;
+
+    fn temporary_directory() -> TempDir {
+        tempfile::tempdir().expect("a temporary directory is created")
+    }
+
+    #[test]
+    fn get_language_reports_the_stored_tag() {
+        let directory = temporary_directory();
+        let config = Config::open(directory.path()).expect("the configuration is created");
+
+        assert_eq!(read_language(&config).expect("language"), "en-US");
+
+        write_language(&config, "zh-CN").expect("the tag is written");
+        assert_eq!(read_language(&config).expect("language"), "zh-CN");
+    }
+
+    #[test]
+    fn set_language_rejects_unknown_tags() {
+        let directory = temporary_directory();
+        let config = Config::open(directory.path()).expect("the configuration is created");
+
+        let error = write_language(&config, "ja-JP").expect_err("the tag is rejected");
+
+        assert_eq!(error.code(), ApiCode::InvalidInput);
+        assert!(
+            error.details().expect("details").contains("zh-CN"),
+            "details list the known tags: {error:?}"
+        );
+        assert_eq!(read_language(&config).expect("language"), "en-US");
+    }
+
+    #[test]
+    fn the_choice_survives_a_restart() {
+        let directory = temporary_directory();
+
+        {
+            let config = Config::open(directory.path()).expect("the configuration is created");
+            write_language(&config, "zh-CN").expect("the tag is written");
+        }
+
+        let reopened = Config::open(directory.path()).expect("the configuration is read back");
+        assert_eq!(read_language(&reopened).expect("language"), "zh-CN");
+    }
+}

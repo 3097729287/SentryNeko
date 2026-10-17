@@ -1,5 +1,9 @@
 {
   "app": {
-    "name": "SentryNeko"
+    "name": "SentryNeko",
+    "tagline": "Track your focus and your todos"
+  },
+  "language": {
+    "label": "Language"
   }
 }

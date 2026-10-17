@@ -64,7 +64,7 @@ A change is ready for review when every box is ticked:
 - [ ] No `unwrap()` / `expect()` on any path a user can trigger; return the unified error response instead.
 - [ ] Tauri commands return the shared envelope from `utils/response.rs`; their signature is added to `docs/commands.md` + `docs/commands.zh-CN.md`.
 - [ ] New Tauri events are documented in `docs/events.md` with payload type and trigger point.
-- [ ] Every user-visible string exists in both `src/i18n/locales/zh-CN.json` and `en-US.json`; backend errors are returned as codes mapped in `services/i18n.rs`. No hardcoded UI copy.
+- [ ] Every user-visible string exists in both `src/i18n/locales/zh-CN.json` and `en-US.json` (`pnpm lint` checks that the key sets match); backend errors are returned as codes mapped in `services/i18n.rs`. No hardcoded UI copy.
 - [ ] Behavior, scope or priority changed → the relevant section of `README.md` / `TODO.md` / `docs/*.md` is updated in the same commit.
 - [ ] No debug prints, commented-out code, or in-code TODO markers. Open work belongs in TODO.md.
 - [ ] No cross-platform abstraction was introduced; all Win32 usage goes through `utils/windows.rs`.

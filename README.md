@@ -224,7 +224,8 @@ SentryNeko/
 ├── scripts/
 │   ├── init_db.ps1                   # Database initialization script (PowerShell)
 │   ├── dev.ps1                       # One-command dev environment (PowerShell)
-│   └── install_collector.ps1         # Install the system collector (auto-start / permissions)
+│   ├── install_collector.ps1         # Install the system collector (auto-start / permissions)
+│   └── check_locales.mjs             # Locale key parity check, run by `pnpm lint`
 │
 ├── package.json
 ├── pnpm-lock.yaml

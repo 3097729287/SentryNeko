@@ -64,7 +64,7 @@ test(heatmap): cover week boundary aggregation
 - [ ] 用户可触发的路径上不使用 `unwrap()` / `expect()`，一律返回统一错误响应。
 - [ ] Tauri 命令返回 `utils/response.rs` 的统一结构，签名同步写入 `docs/commands.md` + `docs/commands.zh-CN.md`。
 - [ ] 新增 Tauri 事件在 `docs/events.md` 中记录负载类型与触发时机。
-- [ ] 所有面向用户的文案同时存在于 `src/i18n/locales/zh-CN.json` 与 `en-US.json`；后端错误以错误码返回并在 `services/i18n.rs` 中映射。界面不得硬编码文案。
+- [ ] 所有面向用户的文案同时存在于 `src/i18n/locales/zh-CN.json` 与 `en-US.json`（键集合一致性由 `pnpm lint` 校验）；后端错误以错误码返回并在 `services/i18n.rs` 中映射。界面不得硬编码文案。
 - [ ] 行为、范围或优先级有变化时，同一提交内更新 `README.md` / `TODO.md` / `docs/*.md` 的对应章节。
 - [ ] 不留调试输出、注释掉的代码或代码内 TODO 标记；待办事项写进 TODO.md。
 - [ ] 不引入跨平台抽象；所有 Win32 调用经 `utils/windows.rs`。

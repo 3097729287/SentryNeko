@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "lint": "tsc --noEmit",
+    "lint": "tsc --noEmit && node scripts/check_locales.mjs",
     "icons": "tauri icon src-tauri/app-icon.svg",
     "tauri": "tauri"
   },
