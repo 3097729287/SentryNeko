@@ -22,3 +22,38 @@ rustc-ice-*.txt
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
+
+# Node / React
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+.npm/
+
+# React build artifacts
+build/
+dist/
+dist-ssr/
+out/
+*.tsbuildinfo
+
+# Caches
+.eslintcache
+.cache/
+.parcel-cache/
+.vite/
+
+# Env & local overrides
+.env
+.env.local
+.env.*.local
+
+# Coverage & test output
+coverage/
+.nyc_output/
+
+# Editors / OS
+.DS_Store
+Thumbs.db
