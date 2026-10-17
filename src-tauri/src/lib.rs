@@ -90,6 +90,7 @@ pub fn run() {
             pomodoro_commands::list_pomodoro_sessions,
             system_commands::get_uptime,
             app_event_commands::app_usage,
+            app_event_commands::list_app_events,
             heatmap_commands::heatmap,
             alarm_commands::list_alarms,
             alarm_commands::add_alarm,

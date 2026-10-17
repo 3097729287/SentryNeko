@@ -39,8 +39,9 @@ a new event: add the new name, migrate the listeners, then drop the old one.
 | `alarm-triggered` | `Alarm` — `{ id, label, hour, minute, repeatDays, enabled, createdAt }` | `services/scheduler.rs` reached the alarm's local time: the tone started and, unless the stored defaults say `inApp`, the toast (or its `notification-fallback`) was handed over first. A one-off is already switched off, so the payload carries `enabled: false` | T17, T18 |
 
 The shell (`App.tsx`) subscribes to `app-switch` once and hands every push to
-`stores/appEventStore.ts`, which keeps the newest rows; `EventsPage` renders that tail, so switching
-apps updates the list while the page is open and keeps it current across page changes. It also
+`stores/appEventStore.ts`, which keeps the newest rows. `EventsPage` pages through the database and
+puts that tail on top, so a switch shows up while the page is open and older history stays
+browsable. It also
 renders `AlarmRinging`, which keeps the newest `alarm-triggered` push on screen for a minute or
 until dismissed: a toast can be missed while the window is in the background, and the payload is
 enough to say which alarm it was.

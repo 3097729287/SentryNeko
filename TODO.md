@@ -60,7 +60,7 @@ Status legend: `[ ]` not started　`[~]` in progress　`[x]` done　`[!]` blocke
 | [x] | T20 | App usage stats: aggregation per app + Top ranking | T12 | Attribution rules defined (merge adjacent records, ignore idle/lock screen); ranking supports time-range switching |
 | [x] | T21 | Focus trends: daily/weekly/monthly trend charts | T11, T19 | Granularity switchable; empty-data placeholder state present |
 | [x] | T22 | Task completion rate | T10 | Rate definition (all-time vs. today) switchable and documented |
-| [ ] | T23 | Event stream page (`EventsPage`) | T15 | Browse foreground app events newest-first with paging |
+| [x] | T23 | Event stream page (`EventsPage`) | T15 | Browse foreground app events newest-first with paging |
 | [ ] | T24 | Analytics page (`AnalyticsPage`) | T20, T21, T22 | Aggregates the stats above; page-level loading and error states implemented |
 | [x] | T25 | System tray: stay resident when minimized + context menu | T02, T11 | Menu offers start Pomodoro, today's stats, show/hide window; closing the main window does not quit the app |
 | [x] | T26 | Auto-start with Windows (registry / Task Scheduler) | T25 | A settings switch writes `HKCU\...\Run` for the running executable; switching it on twice leaves one entry, switching it off removes it, and a login start waits in the tray |

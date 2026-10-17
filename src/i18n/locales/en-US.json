@@ -96,19 +96,16 @@
     "toggle": "Start SentryNeko when I sign in"
   },
   "events": {
+    "error": "The event stream could not be loaded.",
+    "loading": "Loading…",
     "log": {
-      "empty": "Nothing has come in yet — switch to another app.",
-      "title": "Live foreground switches",
+      "empty": "No foreground events recorded yet.",
+      "title": "Foreground app events",
       "untitled": "(no window title)"
     },
-    "pomodoro": {
-      "finished": "Phase finished: {{phase}}",
-      "none": "No pomodoro phase has finished yet."
-    },
-    "test": {
-      "send": "Send a test event",
-      "waiting": "No test event received yet",
-      "received": "Received test event #{{sequence}}"
+    "more": {
+      "label": "Load older events",
+      "loading": "Loading…"
     }
   },
   "heatmap": {

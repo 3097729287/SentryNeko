@@ -96,19 +96,16 @@
     "toggle": "登录时自动启动 SentryNeko"
   },
   "events": {
+    "error": "事件流加载失败。",
+    "loading": "加载中…",
     "log": {
-      "empty": "还没有收到事件——切到别的应用试试。",
-      "title": "实时前台切换",
+      "empty": "还没有记录到前台应用事件。",
+      "title": "前台应用事件",
       "untitled": "（无窗口标题）"
     },
-    "pomodoro": {
-      "finished": "阶段已结束：{{phase}}",
-      "none": "尚未收到番茄钟阶段结束事件。"
-    },
-    "test": {
-      "send": "发送测试事件",
-      "waiting": "尚未收到测试事件",
-      "received": "已收到测试事件 #{{sequence}}"
+    "more": {
+      "label": "加载更早的事件",
+      "loading": "加载中…"
     }
   },
   "heatmap": {

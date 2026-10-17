@@ -3,7 +3,7 @@
 use tauri::State;
 
 use crate::db::connection::Db;
-use crate::models::app_event::{AppEvent, AppUsage};
+use crate::models::app_event::{AppEvent, AppEventPage, AppUsage};
 use crate::utils::response::{ApiResponse, ApiResult};
 use crate::utils::time;
 
@@ -11,6 +11,16 @@ use crate::utils::time;
 #[tauri::command]
 pub fn app_usage(db: State<'_, Db>, from: i64, to: i64, limit: i64) -> ApiResponse<Vec<AppUsage>> {
     usage(&db, from, to, limit).into()
+}
+
+/// Returns one page of foreground events, newest first; `before` pages towards older rows.
+#[tauri::command]
+pub fn list_app_events(
+    db: State<'_, Db>,
+    before: Option<i64>,
+    limit: i64,
+) -> ApiResponse<AppEventPage> {
+    AppEvent::page(&db, before, limit).into()
 }
 
 fn usage(db: &Db, from: i64, to: i64, limit: i64) -> ApiResult<Vec<AppUsage>> {

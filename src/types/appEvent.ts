@@ -13,6 +13,14 @@ export interface AppEvent {
   endedAt: number | null;
 }
 
+/** One page of the event stream, mirrored from `models::app_event::AppEventPage`. */
+export interface AppEventPage {
+  /** Newest first. */
+  events: readonly AppEvent[];
+  /** Whether rows older than the last one of `events` exist. */
+  more: boolean;
+}
+
 /** One line of the usage ranking, mirrored from `models::app_event::AppUsage`. */
 export interface AppUsage {
   appName: string;
