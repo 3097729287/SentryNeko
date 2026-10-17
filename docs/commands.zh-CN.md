@@ -95,7 +95,13 @@ fn toggle(id: i64) -> ApiResult<Todo> {
 预设算好（「今天」从本地零点起），后端只负责把存储的行裁到窗口内、把窗口中再次出现的应用合并，
 并丢掉锁屏与登录界面外壳。热力图这一组回答图表要什么：`heatmap` 接收窗口和 `granularity`
 （`day`、`week`、`month`），按本地日、周一或月初返回每个桶——空桶也返回——桶里带在该处开始的
-专注秒数和在该处完成的任务数；规则写在 `docs/database.md`。
+专注秒数和在该处完成的任务数；规则写在 `docs/database.md`。闹钟这一组维护调度器盯着的那批提醒：
+`list_alarms`、`add_alarm`、`update_alarm`、`set_alarm_enabled`、`delete_alarm`。`hour` 和
+`minute` 是本地墙钟时间，`repeatDays` 是星期掩码（`0` 表示单次）；这里没有任何命令会响铃——
+真正响铃的是 `services/scheduler.rs`，跑在拥有时钟的那个线程上，所以页面开没开都不影响闹钟。
+闹钟怎么响是设置而不是列，所以和时长放在一起：`get_alarm_defaults` 与 `set_alarm_defaults`
+读写响铃时长和通知方式，调度器在响的那一刻读取它们——改一次默认值，所有闹钟一起变，而不只是下
+一个。
 
 | 命令 | 模块 | 参数 | 返回 | 任务 |
 | --- | --- | --- | --- | --- |
@@ -125,3 +131,10 @@ fn toggle(id: i64) -> ApiResult<Todo> {
 | `get_uptime` | `system_commands` | — | `Uptime`（`{ bootAt, todaySeconds, totalSeconds }`） | T13 |
 | `app_usage` | `app_event_commands` | `from: i64`、`to: i64`、`limit: i64` | `AppUsage[]`（`{ appName, seconds }`） | T20 |
 | `heatmap` | `heatmap_commands` | `from: i64`、`to: i64`、`granularity: "day" \| "week" \| "month"` | `HeatmapBucket[]`（`{ start, focusSeconds, completedTasks }`） | T19 |
+| `list_alarms` | `alarm_commands` | — | `Alarm[]`（`{ id, label, hour, minute, repeatDays, enabled, createdAt }`） | T17 |
+| `add_alarm` | `alarm_commands` | `label: String`、`hour: i64`、`minute: i64`、`repeatDays: i64` | `Alarm` | T17 |
+| `update_alarm` | `alarm_commands` | `id: i64`、`label: String`、`hour: i64`、`minute: i64`、`repeatDays: i64` | `Alarm` | T17 |
+| `set_alarm_enabled` | `alarm_commands` | `id: i64`、`enabled: bool` | `Alarm` | T17 |
+| `delete_alarm` | `alarm_commands` | `id: i64` | — | T17 |
+| `get_alarm_defaults` | `settings_commands` | — | `AlarmDefaults`（`{ ringSeconds, method }`） | T18 |
+| `set_alarm_defaults` | `settings_commands` | `defaults: AlarmDefaults` | `AlarmDefaults` | T18 |

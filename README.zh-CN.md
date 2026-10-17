@@ -181,7 +181,7 @@ SentryNeko/
 │   │   ├── useTodos.ts               # 待办数据 Hook
 │   │   ├── usePomodoro.ts            # 番茄钟 Hook
 │   │   ├── useHeatmap.ts             # 热力图数据 Hook
-│   │   ├── useAlarm.ts               # 闹钟 Hook
+│   │   ├── useAlarms.ts              # 闹钟 Hook
 │   │   ├── useAppEvents.ts           # 前台应用事件 Hook
 │   │   ├── useI18n.ts                # 语言切换 Hook
 │   │   ├── useTauriEvent.ts          # Tauri 事件监听封装

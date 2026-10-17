@@ -181,7 +181,7 @@ SentryNeko/
 │   │   ├── useTodos.ts               # Todo data hook
 │   │   ├── usePomodoro.ts            # Pomodoro hook
 │   │   ├── useHeatmap.ts             # Heatmap data hook
-│   │   ├── useAlarm.ts               # Alarm hook
+│   │   ├── useAlarms.ts              # Alarm hook
 │   │   ├── useAppEvents.ts           # Foreground app event hook
 │   │   ├── useI18n.ts                # Language switching hook
 │   │   ├── useTauriEvent.ts          # Tauri event listener wrapper

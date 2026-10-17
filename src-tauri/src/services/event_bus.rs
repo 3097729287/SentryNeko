@@ -6,6 +6,7 @@ use std::sync::Arc;
 use serde::Serialize;
 use tauri::{AppHandle, Emitter};
 
+use crate::models::alarm::Alarm;
 use crate::models::app_event::AppEvent;
 use crate::models::pomodoro::PomodoroSession;
 use crate::services::notification::NotificationKind;
@@ -21,6 +22,8 @@ pub mod names {
     pub const APP_SWITCH: &str = "app-switch";
     /// Pushed when a pomodoro session is closed, carrying the stored row.
     pub const POMODORO_FINISHED: &str = "pomodoro-finished";
+    /// Pushed when an alarm goes off, carrying the row it belongs to.
+    pub const ALARM_TRIGGERED: &str = "alarm-triggered";
 }
 
 /// Payload of [`names::TEST_EVENT`].
@@ -148,6 +151,12 @@ impl EventBus {
         self.sink
             .emit(names::POMODORO_FINISHED, serde_json::to_value(session)?)
     }
+
+    /// Pushes [`names::ALARM_TRIGGERED`] with the alarm that just went off.
+    pub fn emit_alarm_triggered(&self, alarm: &Alarm) -> ApiResult<()> {
+        self.sink
+            .emit(names::ALARM_TRIGGERED, serde_json::to_value(alarm)?)
+    }
 }
 
 #[cfg(test)]
@@ -226,6 +235,31 @@ mod tests {
         assert_eq!(pushed[0].1["appName"], serde_json::json!("code"));
         assert_eq!(pushed[0].1["windowTitle"], serde_json::json!("main.rs"));
         assert_eq!(pushed[0].1["endedAt"], serde_json::json!(null));
+    }
+
+    #[test]
+    fn a_triggered_alarm_carries_its_row() {
+        let recorder = Recorder::default();
+        let bus = EventBus::new(recorder.clone());
+
+        bus.emit_alarm_triggered(&Alarm {
+            id: 5,
+            label: "stand up".to_owned(),
+            hour: 9,
+            minute: 30,
+            repeat_days: 0b0001_1111,
+            enabled: true,
+            created_at: 1_700_000_000,
+        })
+        .expect("pushed");
+
+        let pushed = recorder.pushed();
+        assert_eq!(pushed[0].0, names::ALARM_TRIGGERED);
+        assert_eq!(pushed[0].1["id"], serde_json::json!(5));
+        assert_eq!(pushed[0].1["label"], serde_json::json!("stand up"));
+        assert_eq!(pushed[0].1["hour"], serde_json::json!(9));
+        assert_eq!(pushed[0].1["minute"], serde_json::json!(30));
+        assert_eq!(pushed[0].1["repeatDays"], serde_json::json!(31));
     }
 
     #[test]

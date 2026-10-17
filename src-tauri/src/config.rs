@@ -1,7 +1,7 @@
 //! Application configuration: database location, active language and user settings.
 
 use std::path::{Path, PathBuf};
-use std::sync::RwLock;
+use std::sync::{Arc, RwLock};
 
 use serde::{Deserialize, Serialize};
 
@@ -30,10 +30,13 @@ struct AppConfig {
 }
 
 /// Loads, holds and rewrites `config.json`; share it through Tauri managed state.
-#[derive(Debug)]
+///
+/// Cloning hands out another handle to the same file and the same value, so a background service
+/// that needs the interface language reads the one the settings page writes.
+#[derive(Debug, Clone)]
 pub struct Config {
-    path: PathBuf,
-    current: RwLock<AppConfig>,
+    path: Arc<PathBuf>,
+    current: Arc<RwLock<AppConfig>>,
 }
 
 impl Config {
@@ -53,8 +56,8 @@ impl Config {
         };
 
         let config = Self {
-            path,
-            current: RwLock::new(stored.resolve(directory)),
+            path: Arc::new(path),
+            current: Arc::new(RwLock::new(stored.resolve(directory))),
         };
 
         if !exists {
@@ -115,7 +118,7 @@ impl Config {
         let temporary = self.path.with_extension("json.tmp");
         std::fs::write(&temporary, format!("{contents}\n"))
             .map_err(|error| io_error("write", &temporary, &error))?;
-        std::fs::rename(&temporary, &self.path).map_err(|error| {
+        std::fs::rename(&temporary, self.path.as_path()).map_err(|error| {
             let _ = std::fs::remove_file(&temporary);
             io_error("replace", &self.path, &error)
         })
