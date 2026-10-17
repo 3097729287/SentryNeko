@@ -43,6 +43,18 @@
     }
   },
   "analytics": {
+    "completion": {
+      "counts": "{{total}} 个任务中已完成 {{completed}} 个",
+      "empty": "这个口径下还没有任务。",
+      "error": "完成率加载失败。",
+      "rate": "{{percent}}%",
+      "scope": {
+        "all": "含历史",
+        "label": "统计口径",
+        "today": "仅当日"
+      },
+      "title": "任务完成率"
+    },
     "loading": "加载中…",
     "range": {
       "label": "时间范围",

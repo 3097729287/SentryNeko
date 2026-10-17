@@ -5,11 +5,14 @@ import { useState } from "react";
 import { FocusTrendChart } from "../components/FocusTrendChart";
 import { SegmentedControl } from "../components/ui/SegmentedControl";
 import { useAppUsage } from "../hooks/useAppEvents";
+import { useCompletionRate } from "../hooks/useCompletionRate";
 import { useFocusTrend } from "../hooks/useFocusTrend";
 import { useI18n } from "../hooks/useI18n";
 import { USAGE_RANGES } from "../types/appEvent";
 import type { UsageRange } from "../types/appEvent";
 import type { HeatmapGranularity } from "../types/heatmap";
+import { COMPLETION_SCOPES } from "../types/todo";
+import type { CompletionScope } from "../types/todo";
 import { TREND_GRANULARITIES } from "../types/trend";
 
 /** The copy a duration is written with, so the usage ranking and the trend share one formatter. */
@@ -40,7 +43,13 @@ export function AnalyticsPage() {
   const { t } = useI18n();
   const [range, setRange] = useState<UsageRange>("today");
   const [granularity, setGranularity] = useState<HeatmapGranularity>("day");
+  const [scope, setScope] = useState<CompletionScope>("all");
   const { error, loading, usage } = useAppUsage(range);
+  const {
+    completion,
+    error: completionError,
+    loading: completionLoading,
+  } = useCompletionRate(scope);
   const {
     buckets,
     error: trendError,
@@ -48,6 +57,8 @@ export function AnalyticsPage() {
     totalSeconds,
   } = useFocusTrend(granularity);
   const peak = usage[0]?.seconds ?? 0;
+  const percent =
+    completion.total === 0 ? 0 : Math.round((completion.completed / completion.total) * 100);
 
   /** Hours are only shown once there are any, so a short span reads as plain minutes. */
   const duration = (seconds: number, keys: DurationKeys): string => {
@@ -85,13 +96,50 @@ export function AnalyticsPage() {
                 <span className="usage-app" title={entry.appName}>
                   {entry.appName}
                 </span>
-                <span className="usage-bar">
+                <span className="meter">
                   <span style={{ width: `${Math.round((entry.seconds / peak) * 100)}%` }} />
                 </span>
                 <span className="usage-time">{duration(entry.seconds, USAGE_DURATION)}</span>
               </li>
             ))}
           </ul>
+        ) : null}
+      </section>
+      <section className="analytics-section">
+        <div className="analytics-head">
+          <h2>{t("analytics.completion.title")}</h2>
+          <SegmentedControl
+            label={t("analytics.completion.scope.label")}
+            onChange={setScope}
+            options={COMPLETION_SCOPES.map((value) => ({
+              label: t(`analytics.completion.scope.${value}`),
+              value,
+            }))}
+            value={scope}
+          />
+        </div>
+        {completionLoading ? <p className="muted">{t("analytics.loading")}</p> : null}
+        {completionError !== null ? <p className="error">{t("analytics.completion.error")}</p> : null}
+        {!completionLoading && completionError === null && completion.total === 0 ? (
+          <p className="muted">{t("analytics.completion.empty")}</p>
+        ) : null}
+        {!completionLoading && completionError === null && completion.total > 0 ? (
+          <>
+            <p className="completion-rate">
+              <span className="completion-value">
+                {t("analytics.completion.rate", { percent })}
+              </span>
+              <span className="muted">
+                {t("analytics.completion.counts", {
+                  completed: completion.completed,
+                  total: completion.total,
+                })}
+              </span>
+            </p>
+            <span className="meter" aria-hidden="true">
+              <span style={{ width: `${percent}%` }} />
+            </span>
+          </>
         ) : null}
       </section>
       <section className="analytics-section">

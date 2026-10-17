@@ -43,6 +43,18 @@
     }
   },
   "analytics": {
+    "completion": {
+      "counts": "{{completed}} of {{total}} tasks done",
+      "empty": "No tasks in this scope yet.",
+      "error": "The completion rate could not be loaded.",
+      "rate": "{{percent}}%",
+      "scope": {
+        "all": "All time",
+        "label": "Scope",
+        "today": "Today"
+      },
+      "title": "Task completion"
+    },
     "loading": "Loading…",
     "range": {
       "label": "Time range",

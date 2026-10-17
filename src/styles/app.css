@@ -1056,7 +1056,7 @@ p {
   white-space: nowrap;
 }
 
-.usage-bar {
+.meter {
   display: block;
   overflow: hidden;
   height: 8px;
@@ -1064,7 +1064,7 @@ p {
   background: var(--accent-soft);
 }
 
-.usage-bar span {
+.meter span {
   display: block;
   height: 100%;
   border-radius: inherit;
@@ -1074,6 +1074,20 @@ p {
 
 .usage-time {
   color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.completion-rate {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.completion-value {
+  font-size: 26px;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 

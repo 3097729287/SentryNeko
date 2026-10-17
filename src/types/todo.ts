@@ -20,3 +20,15 @@ export interface TodoCounts {
 
 /** Which tasks the page shows; `list_todos` takes the same three states. */
 export type TodoFilter = "all" | "active" | "completed";
+
+/** Tasks a completion rate covers; `completion_rate` takes the same values. */
+export type CompletionScope = "all" | "today";
+
+/** Every scope, in the order the switcher shows them. */
+export const COMPLETION_SCOPES = ["all", "today"] as const satisfies readonly CompletionScope[];
+
+/** Numerator and denominator, mirrored from `models::todo::TaskCompletion`. */
+export interface TaskCompletion {
+  total: number;
+  completed: number;
+}

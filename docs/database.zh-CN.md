@@ -106,6 +106,10 @@ app.manage(db);
 - 任务计入 `completed_at` 所在的那一天。`set_completed` 在勾选时写入、取消勾选时清空，所以之后
   重命名一个已完成任务不会把它挪到别的日子。
 
+任务完成率（`models/todo.rs`）从两个角度看 `todos`：`all` 统计全部任务，`today` 只统计 `created_at`
+在本地零点之后的任务。分子是该口径下已勾选完成的任务，所以取消勾选会把完成率降回去；任务删除时
+分子分母同时移除，与用户看到的清单保持一致。
+
 `alarms` 由 `commands/alarm_commands.rs` 维护、由 `services/scheduler.rs` 读取：
 
 - `hour` 与 `minute` 是本地墙钟时间，而不是某个瞬间，所以换时区后一行仍然保持原本含义。

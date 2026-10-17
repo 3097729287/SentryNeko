@@ -119,6 +119,11 @@ The heatmap (`models/heatmap.rs`) rolls `pomodoro_sessions` and `todos` up into 
   and clears it when the task is reopened, so renaming a finished task never moves it to another
   day.
 
+The completion rate (`models/todo.rs`) reads `todos` from two angles: `all` counts every stored
+task, `today` only those whose `created_at` falls after local midnight. The numerator is the tasks
+of that scope with `completed` set, so reopening a task moves the rate back, and a deleted task
+leaves both sides — the rate follows the list the user sees.
+
 `alarms` is maintained by `commands/alarm_commands.rs` and read by `services/scheduler.rs`:
 
 - `hour` and `minute` are the local wall clock, never an instant, so a row keeps its meaning when
