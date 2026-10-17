@@ -94,8 +94,15 @@ the foreground window once a second:
   flood the table.
 - Windows owned by SentryNeko itself are skipped and the row before them is closed: time spent in
   this app is not activity worth recording.
+- Five minutes without keyboard or mouse input count as being away: the open row is closed at that
+  sample and a new one opens when input returns, so an app left in front does not accrue time.
 - A sample that finds nothing to attribute — no foreground window, a locked screen, a process that
   cannot be opened — closes the open row the same way.
+
+`AppEvent::usage` reads that table for the ranking: it clips every row to the window it was asked
+about, sums the rows of one app (an app revisited later in the window is merged with its earlier
+stretch instead of appearing twice), counts a row without `ended_at` up to the end of the window,
+and drops `LockApp` / `LogonUI` so locked time is not attributed to anybody.
 
 ## Schema creation
 

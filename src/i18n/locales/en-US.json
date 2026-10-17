@@ -1,4 +1,20 @@
 {
+  "analytics": {
+    "loading": "Loading…",
+    "range": {
+      "label": "Time range",
+      "month": "30 days",
+      "today": "Today",
+      "week": "7 days"
+    },
+    "usage": {
+      "empty": "No foreground activity in this range yet.",
+      "error": "The ranking could not be loaded.",
+      "hours": "{{hours}} h {{minutes}} min",
+      "minutes": "{{minutes}} min",
+      "title": "Foreground app ranking"
+    }
+  },
   "app": {
     "name": "SentryNeko",
     "tagline": "Track your focus and your todos"

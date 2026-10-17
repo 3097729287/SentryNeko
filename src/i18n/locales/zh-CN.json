@@ -1,4 +1,20 @@
 {
+  "analytics": {
+    "loading": "加载中…",
+    "range": {
+      "label": "时间范围",
+      "month": "近 30 天",
+      "today": "今天",
+      "week": "近 7 天"
+    },
+    "usage": {
+      "empty": "这个范围里还没有前台活动记录。",
+      "error": "排行榜加载失败。",
+      "hours": "{{hours}} 小时 {{minutes}} 分",
+      "minutes": "{{minutes}} 分钟",
+      "title": "前台应用排行"
+    }
+  },
   "app": {
     "name": "SentryNeko",
     "tagline": "记录你的专注与待办"

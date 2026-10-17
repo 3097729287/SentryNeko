@@ -22,6 +22,12 @@ use crate::utils::windows;
 /// loop would blur short switches.
 pub const POLL_INTERVAL: Duration = Duration::from_secs(1);
 
+/// How long the user has to be away before the app in front stops counting.
+///
+/// Five minutes covers a phone call or a read of the printed page without charging that time to
+/// whichever window happened to be open.
+pub const IDLE_TIMEOUT: Duration = Duration::from_secs(5 * 60);
+
 /// What the collector saw, already stripped of the windows it ignores.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Sample {
@@ -141,9 +147,12 @@ impl RunningCollector {
             .name("foreground-collector".to_owned())
             .spawn(move || {
                 while !flag.load(Ordering::Relaxed) {
+                    // An app kept in front while the user is away must not accrue time.
+                    let observed = if idle() { None } else { sample() };
+
                     // A failed write must not kill the loop: the next sample retries, otherwise
                     // one lock timeout would cost the rest of the day.
-                    let _ = collector.observe(sample(), time::now_seconds());
+                    let _ = collector.observe(observed, time::now_seconds());
                     thread::park_timeout(POLL_INTERVAL);
                 }
 
@@ -174,6 +183,16 @@ impl RunningCollector {
         handle.thread().unpark();
         let _ = handle.join();
     }
+}
+
+/// Whether the user has been away long enough that the app in front should stop counting.
+fn idle() -> bool {
+    windows::milliseconds_since_last_input().is_some_and(is_idle)
+}
+
+/// Compares an interval of no input against [`IDLE_TIMEOUT`].
+fn is_idle(milliseconds: u64) -> bool {
+    milliseconds >= IDLE_TIMEOUT.as_millis() as u64
 }
 
 /// Reads the foreground window, dropping our own: time spent in SentryNeko is not activity.
@@ -300,6 +319,19 @@ mod tests {
         let stored = rows(&db);
         assert_eq!(stored.len(), 1);
         assert_eq!(stored[0].ended_at, Some(150));
+    }
+
+    #[test]
+    fn the_idle_threshold_is_five_minutes() {
+        let threshold = IDLE_TIMEOUT.as_millis() as u64;
+
+        assert!(!is_idle(0));
+        assert!(
+            !is_idle(threshold - 1),
+            "a break shorter than the timeout counts"
+        );
+        assert!(is_idle(threshold));
+        assert!(is_idle(threshold * 10));
     }
 
     #[test]

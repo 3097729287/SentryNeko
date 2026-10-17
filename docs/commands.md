@@ -104,7 +104,11 @@ the data: `get_uptime` answers the boot instant (`bootAt`), the seconds since bo
 sleep included) and the part of them that falls inside today (`todaySeconds`) — today starts at
 local midnight resolved through the Windows time zone rules, so a boot before midnight counts only
 the part after it, and the counter keeps running through sleep, so a resume does not shift the boot
-instant.
+instant. The foreground group answers what the ranking shows: `app_usage` takes a window (`from`,
+`to`, UTC epoch seconds) and a `limit`, and ranks applications by the seconds they held the
+foreground inside it. The frontend computes the window for its presets — "today" starts at local
+midnight — and the backend clips stored rows to it, merges an app revisited later in the window,
+and drops the lock and sign-in shells.
 
 | Command | Module | Arguments | Returns | Task |
 | --- | --- | --- | --- | --- |
@@ -132,3 +136,4 @@ instant.
 | `send_test_notification` | `notification_commands` | — | `Outcome` (`"toast"` or `"fallback"`) | T14 |
 | `notify_pomodoro_phase` | `notification_commands` | `phase: Phase` | `Outcome` (`"toast"` or `"fallback"`) | T14 |
 | `get_uptime` | `system_commands` | — | `Uptime` (`{ bootAt, todaySeconds, totalSeconds }`) | T13 |
+| `app_usage` | `app_event_commands` | `from: i64`, `to: i64`, `limit: i64` | `AppUsage[]` (`{ appName, seconds }`) | T20 |

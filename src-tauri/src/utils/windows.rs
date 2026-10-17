@@ -46,6 +46,14 @@ struct FileTime {
     high: u32,
 }
 
+/// `LASTINPUTINFO`: when the last keyboard or mouse input arrived, on the tick clock.
+#[repr(C)]
+#[derive(Debug, Clone, Copy, Default)]
+struct LastInputInfo {
+    size: u32,
+    tick: u32,
+}
+
 #[link(name = "user32")]
 extern "system" {
     fn GetForegroundWindow() -> WindowHandle;
@@ -58,7 +66,9 @@ extern "system" {
 #[link(name = "kernel32")]
 extern "system" {
     fn GetCurrentProcessId() -> u32;
+    fn GetTickCount() -> u32;
     fn GetTickCount64() -> u64;
+    fn GetLastInputInfo(last_input: *mut LastInputInfo) -> i32;
     fn OpenProcess(access: u32, inherit: i32, process_id: u32) -> Handle;
     fn CloseHandle(handle: Handle) -> i32;
     fn QueryFullProcessImageNameW(
@@ -143,6 +153,28 @@ pub fn executable_name(image_path: &str) -> Option<String> {
 #[must_use]
 pub fn milliseconds_since_boot() -> u64 {
     unsafe { GetTickCount64() }
+}
+
+/// Milliseconds since the last keyboard or mouse input.
+///
+/// Answers `None` when Windows cannot report it, which only happens outside an interactive
+/// session; the caller then has to decide whether to keep going.
+#[must_use]
+pub fn milliseconds_since_last_input() -> Option<u64> {
+    let mut last = LastInputInfo {
+        size: std::mem::size_of::<LastInputInfo>() as u32,
+        tick: 0,
+    };
+
+    if unsafe { GetLastInputInfo(&mut last) } == 0 {
+        return None;
+    }
+
+    // Both values ride the same 32-bit tick clock, so the wrapping subtraction survives its
+    // 49-day rollover.
+    let now = unsafe { GetTickCount() };
+
+    Some(u64::from(now.wrapping_sub(last.tick)))
 }
 
 /// UTC epoch seconds of the local midnight that starts the day `utc_seconds` falls in.
@@ -302,6 +334,18 @@ mod tests {
     #[test]
     fn the_boot_counter_has_started() {
         assert!(milliseconds_since_boot() > 0);
+    }
+
+    #[test]
+    fn the_last_input_is_reported_in_a_desktop_session() {
+        // Only a session without an input desktop cannot answer; the collector then keeps
+        // recording instead of guessing that the user is away.
+        if let Some(idle) = milliseconds_since_last_input() {
+            assert!(
+                idle < 7 * 24 * 3_600_000,
+                "the tick clock restarted instead of rolling over: {idle}"
+            );
+        }
     }
 
     #[test]

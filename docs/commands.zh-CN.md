@@ -90,7 +90,10 @@ fn toggle(id: i64) -> ApiResult<Todo> {
 系统这一组描述的是机器而不是数据：`get_uptime` 返回开机时刻（`bootAt`）、开机至今的秒数
 （`totalSeconds`，含休眠）以及其中落在今天的那部分（`todaySeconds`）——今天从本地零点算起，
 按 Windows 时区规则换算，所以零点前开机的只计入零点之后的部分；计数器在休眠期间照常走，
-因此恢复后开机时刻不会漂移。
+因此恢复后开机时刻不会漂移。前台这一组回答排行榜用什么：`app_usage` 接收一个时间窗
+（`from`、`to`，UTC epoch 秒）和一个 `limit`，按应用在该窗口内占据前台的秒数排名。窗口由前端按
+预设算好（「今天」从本地零点起），后端只负责把存储的行裁到窗口内、把窗口中再次出现的应用合并，
+并丢掉锁屏与登录界面外壳。
 
 | 命令 | 模块 | 参数 | 返回 | 任务 |
 | --- | --- | --- | --- | --- |
@@ -118,3 +121,4 @@ fn toggle(id: i64) -> ApiResult<Todo> {
 | `send_test_notification` | `notification_commands` | — | `Outcome`（`"toast"` 或 `"fallback"`） | T14 |
 | `notify_pomodoro_phase` | `notification_commands` | `phase: Phase` | `Outcome`（`"toast"` 或 `"fallback"`） | T14 |
 | `get_uptime` | `system_commands` | — | `Uptime`（`{ bootAt, todaySeconds, totalSeconds }`） | T13 |
+| `app_usage` | `app_event_commands` | `from: i64`、`to: i64`、`limit: i64` | `AppUsage[]`（`{ appName, seconds }`） | T20 |

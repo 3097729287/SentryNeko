@@ -636,6 +636,81 @@ p {
   color: var(--text);
 }
 
+/* Analytics */
+
+.analytics-section {
+  display: grid;
+  gap: var(--space-4);
+  max-width: 640px;
+  padding: var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.analytics-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.analytics-head h2 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.usage-list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.usage-row {
+  display: grid;
+  grid-template-columns: minmax(0, 16ch) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: 13px;
+}
+
+.usage-app {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.usage-bar {
+  display: block;
+  overflow: hidden;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+}
+
+.usage-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width 220ms ease;
+}
+
+.usage-time {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.error {
+  margin: 0;
+  color: #f2555a;
+  font-size: 13px;
+}
+
 /* Events */
 
 .event-log {
@@ -683,7 +758,8 @@ p {
 
 @media (prefers-reduced-motion: reduce) {
   .nav-indicator,
-  .segmented-indicator {
+  .segmented-indicator,
+  .usage-bar span {
     transition: none;
   }
 }
