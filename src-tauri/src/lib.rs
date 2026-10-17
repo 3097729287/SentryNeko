@@ -1,12 +1,16 @@
-//! Module registration. Tauri builder setup and command registration land in T02/T03.
+//! Module registration and Tauri application bootstrap.
 
+pub mod collectors;
 pub mod commands;
 pub mod config;
-pub mod collectors;
 pub mod db;
 pub mod models;
 pub mod services;
 pub mod utils;
 
-/// Starts the application. Replaced by the Tauri builder once the app configuration exists.
-pub fn run() {}
+/// Builds and runs the application.
+pub fn run() {
+    tauri::Builder::default()
+        .run(tauri::generate_context!())
+        .expect("error while running the SentryNeko application");
+}

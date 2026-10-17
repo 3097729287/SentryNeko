@@ -115,10 +115,13 @@ SentryNeko 是一款面向 Windows 的个人效率与时间追踪应用。它把
 SentryNeko/
 ├── src-tauri/                        # Tauri Rust 后端
 │   ├── Cargo.toml
+│   ├── Cargo.lock
+│   ├── build.rs                      # Tauri 构建脚本（生成权限 schema）
 │   ├── tauri.conf.json               # Tauri 配置（窗口、权限、打包等）
 │   ├── capabilities/
 │   │   └── default.json              # 权限配置（IPC 允许的命令）
-│   ├── icons/                        # 应用图标
+│   ├── app-icon.svg                  # 图标源文件，供 `pnpm icons` 使用
+│   ├── icons/                        # 应用图标（生成产物，不纳入版本管理）
 │   └── src/
 │       ├── main.rs                   # 入口：启动 Tauri 应用
 │       ├── lib.rs                    # 模块注册 + Tauri 命令注册
@@ -223,9 +226,11 @@ SentryNeko/
 │   └── install_collector.ps1         # 安装系统采集器（注册开机自启/权限配置）
 │
 ├── package.json
+├── pnpm-lock.yaml
 ├── vite.config.ts
 ├── tsconfig.json
 ├── index.html
+├── .gitignore
 ├── README.md                         # 英文说明（默认）
 ├── README.zh-CN.md                   # 中文说明（本文件）
 ├── TODO.md                           # 英文任务拆分（默认）
@@ -251,15 +256,19 @@ SentryNeko/
 # 1. 安装前端依赖
 pnpm install
 
-# 2. 初始化本地数据库（可选，首次运行会自动建表）
+# 2. 生成应用图标（修改 src-tauri/app-icon.svg 后重新执行；
+#    图标为生成产物不入库，仓库只保留 SVG 源文件）
+pnpm icons
+
+# 3. 初始化本地数据库（可选，首次运行会自动建表）
 powershell -ExecutionPolicy Bypass -File scripts/init_db.ps1
 
-# 3. 启动开发环境（前端热更新 + Rust 后端）
+# 4. 启动开发环境（前端热更新 + Rust 后端）
 pnpm tauri dev
 # 或使用一键脚本
 powershell -ExecutionPolicy Bypass -File scripts/dev.ps1
 
-# 4. 打包 Windows 安装包（msi / nsis）
+# 5. 打包 Windows 安装包（msi / nsis）
 pnpm tauri build
 ```
 
@@ -279,3 +288,5 @@ pnpm tauri build
 ## 许可证
 
 [Apache License 2.0](LICENSE) © 2026 haloneko
+
+应用图标（`src-tauri/app-icon.svg`）改编自 [Phosphor Icons](https://phosphoricons.com) 的 "list" 图标，该图标库以 MIT 许可证发布。

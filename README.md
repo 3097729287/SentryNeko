@@ -115,10 +115,13 @@ Status legend: ✅ Planned (implemented in the current scope); 🚧 Reserved (fu
 SentryNeko/
 ├── src-tauri/                        # Tauri Rust backend
 │   ├── Cargo.toml
+│   ├── Cargo.lock
+│   ├── build.rs                      # Tauri build script (generates the permission schemas)
 │   ├── tauri.conf.json               # Tauri config (window, permissions, bundling)
 │   ├── capabilities/
 │   │   └── default.json              # Capability config (commands allowed over IPC)
-│   ├── icons/                        # App icons
+│   ├── app-icon.svg                  # Icon source consumed by `pnpm icons`
+│   ├── icons/                        # App icons (generated, not tracked)
 │   └── src/
 │       ├── main.rs                   # Entry point: starts the Tauri app
 │       ├── lib.rs                    # Module registration + Tauri command registration
@@ -223,9 +226,11 @@ SentryNeko/
 │   └── install_collector.ps1         # Install the system collector (auto-start / permissions)
 │
 ├── package.json
+├── pnpm-lock.yaml
 ├── vite.config.ts
 ├── tsconfig.json
 ├── index.html
+├── .gitignore
 ├── README.md                         # English docs (default)
 ├── README.zh-CN.md                   # Simplified Chinese docs
 ├── TODO.md                           # English task breakdown (default)
@@ -251,15 +256,19 @@ SentryNeko/
 # 1. Install frontend dependencies
 pnpm install
 
-# 2. Initialize the local database (optional, tables are created on first run)
+# 2. Generate the application icons (re-run after editing src-tauri/app-icon.svg;
+#    generated files are not tracked, only the SVG source is)
+pnpm icons
+
+# 3. Initialize the local database (optional, tables are created on first run)
 powershell -ExecutionPolicy Bypass -File scripts/init_db.ps1
 
-# 3. Start the dev environment (frontend HMR + Rust backend)
+# 4. Start the dev environment (frontend HMR + Rust backend)
 pnpm tauri dev
 # or use the convenience script
 powershell -ExecutionPolicy Bypass -File scripts/dev.ps1
 
-# 4. Build the Windows installer (msi / nsis)
+# 5. Build the Windows installer (msi / nsis)
 pnpm tauri build
 ```
 
@@ -279,3 +288,5 @@ pnpm tauri build
 ## License
 
 [Apache License 2.0](LICENSE) © 2026 haloneko
+
+The application icon (`src-tauri/app-icon.svg`) adapts the "list" glyph from [Phosphor Icons](https://phosphoricons.com), which is distributed under the MIT License.
