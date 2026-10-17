@@ -1,4 +1,5 @@
-import { HashRouter, Navigate, NavLink, Outlet, Route, Routes } from "react-router-dom";
+import { useLayoutEffect, useRef, useState } from "react";
+import { HashRouter, Navigate, NavLink, Outlet, Route, Routes, useLocation } from "react-router-dom";
 
 import { I18nProvider } from "./components/I18nProvider";
 import { LanguageSwitcher } from "./components/LanguageSwitcher";
@@ -27,7 +28,17 @@ const PAGES = [
 
 /** Window frame shared by every page: brand, navigation and language choice. */
 function Shell() {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
+  const navRef = useRef<HTMLElement>(null);
+  const { pathname } = useLocation();
+  const [indicator, setIndicator] = useState({ top: 0, height: 0 });
+
+  // The sliding highlight is placed from the active link, so no geometry is hard-coded.
+  useLayoutEffect(() => {
+    const active = navRef.current?.querySelector<HTMLElement>('[aria-current="page"]');
+
+    setIndicator({ top: active?.offsetTop ?? 0, height: active?.offsetHeight ?? 0 });
+  }, [pathname, language]);
 
   return (
     <div className="app-shell">
@@ -40,7 +51,12 @@ function Shell() {
           </span>
           <p className="brand-tagline">{t("app.tagline")}</p>
         </div>
-        <nav className="nav">
+        <nav className="nav" ref={navRef}>
+          <span
+            aria-hidden="true"
+            className="nav-indicator"
+            style={{ height: indicator.height, transform: `translateY(${indicator.top}px)` }}
+          />
           {PAGES.map(({ path, label }) => (
             <NavLink className="nav-link" end={path === "/"} key={path} to={path}>
               {t(label)}

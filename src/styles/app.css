@@ -14,6 +14,8 @@
   --accent: #8b7cf6;
   --accent-soft: rgb(139 124 246 / 14%);
   --accent-text: #b9b0ff;
+  --nav-active-bg: #232a38;
+  --nav-active-shadow: none;
 
   --radius-sm: 8px;
   --radius-lg: 16px;
@@ -33,7 +35,7 @@
 @media (prefers-color-scheme: light) {
   :root {
     --bg: #f6f7fb;
-    --bg-sidebar: #ffffff;
+    --bg-sidebar: #f1f3f8;
     --surface: #ffffff;
     --surface-hover: #f0f2f8;
     --border: #e3e7f0;
@@ -43,6 +45,8 @@
     --accent: #5b47f0;
     --accent-soft: rgb(91 71 240 / 10%);
     --accent-text: #4a37d6;
+    --nav-active-bg: #ffffff;
+    --nav-active-shadow: 0 1px 2px rgb(16 20 32 / 10%), 0 0 0 1px rgb(16 20 32 / 4%);
   }
 }
 
@@ -158,28 +162,40 @@ p {
 }
 
 .nav {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
+.nav-indicator {
+  position: absolute;
+  top: 0;
+  inset-inline: 0;
+  border-radius: var(--radius-sm);
+  background: var(--nav-active-bg);
+  box-shadow: var(--nav-active-shadow);
+  pointer-events: none;
+  transition: transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1), height 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
 .nav-link {
+  position: relative;
+  z-index: 1;
   padding: 8px var(--space-3);
   border-radius: var(--radius-sm);
   color: var(--text-muted);
   font-size: 13.5px;
   text-decoration: none;
-  transition: background-color 120ms ease, color 120ms ease;
+  transition: color 120ms ease;
 }
 
 .nav-link:hover {
-  background: var(--surface-hover);
   color: var(--text);
 }
 
 .nav-link[aria-current="page"] {
-  background: var(--accent-soft);
-  color: var(--accent-text);
+  color: var(--text);
   font-weight: 600;
 }
 
@@ -314,4 +330,10 @@ p {
 
 .btn:active {
   transform: translateY(1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-indicator {
+    transition: none;
+  }
 }

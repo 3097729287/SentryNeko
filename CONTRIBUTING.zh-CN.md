@@ -86,7 +86,7 @@ test(heatmap): cover week boundary aggregation
 - 事件监听复用 `hooks/useTauriEvent.ts`，不要直接 `listen`，以保证卸载时正确清理订阅。
 - 倒计时与时长必须以时间戳推算，不依赖 `setInterval` 累加。
 - 图表需处理加载中、空数据与错误三种状态。
-- 样式集中在 `src/styles/app.css`：设计令牌写在 `:root`，其后是外壳与共享基础类。不要写行内样式。
+- 样式集中在 `src/styles/app.css`：设计令牌写在 `:root`，其后是外壳与共享基础类。只有来自状态的值（例如测量出的位置）才写行内样式。
 
 ## 测试
 
