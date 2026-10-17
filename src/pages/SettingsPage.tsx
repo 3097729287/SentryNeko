@@ -1,6 +1,7 @@
-/** Settings page: the pomodoro durations, the alarm defaults and the language choice. */
+/** Settings page: the pomodoro durations, the alarm defaults, auto-start and the language. */
 
 import { useEffect } from "react";
+import type { ReactNode } from "react";
 
 import { AlarmDefaultsSettings } from "../components/AlarmDefaultsSettings";
 import { AutostartSettings } from "../components/AutostartSettings";
@@ -8,6 +9,29 @@ import { LanguageSwitcher } from "../components/LanguageSwitcher";
 import { PomodoroSettings } from "../components/PomodoroSettings";
 import { useI18n } from "../hooks/useI18n";
 import { usePomodoro } from "../hooks/usePomodoro";
+
+interface SettingsRowProps {
+  /** Two-digit ordinal shown above the title, so the page reads as one list. */
+  index: string;
+  title: string;
+  /** One line saying what the row changes. */
+  hint: string;
+  children: ReactNode;
+}
+
+/** One numbered row: the label sits in a rail, the controls stand beside it. */
+function SettingsRow({ children, hint, index, title }: SettingsRowProps) {
+  return (
+    <section className="settings-row">
+      <div className="settings-lead">
+        <span className="settings-index">{index}</span>
+        <h2>{title}</h2>
+        <p className="settings-hint">{hint}</p>
+      </div>
+      <div className="settings-body">{children}</div>
+    </section>
+  );
+}
 
 /** Renders the settings the app persists. */
 export function SettingsPage() {
@@ -22,19 +46,24 @@ export function SettingsPage() {
   return (
     <>
       <h1>{t("nav.settings")}</h1>
-      <section className="settings-section">
-        <PomodoroSettings />
-      </section>
-      <section className="settings-section">
-        <AlarmDefaultsSettings />
-      </section>
-      <section className="settings-section">
-        <AutostartSettings />
-      </section>
-      <section className="settings-section">
-        <h2>{t("language.label")}</h2>
-        <LanguageSwitcher />
-      </section>
+      <div className="settings">
+        <SettingsRow hint={t("settings.language.hint")} index="01" title={t("language.label")}>
+          <LanguageSwitcher />
+        </SettingsRow>
+        <SettingsRow
+          hint={t("settings.pomodoro.hint")}
+          index="02"
+          title={t("pomodoro.settings.title")}
+        >
+          <PomodoroSettings />
+        </SettingsRow>
+        <SettingsRow hint={t("settings.alarm.hint")} index="03" title={t("alarm.settings.title")}>
+          <AlarmDefaultsSettings />
+        </SettingsRow>
+        <SettingsRow hint={t("settings.autostart.hint")} index="04" title={t("autostart.title")}>
+          <AutostartSettings />
+        </SettingsRow>
+      </div>
     </>
   );
 }

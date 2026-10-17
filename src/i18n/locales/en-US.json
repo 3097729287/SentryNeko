@@ -23,8 +23,8 @@
     "settings": {
       "error": "The alarm defaults could not be saved.",
       "method": "Notification",
-      "methodInApp": "In app only",
-      "methodToast": "System notification",
+      "methodInApp": "In-app",
+      "methodToast": "System",
       "ring": "Ring duration (seconds)",
       "saved": "Saved",
       "title": "Alarm defaults"
@@ -90,7 +90,6 @@
     "tagline": "Track your focus and your todos"
   },
   "autostart": {
-    "description": "Windows starts SentryNeko when you sign in, so tracking and alarms are already running. The window stays in the tray until you open it.",
     "error": "The login entry could not be updated.",
     "title": "Start with Windows",
     "toggle": "Start SentryNeko when I sign in"
@@ -175,7 +174,7 @@
     "title": "Focus heatmap"
   },
   "language": {
-    "label": "Language"
+    "label": "Interface language"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -206,15 +205,30 @@
     },
     "reset": "Reset",
     "settings": {
+      "error": "The durations could not be saved.",
       "focus": "Focus (minutes)",
       "locked": "Stop the timer to change the durations.",
       "longBreak": "Long break (minutes)",
-      "save": "Save",
       "saved": "Saved",
       "shortBreak": "Short break (minutes)",
+      "slice": "{{phase}} · {{minutes}} min",
       "title": "Pomodoro durations"
     },
     "start": "Start"
+  },
+  "settings": {
+    "alarm": {
+      "hint": "Changes save as you type; new alarms inherit them."
+    },
+    "autostart": {
+      "hint": "Signing in starts the app in the tray, so tracking and alarms keep running."
+    },
+    "language": {
+      "hint": "The copy and date formats follow as soon as you pick one."
+    },
+    "pomodoro": {
+      "hint": "Changes save as you type; the fields lock while the timer runs."
+    }
   },
   "todo": {
     "add": "Add",
