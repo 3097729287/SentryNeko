@@ -503,14 +503,6 @@ p {
   background: var(--surface);
 }
 
-.pomodoro-phase {
-  margin: 0;
-  color: var(--text-muted);
-  font-size: 12.5px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
 .pomodoro-clock {
   margin: 0;
   font-size: 64px;

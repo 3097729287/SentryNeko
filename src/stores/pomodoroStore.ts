@@ -26,6 +26,8 @@ export interface PomodoroState {
   start: () => Promise<void>;
   pause: () => void;
   reset: () => Promise<void>;
+  /** Jumps to a phase by hand; a running phase is closed with the time it already spent. */
+  selectPhase: (phase: PomodoroPhase) => Promise<void>;
   saveDurations: (durations: PomodoroDurations) => Promise<boolean>;
   /** Advances the clock; the page calls it on an interval, so render throttling cannot drift it. */
   tick: (now: number) => Promise<void>;
@@ -128,6 +130,40 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
     }
 
     set({ sessionId: null });
+
+    const response = await request<PomodoroSession>("finish_pomodoro_session", {
+      actualSeconds: spent,
+      id: sessionId,
+    });
+
+    if (!isOk(response)) {
+      set({ error: response.code });
+    }
+  },
+
+  selectPhase: async (phase) => {
+    const { durations, endsAt, phase: current, remainingMs, sessionId } = get();
+
+    if (phase === current) {
+      return;
+    }
+
+    const totalMs = phaseSeconds(durations, current) * 1000;
+    const left = endsAt === null ? remainingMs : Math.max(0, endsAt - Date.now());
+    const spent = Math.max(0, Math.round((totalMs - left) / 1000));
+
+    // The chosen phase starts from its full length; a running one is closed with what it spent.
+    set({
+      endsAt: null,
+      error: null,
+      phase,
+      remainingMs: phaseSeconds(durations, phase) * 1000,
+      sessionId: null,
+    });
+
+    if (sessionId === null) {
+      return;
+    }
 
     const response = await request<PomodoroSession>("finish_pomodoro_session", {
       actualSeconds: spent,

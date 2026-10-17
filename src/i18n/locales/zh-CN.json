@@ -31,6 +31,7 @@
     "pause": "暂停",
     "phase": {
       "focus": "专注",
+      "label": "阶段",
       "longBreak": "长休息",
       "shortBreak": "短休息"
     },

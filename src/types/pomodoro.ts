@@ -20,6 +20,13 @@ export interface PomodoroSession {
   todoId: number | null;
 }
 
+/** Every phase, in the order the segmented control shows them. */
+export const POMODORO_PHASES = [
+  "focus",
+  "shortBreak",
+  "longBreak",
+] as const satisfies readonly PomodoroPhase[];
+
 /** The key of `PomodoroDurations` that holds the length of one phase. */
 const DURATION_KEYS: Record<PomodoroPhase, keyof PomodoroDurations> = {
   focus: "focusSeconds",

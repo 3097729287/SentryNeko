@@ -4,12 +4,24 @@ import { useEffect } from "react";
 
 import { useI18n } from "../hooks/useI18n";
 import { usePomodoro } from "../hooks/usePomodoro";
-import { phaseSeconds } from "../types/pomodoro";
+import { POMODORO_PHASES, phaseSeconds } from "../types/pomodoro";
+import { SegmentedControl } from "./ui/SegmentedControl";
 
 /** Ticks the store and renders the clock. */
 export function PomodoroTimer() {
   const { t } = useI18n();
-  const { durations, endsAt, error, pause, phase, remainingMs, reset, start, tick } = usePomodoro();
+  const {
+    durations,
+    endsAt,
+    error,
+    pause,
+    phase,
+    remainingMs,
+    reset,
+    selectPhase,
+    start,
+    tick,
+  } = usePomodoro();
 
   // The store derives the remaining time from a timestamp, so a late tick only delays the paint.
   useEffect(() => {
@@ -29,7 +41,17 @@ export function PomodoroTimer() {
 
   return (
     <section className="pomodoro-panel">
-      <p className="pomodoro-phase">{t(`pomodoro.phase.${phase}`)}</p>
+      <SegmentedControl
+        label={t("pomodoro.phase.label")}
+        onChange={(next) => {
+          void selectPhase(next);
+        }}
+        options={POMODORO_PHASES.map((value) => ({
+          label: t(`pomodoro.phase.${value}`),
+          value,
+        }))}
+        value={phase}
+      />
       <p className="pomodoro-clock" role="timer">
         {formatClock(seconds)}
       </p>
