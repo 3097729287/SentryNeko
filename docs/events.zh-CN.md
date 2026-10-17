@@ -31,6 +31,12 @@ useTauriEvent<TestEventPayload>(BACKEND_EVENTS.testEvent, (payload) => {
 | --- | --- | --- | --- |
 | `test-event` | `TestEvent` —— `{ sequence: u64 }` | `emit_test_event` 按需推送一条，`sequence` 每次递增 | T08 |
 | `notification-fallback` | `NotificationFallback` —— `{ kind, reason }` | `send_test_notification` 在系统拒绝 Toast 时推一条，前端改为在应用内显示 | T14 |
+| `app-switch` | `AppEvent` —— `{ id, appName, windowTitle, startedAt, endedAt }` | 前台采集器开了一行，也就是另一个应用来到前台。同一个应用内标题变化只更新该行、不推送，因此一次推送对应一次切换 | T15 |
+| `pomodoro-finished` | `PomodoroSession` —— `{ id, phase, plannedSeconds, actualSeconds, startedAt, endedAt, todoId }` | `finish_pomodoro_session` 关闭一个会话，历史视图无需轮询即可刷新；关闭它的那个窗口本来就已经知道 | T15 |
+
+外壳（`App.tsx`）只订阅一次 `app-switch`，把每条推送交给 `stores/appEventStore.ts` 保存最近几条；
+`EventsPage` 渲染这份尾部数据，因此打开页面时切应用会立即刷新，切换页面后也不会丢。闹钟触发事件
+暂未列入：它随 T17 一起到来，等 `services/scheduler.rs` 有东西可触发时再补。
 
 ## 载荷规则
 

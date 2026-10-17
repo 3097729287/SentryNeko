@@ -4,6 +4,15 @@
     "tagline": "Track your focus and your todos"
   },
   "events": {
+    "log": {
+      "empty": "Nothing has come in yet — switch to another app.",
+      "title": "Live foreground switches",
+      "untitled": "(no window title)"
+    },
+    "pomodoro": {
+      "finished": "Phase finished: {{phase}}",
+      "none": "No pomodoro phase has finished yet."
+    },
     "test": {
       "send": "Send a test event",
       "waiting": "No test event received yet",

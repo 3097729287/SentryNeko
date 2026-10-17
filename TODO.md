@@ -47,14 +47,14 @@ Status legend: `[ ]` not started　`[~]` in progress　`[x]` done　`[!]` blocke
 | [x] | T12 | Foreground app collector (Win32 FFI) | T04, T05 | `collectors/foreground_app.rs` + `utils/windows.rs` capture app name and window title, filter out our own process, and avoid duplicate rows for the same switch |
 | [x] | T13 | Boot time collection and today's uptime | T12 | Reads system boot time; correct across midnight and sleep/resume |
 | [x] | T14 | System notifications: Windows Toast | T03 | `services/notification.rs` can send a notification and falls back to an in-app toast on failure |
-| [ ] | T15 | Event push wiring: app switch / Pomodoro completion / alarm trigger | T08, T12 | The UI refreshes in real time without polling; event payloads have type definitions and docs |
+| [x] | T15 | Event push wiring: app switch / Pomodoro completion / alarm trigger | T08, T12 | The UI refreshes in real time without polling; event payloads have type definitions and docs |
 | [x] | T16 | Settings page: Pomodoro settings + language settings | T07, T11 | `settings_commands.rs` wired to `SettingsPage`; changes take effect immediately and persist |
 
 ## P2 Important, not urgent
 
 | Status | ID | Task | Depends on | Acceptance criteria |
 | --- | --- | --- | --- | --- |
-| [ ] | T17 | Alarms: one-off/repeating + `scheduler.rs` | T04, T14 | Fires notification and ringtone on time; alarms that have not expired survive an app restart |
+| [ ] | T17 | Alarms: one-off/repeating + `scheduler.rs` | T04, T14 | Fires notification and ringtone on time; alarms that have not expired survive an app restart; pushes the alarm trigger event (T15) |
 | [ ] | T18 | Alarm defaults (ring duration, notification method) | T16, T17 | Merged into the settings page; new alarms inherit the defaults |
 | [ ] | T19 | Heatmap: aggregate focus time and task count by day/week/month | T04, T11 | `heatmap_commands.rs` + `HeatmapChart.tsx`, GitHub style; aggregation rules documented and consistent |
 | [ ] | T20 | App usage stats: aggregation per app + Top ranking | T12 | Attribution rules defined (merge adjacent records, ignore idle/lock screen); ranking supports time-range switching |

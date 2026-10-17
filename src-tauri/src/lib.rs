@@ -31,8 +31,9 @@ pub fn run() {
             schema::ensure(&db)?;
             app.manage(config);
             app.manage(db.clone());
-            app.manage(EventBus::new(app.handle().clone()));
-            app.manage(RunningCollector::spawn(db)?);
+            let bus = EventBus::new(app.handle().clone());
+            app.manage(bus.clone());
+            app.manage(RunningCollector::spawn(db, bus)?);
 
             Ok(())
         })

@@ -11,6 +11,7 @@ use std::time::Duration;
 
 use crate::db::connection::Db;
 use crate::models::app_event::AppEvent;
+use crate::services::event_bus::EventBus;
 use crate::utils::response::{ApiError, ApiResult};
 use crate::utils::time;
 use crate::utils::windows;
@@ -44,14 +45,19 @@ enum Change {
 /// Keeps exactly one `app_events` row open for the app in front of the user.
 pub struct ForegroundCollector {
     db: Db,
+    bus: EventBus,
     open: Option<AppEvent>,
 }
 
 impl ForegroundCollector {
     /// Builds a collector that owns no row yet.
     #[must_use]
-    pub fn new(db: Db) -> Self {
-        Self { db, open: None }
+    pub fn new(db: Db, bus: EventBus) -> Self {
+        Self {
+            db,
+            bus,
+            open: None,
+        }
     }
 
     /// Applies one observation taken at `now`.
@@ -73,12 +79,16 @@ impl ForegroundCollector {
             }
             Change::Switch => {
                 self.close(now)?;
-                self.open = Some(AppEvent::open(
+                let opened = AppEvent::open(
                     &self.db,
                     &sample.app_name,
                     sample.window_title.as_deref(),
                     now,
-                )?);
+                )?;
+
+                // The row is stored before the push, so a window that closed cannot lose it.
+                self.open = Some(opened.clone());
+                self.bus.emit_app_switch(&opened)?;
 
                 Ok(())
             }
@@ -122,10 +132,10 @@ pub struct RunningCollector {
 
 impl RunningCollector {
     /// Starts the sampling loop on a background thread.
-    pub fn spawn(db: Db) -> ApiResult<Self> {
+    pub fn spawn(db: Db, bus: EventBus) -> ApiResult<Self> {
         let stopped = Arc::new(AtomicBool::new(false));
         let flag = Arc::clone(&stopped);
-        let mut collector = ForegroundCollector::new(db);
+        let mut collector = ForegroundCollector::new(db, bus);
 
         let thread = thread::Builder::new()
             .name("foreground-collector".to_owned())
@@ -188,6 +198,8 @@ mod tests {
     use super::*;
     use crate::db::repository;
     use crate::db::schema;
+    use crate::services::event_bus::names;
+    use crate::services::event_bus::testing::Recorder;
 
     fn created() -> Db {
         let db = Db::open_in_memory().expect("in-memory database opens");
@@ -212,10 +224,14 @@ mod tests {
         })
     }
 
+    fn new_collector(db: &Db) -> ForegroundCollector {
+        ForegroundCollector::new(db.clone(), EventBus::new(Recorder::default()))
+    }
+
     #[test]
     fn polling_the_same_window_twice_writes_one_row() {
         let db = created();
-        let mut collector = ForegroundCollector::new(db.clone());
+        let mut collector = new_collector(&db);
 
         for now in [100, 101, 102] {
             collector
@@ -233,7 +249,7 @@ mod tests {
     #[test]
     fn a_switch_closes_the_previous_row_at_the_same_instant() {
         let db = created();
-        let mut collector = ForegroundCollector::new(db.clone());
+        let mut collector = new_collector(&db);
 
         collector
             .observe(seen("code", Some("main.rs")), 100)
@@ -254,7 +270,7 @@ mod tests {
     #[test]
     fn a_title_change_updates_the_open_row_instead_of_splitting_it() {
         let db = created();
-        let mut collector = ForegroundCollector::new(db.clone());
+        let mut collector = new_collector(&db);
 
         collector
             .observe(seen("chrome", Some("tab one")), 100)
@@ -273,7 +289,7 @@ mod tests {
     #[test]
     fn nothing_in_front_closes_the_open_row() {
         let db = created();
-        let mut collector = ForegroundCollector::new(db.clone());
+        let mut collector = new_collector(&db);
 
         collector
             .observe(seen("code", Some("main.rs")), 100)
@@ -284,6 +300,35 @@ mod tests {
         let stored = rows(&db);
         assert_eq!(stored.len(), 1);
         assert_eq!(stored[0].ended_at, Some(150));
+    }
+
+    #[test]
+    fn a_switch_is_pushed_once_and_a_title_change_is_not() {
+        let db = created();
+        let recorder = Recorder::default();
+        let mut collector = ForegroundCollector::new(db.clone(), EventBus::new(recorder.clone()));
+
+        collector
+            .observe(seen("code", Some("main.rs")), 100)
+            .expect("first app");
+        collector
+            .observe(seen("code", Some("main.rs")), 110)
+            .expect("same window");
+        collector
+            .observe(seen("code", Some("lib.rs")), 120)
+            .expect("same app, new title");
+        collector
+            .observe(seen("chrome", Some("docs")), 160)
+            .expect("second app");
+
+        let pushed = recorder.pushed();
+        assert_eq!(pushed.len(), 2, "{pushed:?}");
+        assert_eq!(pushed[0].0, names::APP_SWITCH);
+        assert_eq!(pushed[0].1["appName"], serde_json::json!("code"));
+        assert_eq!(pushed[0].1["startedAt"], serde_json::json!(100));
+        assert_eq!(pushed[1].0, names::APP_SWITCH);
+        assert_eq!(pushed[1].1["appName"], serde_json::json!("chrome"));
+        assert_eq!(pushed[1].1["startedAt"], serde_json::json!(160));
     }
 
     #[test]
@@ -305,7 +350,7 @@ mod tests {
     #[test]
     fn a_clock_that_steps_back_does_not_end_a_row_before_it_starts() {
         let db = created();
-        let mut collector = ForegroundCollector::new(db.clone());
+        let mut collector = new_collector(&db);
 
         collector
             .observe(seen("code", Some("main.rs")), 500)

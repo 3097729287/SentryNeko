@@ -33,6 +33,14 @@ a new event: add the new name, migrate the listeners, then drop the old one.
 | --- | --- | --- | --- |
 | `test-event` | `TestEvent` — `{ sequence: u64 }` | `emit_test_event` pushes one on demand; `sequence` rises with every push | T08 |
 | `notification-fallback` | `NotificationFallback` — `{ kind, reason }` | `send_test_notification` pushes one when the system refuses the toast, so the frontend paints it in the app instead | T14 |
+| `app-switch` | `AppEvent` — `{ id, appName, windowTitle, startedAt, endedAt }` | The foreground collector opened a row, i.e. another app took the foreground. A title change inside the same app updates its row without a push, so one push is one switch | T15 |
+| `pomodoro-finished` | `PomodoroSession` — `{ id, phase, plannedSeconds, actualSeconds, startedAt, endedAt, todoId }` | `finish_pomodoro_session` closed a session, so a history view can refresh without polling; the window that closed it already knows | T15 |
+
+The shell (`App.tsx`) subscribes to `app-switch` once and hands every push to
+`stores/appEventStore.ts`, which keeps the newest rows; `EventsPage` renders that tail, so switching
+apps updates the list while the page is open and keeps it current across page changes. The alarm
+trigger push is not listed yet: it arrives with T17, once `services/scheduler.rs` has something to
+fire.
 
 ## Payload rules
 

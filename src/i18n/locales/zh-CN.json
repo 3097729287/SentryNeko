@@ -4,6 +4,15 @@
     "tagline": "记录你的专注与待办"
   },
   "events": {
+    "log": {
+      "empty": "还没有收到事件——切到别的应用试试。",
+      "title": "实时前台切换",
+      "untitled": "（无窗口标题）"
+    },
+    "pomodoro": {
+      "finished": "阶段已结束：{{phase}}",
+      "none": "尚未收到番茄钟阶段结束事件。"
+    },
     "test": {
       "send": "发送测试事件",
       "waiting": "尚未收到测试事件",

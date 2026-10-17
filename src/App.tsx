@@ -5,6 +5,7 @@ import { I18nProvider } from "./components/I18nProvider";
 import { TitleBar } from "./components/TitleBar";
 import { ToastHost } from "./components/ToastHost";
 import { useI18n } from "./hooks/useI18n";
+import { BACKEND_EVENTS, useTauriEvent } from "./hooks/useTauriEvent";
 import { AlarmsPage } from "./pages/AlarmsPage";
 import { AnalyticsPage } from "./pages/AnalyticsPage";
 import { Dashboard } from "./pages/Dashboard";
@@ -13,6 +14,8 @@ import { HeatmapPage } from "./pages/HeatmapPage";
 import { PomodoroPage } from "./pages/PomodoroPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { TodosPage } from "./pages/TodosPage";
+import { useAppEventStore } from "./stores/appEventStore";
+import type { AppEvent } from "./types/appEvent";
 
 /** Every page of the shell, in navigation order; each label doubles as the page heading. */
 const PAGES = [
@@ -29,11 +32,15 @@ const PAGES = [
 /** Window frame shared by every page: brand, navigation and language choice. */
 function Shell() {
   const { t, language } = useI18n();
+  const recordAppSwitch = useAppEventStore((state) => state.record);
   const navRef = useRef<HTMLElement>(null);
   const { pathname } = useLocation();
   // Null until the first measurement: the highlight must appear already in place instead of
   // sliding in from the top of the list on mount.
   const [indicator, setIndicator] = useState<{ top: number; height: number } | null>(null);
+
+  // The shell owns the push, so the live tail keeps growing while another page is mounted.
+  useTauriEvent<AppEvent>(BACKEND_EVENTS.appSwitch, recordAppSwitch);
 
   // The sliding highlight is placed from the active link, so no geometry is hard-coded.
   useLayoutEffect(() => {
