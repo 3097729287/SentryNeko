@@ -337,6 +337,47 @@ p {
   cursor: default;
 }
 
+.segmented {
+  position: relative;
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.segmented-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 6px;
+  background: var(--nav-active-bg);
+  box-shadow: var(--nav-active-shadow);
+  pointer-events: none;
+  transition: transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1), width 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    height 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.segmented-option {
+  position: relative;
+  z-index: 1;
+  padding: 4px 12px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: color 120ms ease;
+}
+
+.segmented-option:hover,
+.segmented-option[aria-pressed="true"] {
+  color: var(--text);
+}
+
 /* Todo */
 
 .todo-form {
@@ -375,37 +416,6 @@ p {
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
-}
-
-.todo-filters {
-  display: flex;
-  gap: 2px;
-  padding: 3px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-}
-
-.todo-filter {
-  padding: 4px 12px;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--text-muted);
-  font: inherit;
-  font-size: 12.5px;
-  cursor: pointer;
-  transition: background-color 120ms ease, color 120ms ease;
-}
-
-.todo-filter:hover {
-  color: var(--text);
-}
-
-.todo-filter[aria-pressed="true"] {
-  background: var(--nav-active-bg);
-  box-shadow: var(--nav-active-shadow);
-  color: var(--text);
 }
 
 .todo-list {
@@ -482,7 +492,8 @@ p {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .nav-indicator {
+  .nav-indicator,
+  .segmented-indicator {
     transition: none;
   }
 }

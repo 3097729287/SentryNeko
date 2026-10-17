@@ -35,7 +35,8 @@
     "filter": {
       "all": "全部",
       "active": "进行中",
-      "completed": "已完成"
+      "completed": "已完成",
+      "label": "按状态筛选"
     },
     "loading": "加载中…",
     "placeholder": "要做什么？",

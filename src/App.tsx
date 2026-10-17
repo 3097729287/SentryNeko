@@ -31,13 +31,23 @@ function Shell() {
   const { t, language } = useI18n();
   const navRef = useRef<HTMLElement>(null);
   const { pathname } = useLocation();
-  const [indicator, setIndicator] = useState({ top: 0, height: 0 });
+  // Null until the first measurement: the highlight must appear already in place instead of
+  // sliding in from the top of the list on mount.
+  const [indicator, setIndicator] = useState<{ top: number; height: number } | null>(null);
 
   // The sliding highlight is placed from the active link, so no geometry is hard-coded.
   useLayoutEffect(() => {
     const active = navRef.current?.querySelector<HTMLElement>('[aria-current="page"]');
 
-    setIndicator({ top: active?.offsetTop ?? 0, height: active?.offsetHeight ?? 0 });
+    if (!active) {
+      return;
+    }
+
+    const next = { top: active.offsetTop, height: active.offsetHeight };
+
+    setIndicator((current) =>
+      current && current.top === next.top && current.height === next.height ? current : next,
+    );
   }, [pathname, language]);
 
   return (
@@ -52,11 +62,13 @@ function Shell() {
           <p className="brand-tagline">{t("app.tagline")}</p>
         </div>
         <nav className="nav" ref={navRef}>
-          <span
-            aria-hidden="true"
-            className="nav-indicator"
-            style={{ height: indicator.height, transform: `translateY(${indicator.top}px)` }}
-          />
+          {indicator ? (
+            <span
+              aria-hidden="true"
+              className="nav-indicator"
+              style={{ height: indicator.height, transform: `translateY(${indicator.top}px)` }}
+            />
+          ) : null}
           {PAGES.map(({ path, label }) => (
             <NavLink className="nav-link" end={path === "/"} key={path} to={path}>
               {t(label)}

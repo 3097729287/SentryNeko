@@ -87,6 +87,7 @@ A change is ready for review when every box is ticked:
 - Countdowns and durations are derived from timestamps, never from accumulated `setInterval` ticks.
 - Charts must handle loading, empty and error states.
 - Styles live in `src/styles/app.css`: design tokens on `:root`, then the shell and the shared primitives. Inline styles only for values that come from state, such as a measured position.
+- A reusable, feature-agnostic control belongs in `src/components/ui/` and takes its copy as props; a component only one page uses stays in `src/components/`.
 
 ## Testing
 

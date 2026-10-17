@@ -3,6 +3,7 @@
 import { useI18n } from "../hooks/useI18n";
 import { useTodos } from "../hooks/useTodos";
 import type { TodoFilter } from "../types/todo";
+import { SegmentedControl } from "./ui/SegmentedControl";
 import { TodoItem } from "./TodoItem";
 
 const FILTERS: readonly TodoFilter[] = ["all", "active", "completed"];
@@ -21,21 +22,12 @@ export function TodoList() {
   return (
     <section className="todo-panel">
       <div className="todo-toolbar">
-        <div className="todo-filters">
-          {FILTERS.map((value) => (
-            <button
-              aria-pressed={filter === value}
-              className="todo-filter"
-              key={value}
-              onClick={() => {
-                setFilter(value);
-              }}
-              type="button"
-            >
-              {t(FILTER_LABELS[value])}
-            </button>
-          ))}
-        </div>
+        <SegmentedControl
+          label={t("todo.filter.label")}
+          onChange={setFilter}
+          options={FILTERS.map((value) => ({ label: t(FILTER_LABELS[value]), value }))}
+          value={filter}
+        />
         <span className="muted">{t("todo.remaining", { remaining: counts.remaining })}</span>
       </div>
       {error !== null && <p className="todo-error">{t("todo.error")}</p>}

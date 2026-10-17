@@ -193,7 +193,9 @@ SentryNeko/
 │   │   ├── AppEventLog.tsx           # 前台应用事件日志列表
 │   │   ├── LanguageSwitcher.tsx      # 语言切换组件
 │   │   ├── TitleBar.tsx              # 自绘标题栏（拖拽、最小化、最大化、关闭）
-│   │   └── I18nProvider.tsx          # 国际化 Provider 组件
+│   │   ├── I18nProvider.tsx          # 国际化 Provider 组件
+│   │   └── ui/                       # 公共组件库
+│   │       └── SegmentedControl.tsx  # 公共分段控件（带滑动高亮）
 │   ├── pages/
 │   │   ├── Dashboard.tsx             # 主面板
 │   │   ├── TodosPage.tsx             # 待办页面

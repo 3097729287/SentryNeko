@@ -35,7 +35,8 @@
     "filter": {
       "all": "All",
       "active": "Active",
-      "completed": "Completed"
+      "completed": "Completed",
+      "label": "Filter by status"
     },
     "loading": "Loading…",
     "placeholder": "What needs doing?",

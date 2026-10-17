@@ -193,7 +193,9 @@ SentryNeko/
 │   │   ├── AppEventLog.tsx           # Foreground app event log list
 │   │   ├── LanguageSwitcher.tsx      # Language switcher component
 │   │   ├── TitleBar.tsx              # Custom title bar: drag, minimize, maximize, close
-│   │   └── I18nProvider.tsx          # i18n provider component
+│   │   ├── I18nProvider.tsx          # i18n provider component
+│   │   └── ui/                       # Shared component library
+│   │       └── SegmentedControl.tsx  # Segmented switch with a sliding highlight
 │   ├── pages/
 │   │   ├── Dashboard.tsx             # Main dashboard
 │   │   ├── TodosPage.tsx             # Todos page
