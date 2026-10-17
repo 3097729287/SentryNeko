@@ -693,6 +693,32 @@ p {
   gap: var(--space-3);
 }
 
+.alarm-defaults {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.alarm-defaults-field {
+  display: grid;
+  gap: 4px;
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+
+.alarm-defaults-field input {
+  padding: 8px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 13.5px;
+}
+
+.alarm-defaults-field input:focus-visible {
+  border-color: var(--accent);
+}
+
 .alarm-list {
   display: grid;
   gap: 6px;

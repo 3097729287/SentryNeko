@@ -6,6 +6,7 @@
     "edit": "Edit alarm",
     "empty": "No alarms yet — add the first one above.",
     "error": "The alarm list could not be loaded.",
+    "inherits": "New alarms inherit: {{seconds}} s of ringing · {{method}}",
     "label": "Label",
     "labelPlaceholder": "Wake up",
     "loading": "Loading…",
@@ -19,6 +20,15 @@
       "title": "Alarm"
     },
     "save": "Save",
+    "settings": {
+      "error": "The alarm defaults could not be saved.",
+      "method": "Notification",
+      "methodInApp": "In app only",
+      "methodToast": "System notification",
+      "ring": "Ring duration (seconds)",
+      "saved": "Saved",
+      "title": "Alarm defaults"
+    },
     "time": "Time",
     "toggle": "Enable alarm",
     "untitled": "Alarm",

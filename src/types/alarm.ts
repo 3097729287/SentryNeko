@@ -31,6 +31,29 @@ export interface AlarmDraft {
   repeatDays: number;
 }
 
+/** How an alarm announces itself; mirrors `models::alarm::Method`. */
+export type NotificationMethod = "toast" | "inApp";
+
+/** The methods in the order the settings page offers them. */
+export const NOTIFICATION_METHODS = ["toast", "inApp"] as const satisfies
+  readonly NotificationMethod[];
+
+/** What an alarm rings with; mirrors `models::alarm::AlarmDefaults`. */
+export interface AlarmDefaults {
+  /** How long the tone repeats, in seconds, `1..=60`. */
+  ringSeconds: number;
+  method: NotificationMethod;
+}
+
+/** The backend's own default, shown until the stored one arrives. */
+export const DEFAULT_ALARM_DEFAULTS: AlarmDefaults = { method: "toast", ringSeconds: 10 };
+
+/** The `t()` key of one notification method. */
+export const METHOD_LABELS: Record<NotificationMethod, string> = {
+  inApp: "alarm.settings.methodInApp",
+  toast: "alarm.settings.methodToast",
+};
+
 /** Bit of one weekday in {@link Alarm.repeatDays}. */
 export function dayMask(day: Weekday): number {
   return 1 << WEEKDAYS.indexOf(day);

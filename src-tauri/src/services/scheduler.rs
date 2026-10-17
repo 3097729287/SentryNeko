@@ -15,7 +15,7 @@ use tauri::AppHandle;
 
 use crate::config::Config;
 use crate::db::connection::Db;
-use crate::models::alarm::Alarm;
+use crate::models::alarm::{Alarm, AlarmDefaults, Method};
 use crate::services::event_bus::EventBus;
 use crate::services::i18n::Language;
 use crate::services::notification::{Chime, Notification, Notifier, ToastSink};
@@ -35,10 +35,38 @@ pub const TICK: Duration = Duration::from_secs(1);
 /// replay an alarm that was due while the app was closed.
 const GRACE_SECONDS: i64 = 1;
 
+/// Seconds between two tones while an alarm is ringing.
+///
+/// The system chime lasts about a second, so two seconds leave a pause instead of a solid hum.
+const BEEP_INTERVAL: i64 = 2;
+
 /// One alarm and the instant it is next due at.
 struct Due {
     alarm: Alarm,
     next_fire: Option<i64>,
+}
+
+/// The tones still owed to an alarm that has just gone off.
+struct Ringing {
+    /// Tones after the one that opened the ring.
+    remaining: i64,
+    /// When the next of them is due.
+    next_at: i64,
+    /// When the ring is over, whether or not every tone of it could still be played.
+    ends_at: i64,
+}
+
+impl Ringing {
+    /// Schedules the tones that follow the first one for `seconds` of ringing.
+    fn after(now: i64, seconds: i64) -> Option<Self> {
+        let beeps = (seconds + BEEP_INTERVAL - 1) / BEEP_INTERVAL;
+
+        (beeps > 1).then(|| Self {
+            remaining: beeps - 1,
+            next_at: now + BEEP_INTERVAL,
+            ends_at: now + seconds,
+        })
+    }
 }
 
 /// Rings alarms when their local time comes.
@@ -49,6 +77,7 @@ pub struct AlarmScheduler<T: ToastSink, C: Chime> {
     notifier: Notifier<T>,
     chime: C,
     due: HashMap<i64, Due>,
+    ringing: Option<Ringing>,
 }
 
 impl<T: ToastSink, C: Chime> AlarmScheduler<T, C> {
@@ -62,6 +91,7 @@ impl<T: ToastSink, C: Chime> AlarmScheduler<T, C> {
             notifier,
             chime,
             due: HashMap::new(),
+            ringing: None,
         }
     }
 
@@ -72,6 +102,8 @@ impl<T: ToastSink, C: Chime> AlarmScheduler<T, C> {
     /// cannot ring, because the tone or the toast was refused, still counts as rung — the other
     /// channel covers for it.
     pub fn tick(&mut self, now: i64) -> ApiResult<Vec<Alarm>> {
+        self.beep_if_due(now);
+
         let alarms = Alarm::list(&self.db)?;
         let known: Vec<i64> = alarms.iter().map(|alarm| alarm.id).collect();
         self.due.retain(|id, _| known.contains(id));
@@ -111,13 +143,21 @@ impl<T: ToastSink, C: Chime> AlarmScheduler<T, C> {
             alarm.clone()
         };
 
+        // The defaults are read here rather than copied into the row, so the settings page moves
+        // every alarm the moment it is saved. A missing or unreadable row rings the plain default.
+        let defaults = AlarmDefaults::load(&self.db).unwrap_or_default();
         let language = self.config.language().unwrap_or(Language::DEFAULT);
         let notification = Notification::alarm(language, &rung.label);
 
         // Both channels are best effort and independent: a machine without a sound device must
-        // still show the toast, and a system that blocks toasts must not silence the alarm.
+        // still show the message, and a system that blocks toasts must not silence the alarm.
         let _ = self.chime.play();
-        let _ = self.notifier.send(&self.bus, &notification);
+        self.ringing = Ringing::after(now, defaults.ring_seconds);
+
+        if defaults.method == Method::Toast {
+            let _ = self.notifier.send(&self.bus, &notification);
+        }
+
         let _ = self.bus.emit_alarm_triggered(&rung);
 
         self.due.insert(
@@ -129,6 +169,33 @@ impl<T: ToastSink, C: Chime> AlarmScheduler<T, C> {
         );
 
         rung
+    }
+
+    /// Plays the next tone of a ring that is still running, if it is due.
+    ///
+    /// Only one tone per tick: a loop that fell behind must not fire a burst of them at once.
+    fn beep_if_due(&mut self, now: i64) {
+        let Some(ringing) = self.ringing.as_mut() else {
+            return;
+        };
+
+        // A loop that slept through the whole ring must not replay it at wake-up.
+        if now > ringing.ends_at {
+            self.ringing = None;
+            return;
+        }
+
+        if now < ringing.next_at {
+            return;
+        }
+
+        let _ = self.chime.play();
+        ringing.remaining -= 1;
+        ringing.next_at = now + BEEP_INTERVAL;
+
+        if ringing.remaining == 0 {
+            self.ringing = None;
+        }
     }
 }
 
@@ -466,5 +533,71 @@ mod tests {
 
         assert_eq!(scheduler.tick(fire).expect("tick").len(), 1);
         assert_eq!(chime.plays(), 1);
+    }
+
+    #[test]
+    fn the_tone_repeats_until_the_configured_duration_is_over() {
+        let fixture = Fixture::new();
+        let chime = FakeChime::default();
+        let mut scheduler = fixture.scheduler(FakeToast::accepting(), chime.clone());
+        AlarmDefaults::save(
+            &fixture.db,
+            AlarmDefaults {
+                ring_seconds: 4,
+                method: Method::Toast,
+            },
+        )
+        .expect("stored");
+        let (hour, minute) = clock_in(120);
+        let alarm = Alarm::add(&fixture.db, "ring", hour, minute, 0).expect("stored");
+        let fire = alarm.next_fire(now()).expect("it has a next occurrence");
+
+        assert_eq!(scheduler.tick(fire).expect("tick").len(), 1);
+        assert_eq!(chime.plays(), 1, "the first tone plays with the alarm");
+
+        assert!(scheduler.tick(fire + 1).expect("tick").is_empty());
+        assert_eq!(chime.plays(), 1, "two tones are two seconds apart");
+
+        scheduler.tick(fire + 2).expect("tick");
+        assert_eq!(chime.plays(), 2, "the second tone is due two seconds in");
+
+        for offset in 3..=20 {
+            scheduler.tick(fire + offset).expect("tick");
+        }
+        assert_eq!(chime.plays(), 2, "four seconds of ringing are over");
+    }
+
+    #[test]
+    fn the_in_app_method_leaves_the_system_toast_quiet() {
+        let fixture = Fixture::new();
+        let toast = FakeToast::accepting();
+        let chime = FakeChime::default();
+        let mut scheduler = fixture.scheduler(toast.clone(), chime.clone());
+        let (hour, minute) = clock_in(120);
+        let alarm = Alarm::add(&fixture.db, "quiet", hour, minute, 0).expect("stored");
+        let fire = alarm.next_fire(now()).expect("it has a next occurrence");
+
+        // Saved after the alarm exists: the defaults are read when it rings, not when it is added.
+        AlarmDefaults::save(
+            &fixture.db,
+            AlarmDefaults {
+                ring_seconds: 2,
+                method: Method::InApp,
+            },
+        )
+        .expect("stored");
+
+        let rung = scheduler.tick(fire).expect("tick");
+
+        assert_eq!(rung.len(), 1);
+        assert_eq!(chime.plays(), 1, "the tone still plays");
+        assert!(
+            toast.shown().is_empty(),
+            "the system was never asked to show a toast"
+        );
+
+        let pushed = fixture.recorder.pushed();
+        assert_eq!(pushed.len(), 1, "{pushed:?}");
+        assert_eq!(pushed[0].0, names::ALARM_TRIGGERED);
     }
 }

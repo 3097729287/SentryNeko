@@ -63,6 +63,8 @@ pub fn run() {
             tag_commands::todos_with_tag,
             settings_commands::get_pomodoro_durations,
             settings_commands::set_pomodoro_durations,
+            settings_commands::get_alarm_defaults,
+            settings_commands::set_alarm_defaults,
             notification_commands::send_test_notification,
             notification_commands::notify_pomodoro_phase,
             pomodoro_commands::start_pomodoro_session,

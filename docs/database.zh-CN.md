@@ -74,7 +74,9 @@ app.manage(db);
 `Todo::set_tags` 在一个事务里同时写两边，`Tag::delete` 会把 id 从所有仍列着它的任务缓存里删掉。
 
 番茄钟时长是 `settings` 里的一行：键 `pomodoro.durations`，值是 `PomodoroDurations` 的 JSON；
-这一行不存在时按默认值处理。
+这一行不存在时按默认值处理。闹钟默认设置同样是一行：键 `alarm.defaults`，值形如
+`{ "ringSeconds": 10, "method": "toast" }`——提示音重复多久，以及消息怎么走（`toast`，或
+`inApp` 只交给窗口）。
 
 `app_events` 由前台采集器（`collectors/foreground_app.rs`）写入，它每秒采样一次前台窗口：
 
@@ -117,6 +119,9 @@ app.manage(db);
   只响第一次，绝不响两次。
 - 调度器为每个闹钟保存一个触发瞬间，并每秒读一次表，所以新增、编辑、删除或启停都在一秒内生效。
   恰好在读取那一行时到点的闹钟仍会响，最多晚一拍。
+- 闹钟怎么响由 `alarm.defaults` 决定，而且是在响的那一刻读取、不是抄进闹钟行里：提示音每两秒响
+  一次，直到 `ringSeconds` 用完；`method` 决定要不要向系统申请 Toast，`inApp` 时只靠
+  `alarm-triggered` 推送让窗口显示。因此保存默认设置会同时改变所有闹钟。
 
 ## 建表
 

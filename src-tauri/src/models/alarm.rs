@@ -5,7 +5,7 @@
 //! next epoch second it has to ring at, resolving the local time through the Windows rules.
 
 use rusqlite::{params, Row};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::db::connection::Db;
 use crate::db::repository;
@@ -16,8 +16,14 @@ use crate::utils::windows;
 /// Columns every query selects, in the order [`Alarm::from_row`] reads them.
 const COLUMNS: &str = "id, label, hour, minute, repeat_days, enabled, created_at";
 
+/// Key of the defaults row in the `settings` table.
+const DEFAULTS_KEY: &str = "alarm.defaults";
+
 /// Longest accepted label, in characters.
 const MAX_LABEL_CHARS: usize = 60;
+
+/// Longest accepted ring duration, in seconds.
+const MAX_RING_SECONDS: i64 = 60;
 
 /// Every weekday bit set: the weekday mask has no other bit.
 pub const ALL_DAYS: u8 = 0b0111_1111;
@@ -37,6 +43,84 @@ const REPEAT_LOOKAHEAD_DAYS: i64 = 8;
 
 /// How many days ahead a one-off alarm is looked for: today, or tomorrow when its time has passed.
 const ONE_OFF_LOOKAHEAD_DAYS: i64 = 2;
+
+/// How an alarm announces itself when it goes off.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum Method {
+    /// Ask the system for a Toast; when it refuses, the frontend shows one in the app instead.
+    Toast,
+    /// Leave the message to the window, which paints it from the push.
+    InApp,
+}
+
+/// What an alarm rings with: how long the tone repeats and how the message travels.
+///
+/// The defaults live in one `settings` row and are read when an alarm goes off, so changing them
+/// moves every alarm at once instead of leaving old rows on values nobody remembers choosing.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AlarmDefaults {
+    /// How long the tone keeps repeating, in seconds.
+    pub ring_seconds: i64,
+    pub method: Method,
+}
+
+impl Default for AlarmDefaults {
+    fn default() -> Self {
+        Self {
+            ring_seconds: 10,
+            method: Method::Toast,
+        }
+    }
+}
+
+impl AlarmDefaults {
+    /// Reads the stored defaults, falling back to the defaults on a fresh database.
+    pub fn load(db: &Db) -> ApiResult<Self> {
+        let stored = repository::query_optional(
+            db,
+            "SELECT value FROM settings WHERE key = ?1",
+            [DEFAULTS_KEY],
+            |row| Ok(row.get::<_, String>(0)?),
+        )?;
+
+        match stored {
+            Some(raw) => Ok(serde_json::from_str(&raw)?),
+            None => Ok(Self::default()),
+        }
+    }
+
+    /// Validates and stores the defaults; a duration outside `1..=MAX_RING_SECONDS` is
+    /// `INVALID_INPUT`.
+    pub fn save(db: &Db, defaults: Self) -> ApiResult<Self> {
+        defaults.validate()?;
+
+        repository::execute(
+            db,
+            "INSERT INTO settings (key, value, updated_at) VALUES (?1, ?2, ?3)
+             ON CONFLICT (key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at",
+            params![
+                DEFAULTS_KEY,
+                serde_json::to_string(&defaults)?,
+                time::now_seconds()
+            ],
+        )?;
+
+        Ok(defaults)
+    }
+
+    fn validate(&self) -> ApiResult<()> {
+        if !(1..=MAX_RING_SECONDS).contains(&self.ring_seconds) {
+            return Err(ApiError::invalid_input(format!(
+                "ringSeconds must be between 1 and {MAX_RING_SECONDS}"
+            ))
+            .with_details(format!("received {}", self.ring_seconds)));
+        }
+
+        Ok(())
+    }
+}
 
 /// A reminder at a local time of day.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -504,5 +588,70 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn the_defaults_are_ten_seconds_of_toast() {
+        let db = created();
+
+        assert_eq!(
+            AlarmDefaults::load(&db).expect("defaults"),
+            AlarmDefaults {
+                ring_seconds: 10,
+                method: Method::Toast,
+            }
+        );
+    }
+
+    #[test]
+    fn the_defaults_survive_a_save() {
+        let db = created();
+        let chosen = AlarmDefaults {
+            ring_seconds: 30,
+            method: Method::InApp,
+        };
+
+        AlarmDefaults::save(&db, chosen).expect("stored");
+
+        assert_eq!(AlarmDefaults::load(&db).expect("read back"), chosen);
+    }
+
+    #[test]
+    fn a_ring_duration_outside_the_accepted_range_is_refused() {
+        let db = created();
+
+        for ring_seconds in [0, -1, MAX_RING_SECONDS + 1] {
+            let error = AlarmDefaults::save(
+                &db,
+                AlarmDefaults {
+                    ring_seconds,
+                    method: Method::Toast,
+                },
+            )
+            .expect_err("the duration is refused");
+
+            assert_eq!(error.code(), ApiCode::InvalidInput, "{ring_seconds}");
+        }
+
+        assert_eq!(
+            AlarmDefaults::load(&db).expect("defaults"),
+            AlarmDefaults::default()
+        );
+    }
+
+    #[test]
+    fn the_defaults_serialize_the_way_the_frontend_reads_them() {
+        let json = serde_json::to_value(AlarmDefaults {
+            ring_seconds: 30,
+            method: Method::InApp,
+        })
+        .expect("serializes");
+
+        assert_eq!(json["ringSeconds"], serde_json::json!(30));
+        assert_eq!(json["method"], serde_json::json!("inApp"));
+        assert_eq!(
+            serde_json::to_value(AlarmDefaults::default()).expect("serializes")["method"],
+            serde_json::json!("toast")
+        );
     }
 }

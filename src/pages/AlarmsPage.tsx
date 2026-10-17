@@ -4,10 +4,12 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 
 import { AlarmList } from "../components/AlarmList";
+import { useAlarmDefaults } from "../hooks/useAlarmDefaults";
 import { useAlarms } from "../hooks/useAlarms";
 import { useI18n } from "../hooks/useI18n";
 import { BACKEND_EVENTS, useTauriEvent } from "../hooks/useTauriEvent";
 import {
+  METHOD_LABELS,
   WEEKDAYS,
   clockTime,
   defaultTime,
@@ -22,6 +24,7 @@ import type { Alarm, AlarmDraft, Weekday } from "../types/alarm";
 export function AlarmsPage() {
   const { t } = useI18n();
   const { add, alarms, error, loading, refresh, remove, setEnabled, update } = useAlarms();
+  const { defaults } = useAlarmDefaults();
   const [editing, setEditing] = useState<Alarm | null>(null);
   const [time, setTime] = useState<string>(defaultTime);
   const [label, setLabel] = useState("");
@@ -134,6 +137,13 @@ export function AlarmsPage() {
           )}
         </div>
       </form>
+
+      <p className="alarm-hint">
+        {t("alarm.inherits", {
+          method: t(METHOD_LABELS[defaults.method]),
+          seconds: defaults.ringSeconds,
+        })}
+      </p>
 
       {loading ? <p className="muted">{t("alarm.loading")}</p> : null}
       {error !== null ? <p className="error">{t("alarm.error")}</p> : null}

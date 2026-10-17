@@ -6,6 +6,7 @@
     "edit": "编辑闹钟",
     "empty": "还没有闹钟——在上方添加一个。",
     "error": "闹钟列表加载失败。",
+    "inherits": "新建闹钟继承：响铃 {{seconds}} 秒 · {{method}}",
     "label": "备注",
     "labelPlaceholder": "该起床了",
     "loading": "加载中…",
@@ -19,6 +20,15 @@
       "title": "闹钟"
     },
     "save": "保存",
+    "settings": {
+      "error": "闹钟默认设置保存失败。",
+      "method": "通知方式",
+      "methodInApp": "仅应用内",
+      "methodToast": "系统通知",
+      "ring": "响铃时长（秒）",
+      "saved": "已保存",
+      "title": "闹钟默认设置"
+    },
     "time": "时间",
     "toggle": "启用闹钟",
     "untitled": "闹钟",

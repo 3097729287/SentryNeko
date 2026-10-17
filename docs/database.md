@@ -79,7 +79,9 @@ answers "which tags" without a join, while `todo_tags` is the index the other di
 transaction, and `Tag::delete` removes its id from the cache of every task that listed it.
 
 The pomodoro durations are a single `settings` row: key `pomodoro.durations`, value the JSON form
-of `PomodoroDurations`. A missing row means the defaults apply.
+of `PomodoroDurations`. A missing row means the defaults apply. The alarm defaults are the same
+shape: key `alarm.defaults`, value `{ "ringSeconds": 10, "method": "toast" }` — how long the tone
+repeats and how the message travels (`toast`, or `inApp` for the window alone).
 
 `app_events` is written by the foreground collector (`collectors/foreground_app.rs`), which samples
 the foreground window once a second:
@@ -134,6 +136,10 @@ The heatmap (`models/heatmap.rs`) rolls `pomodoro_sessions` and `todos` up into 
 - The scheduler keeps one instant per alarm and reads the table once a second, so adding, editing,
   deleting or switching a row takes effect within a second. An instant that arrived while the row
   was being read still rings, up to one tick late.
+- How an alarm rings comes from `alarm.defaults`, read when it fires rather than copied into the
+  row: the tone repeats every two seconds until `ringSeconds` has passed, and `method` decides
+  whether the system is asked for a Toast. `inApp` leaves it to the `alarm-triggered` push, so the
+  window is the only channel; saving the defaults therefore moves every alarm at once.
 
 ## Schema creation
 

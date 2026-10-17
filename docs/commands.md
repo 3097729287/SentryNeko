@@ -115,7 +115,10 @@ there and the tasks completed there; the rules live in `docs/database.md`. The a
 maintains the reminders the scheduler watches: `list_alarms`, `add_alarm`, `update_alarm`,
 `set_alarm_enabled` and `delete_alarm`. `hour` and `minute` are the local wall clock and
 `repeatDays` is a weekday mask (`0` for a one-off); nothing here rings — `services/scheduler.rs`
-does, on the thread that owns the clock, so an alarm fires whether or not the page is open.
+does, on the thread that owns the clock, so an alarm fires whether or not the page is open. How an
+alarm rings is a setting rather than a column, so it lives with the durations: `get_alarm_defaults`
+and `set_alarm_defaults` carry the ring length and the notification method, and the scheduler reads
+them when an alarm fires — editing one therefore moves every alarm, not only the next.
 
 | Command | Module | Arguments | Returns | Task |
 | --- | --- | --- | --- | --- |
@@ -150,3 +153,5 @@ does, on the thread that owns the clock, so an alarm fires whether or not the pa
 | `update_alarm` | `alarm_commands` | `id: i64`, `label: String`, `hour: i64`, `minute: i64`, `repeatDays: i64` | `Alarm` | T17 |
 | `set_alarm_enabled` | `alarm_commands` | `id: i64`, `enabled: bool` | `Alarm` | T17 |
 | `delete_alarm` | `alarm_commands` | `id: i64` | — | T17 |
+| `get_alarm_defaults` | `settings_commands` | — | `AlarmDefaults` (`{ ringSeconds, method }`) | T18 |
+| `set_alarm_defaults` | `settings_commands` | `defaults: AlarmDefaults` | `AlarmDefaults` | T18 |
