@@ -86,7 +86,7 @@ SentryNeko 是一款面向 Windows 的个人效率与时间追踪应用。它把
 
 | 功能 | 说明 | 状态 |
 | --- | --- | --- |
-| 开机自启 | 注册 Windows 计划任务/注册表，开机自动启动采集器 | ✅ 规划 |
+| 开机自启 | 设置页开关写入当前用户的 Run 键，开机登录后启动并留在托盘 | ✅ 规划 |
 | 系统托盘 | 最小化到托盘，右键菜单快速操作（开始番茄、查看今日统计） | ✅ 规划 |
 | 全局快捷键 | 自定义快捷键快速开始/暂停番茄钟、显示/隐藏主窗口 | 🚧 预留 |
 
@@ -237,7 +237,6 @@ SentryNeko/
 ├── scripts/
 │   ├── init_db.ps1                   # 初始化数据库脚本（PowerShell）
 │   ├── dev.ps1                       # 一键启动开发环境（PowerShell）
-│   ├── install_collector.ps1         # 安装系统采集器（注册开机自启/权限配置）
 │   └── check_locales.mjs             # locale 键集合校验，由 `pnpm lint` 执行
 │
 ├── package.json
@@ -286,7 +285,7 @@ powershell -ExecutionPolicy Bypass -File scripts/dev.ps1
 pnpm tauri build
 ```
 
-> 采集器需要读取前台窗口信息，如遇权限或杀软拦截，执行 `scripts/install_collector.ps1` 完成注册与放行。
+> 采集器需要读取前台窗口信息，它跑在应用进程内、使用你本人的账户。如遇杀软拦截，在该工具里放行 SentryNeko 的可执行文件即可，没有需要单独注册的东西。开机自启是设置页上的一个开关，会在 `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` 下写入一条值。
 
 ## 文档
 

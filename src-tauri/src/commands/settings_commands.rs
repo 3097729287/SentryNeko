@@ -1,11 +1,14 @@
 //! Settings commands: read and update persisted user settings.
 
+use std::path::PathBuf;
+
 use tauri::State;
 
 use crate::config::Config;
 use crate::db::connection::Db;
 use crate::models::alarm::AlarmDefaults;
 use crate::models::pomodoro::PomodoroDurations;
+use crate::services::autostart::{Autostart, WindowsRunKey};
 use crate::services::i18n::Language;
 use crate::services::tray::Tray;
 use crate::utils::response::{ApiError, ApiResponse, ApiResult};
@@ -38,6 +41,33 @@ pub fn set_alarm_defaults(
     defaults: AlarmDefaults,
 ) -> ApiResponse<AlarmDefaults> {
     AlarmDefaults::save(&db, defaults).into()
+}
+
+/// Reads whether Windows starts the application when the user signs in.
+#[tauri::command]
+pub fn get_autostart(autostart: State<'_, Autostart<WindowsRunKey>>) -> ApiResponse<bool> {
+    program()
+        .and_then(|program| autostart.enabled(&program))
+        .into()
+}
+
+/// Registers or unregisters the application for a start at login.
+#[tauri::command]
+pub fn set_autostart(
+    enabled: bool,
+    autostart: State<'_, Autostart<WindowsRunKey>>,
+) -> ApiResponse<bool> {
+    program()
+        .and_then(|program| autostart.set(&program, enabled))
+        .into()
+}
+
+/// The executable a login entry has to point at.
+fn program() -> ApiResult<PathBuf> {
+    std::env::current_exe().map_err(|error| {
+        ApiError::internal("the running executable cannot be located")
+            .with_details(error.to_string())
+    })
 }
 
 /// Reads the language stored in `config.json`.

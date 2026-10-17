@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 
 import { AlarmDefaultsSettings } from "../components/AlarmDefaultsSettings";
+import { AutostartSettings } from "../components/AutostartSettings";
 import { LanguageSwitcher } from "../components/LanguageSwitcher";
 import { PomodoroSettings } from "../components/PomodoroSettings";
 import { useI18n } from "../hooks/useI18n";
@@ -26,6 +27,9 @@ export function SettingsPage() {
       </section>
       <section className="settings-section">
         <AlarmDefaultsSettings />
+      </section>
+      <section className="settings-section">
+        <AutostartSettings />
       </section>
       <section className="settings-section">
         <h2>{t("language.label")}</h2>

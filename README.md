@@ -86,7 +86,7 @@ Status legend: ✅ Planned (implemented in the current scope); 🚧 Reserved (fu
 
 | Feature | Description | Status |
 | --- | --- | --- |
-| Auto-start with Windows | Register a Task Scheduler entry / registry key to launch the collector on boot | ✅ Planned |
+| Auto-start with Windows | A settings switch writes the per-user run key, so the app starts at login and waits in the tray | ✅ Planned |
 | System tray | Minimize to tray with a right-click menu (start Pomodoro, view today's stats) | ✅ Planned |
 | Global shortcuts | Custom shortcuts to start / pause the Pomodoro timer and show / hide the main window | 🚧 Reserved |
 
@@ -237,7 +237,6 @@ SentryNeko/
 ├── scripts/
 │   ├── init_db.ps1                   # Database initialization script (PowerShell)
 │   ├── dev.ps1                       # One-command dev environment (PowerShell)
-│   ├── install_collector.ps1         # Install the system collector (auto-start / permissions)
 │   └── check_locales.mjs             # Locale key parity check, run by `pnpm lint`
 │
 ├── package.json
@@ -286,7 +285,7 @@ powershell -ExecutionPolicy Bypass -File scripts/dev.ps1
 pnpm tauri build
 ```
 
-> The collector reads foreground window information. If antivirus software or permissions block it, run `scripts/install_collector.ps1` to register and allow it.
+> The collector reads foreground window information and runs inside the app, under your own account. If antivirus software blocks it, allow the SentryNeko executable in that tool; there is nothing to register separately. Starting with Windows is a switch on the settings page, which writes one value under `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`.
 
 ## Documentation
 

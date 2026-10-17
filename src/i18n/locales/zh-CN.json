@@ -62,6 +62,12 @@
     "name": "SentryNeko",
     "tagline": "记录你的专注与待办"
   },
+  "autostart": {
+    "description": "登录 Windows 时自动启动 SentryNeko，追踪与闹钟无需打开窗口即已就绪；窗口会留在托盘里，直到你打开它。",
+    "error": "开机自启设置保存失败。",
+    "title": "开机自启",
+    "toggle": "登录时自动启动 SentryNeko"
+  },
   "events": {
     "log": {
       "empty": "还没有收到事件——切到别的应用试试。",

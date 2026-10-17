@@ -101,7 +101,9 @@ fn toggle(id: i64) -> ApiResult<Todo> {
 真正响铃的是 `services/scheduler.rs`，跑在拥有时钟的那个线程上，所以页面开没开都不影响闹钟。
 闹钟怎么响是设置而不是列，所以和时长放在一起：`get_alarm_defaults` 与 `set_alarm_defaults`
 读写响铃时长和通知方式，调度器在响的那一刻读取它们——改一次默认值，所有闹钟一起变，而不只是下
-一个。
+一个。两个自启命令管的是另一半机器状态：`get_autostart` 报告当前用户的 Run 键会不会启动这个
+可执行文件，`set_autostart` 写入或删除那条记录，并返回此刻生效的状态；注册表拒绝写入时是
+`PERMISSION_DENIED`。
 
 | 命令 | 模块 | 参数 | 返回 | 任务 |
 | --- | --- | --- | --- | --- |
@@ -138,3 +140,5 @@ fn toggle(id: i64) -> ApiResult<Todo> {
 | `delete_alarm` | `alarm_commands` | `id: i64` | — | T17 |
 | `get_alarm_defaults` | `settings_commands` | — | `AlarmDefaults`（`{ ringSeconds, method }`） | T18 |
 | `set_alarm_defaults` | `settings_commands` | `defaults: AlarmDefaults` | `AlarmDefaults` | T18 |
+| `get_autostart` | `settings_commands` | — | `bool` —— 自启项是否指向当前可执行文件 | T26 |
+| `set_autostart` | `settings_commands` | `enabled: bool` | `bool` —— 此刻生效的状态 | T26 |

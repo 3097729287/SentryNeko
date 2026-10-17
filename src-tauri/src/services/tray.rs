@@ -245,6 +245,14 @@ impl Tray {
     }
 }
 
+/// Hides the window, e.g. when Windows started the application at login and the user asked for a
+/// quiet start.
+pub fn hide_window(app: &AppHandle) {
+    if let Some(window) = app.get_webview_window(WINDOW_LABEL) {
+        let _ = window.hide();
+    }
+}
+
 /// Parks the window in the tray when it is closed instead of ending the process.
 pub fn hide_on_close(window: &WebviewWindow) {
     let parked = window.clone();

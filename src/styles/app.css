@@ -512,6 +512,19 @@ p {
   font-weight: 600;
 }
 
+.autostart {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.autostart-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+
 /* Pomodoro */
 
 .pomodoro-panel {
