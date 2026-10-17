@@ -2,6 +2,7 @@ import { HashRouter, Navigate, NavLink, Outlet, Route, Routes } from "react-rout
 
 import { I18nProvider } from "./components/I18nProvider";
 import { LanguageSwitcher } from "./components/LanguageSwitcher";
+import { TitleBar } from "./components/TitleBar";
 import { useI18n } from "./hooks/useI18n";
 import { AlarmsPage } from "./pages/AlarmsPage";
 import { AnalyticsPage } from "./pages/AnalyticsPage";
@@ -30,7 +31,8 @@ function Shell() {
 
   return (
     <div className="app-shell">
-      <aside className="sidebar">
+      <TitleBar />
+      <aside className="sidebar" data-tauri-drag-region="deep">
         <div className="brand">
           <span className="brand-mark">
             <span aria-hidden="true" className="brand-dot" />
@@ -57,9 +59,8 @@ function Shell() {
 }
 
 /**
- * Root component: the i18next instance wraps the router, which picks the page for the current
- * address. Routing is hash based on purpose — the packaged application is served from a single
- * document, so a plain path would not survive a reload.
+ * Root component: the i18n provider wraps the router that picks the page. Hash routing keeps
+ * reloads working, because the packaged app is served from a single document.
  */
 export default function App() {
   return (

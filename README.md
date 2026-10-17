@@ -181,7 +181,8 @@ SentryNeko/
 │   │   ├── useAlarm.ts               # Alarm hook
 │   │   ├── useAppEvents.ts           # Foreground app event hook
 │   │   ├── useI18n.ts                # Language switching hook
-│   │   └── useTauriEvent.ts          # Tauri event listener wrapper
+│   │   ├── useTauriEvent.ts          # Tauri event listener wrapper
+│   │   └── useWindowControls.ts      # Window controls for the custom title bar
 │   ├── components/
 │   │   ├── TodoList.tsx              # Todo list component
 │   │   ├── TodoItem.tsx              # Single todo item
@@ -191,6 +192,7 @@ SentryNeko/
 │   │   ├── AlarmList.tsx             # Alarm list
 │   │   ├── AppEventLog.tsx           # Foreground app event log list
 │   │   ├── LanguageSwitcher.tsx      # Language switcher component
+│   │   ├── TitleBar.tsx              # Custom title bar: drag, minimize, maximize, close
 │   │   └── I18nProvider.tsx          # i18n provider component
 │   ├── pages/
 │   │   ├── Dashboard.tsx             # Main dashboard

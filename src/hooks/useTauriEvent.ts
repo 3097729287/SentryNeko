@@ -12,11 +12,8 @@ export const BACKEND_EVENTS = {
 } as const;
 
 /**
- * Runs `handler` for every `event` the backend pushes while the component is mounted.
- *
- * The handler lives in a ref, so an inline closure does not resubscribe on every render, and
- * the subscription is torn down on unmount even when `listen` resolves afterwards. Outside
- * Tauri — a plain `pnpm dev` in a browser — nothing is subscribed.
+ * Runs `handler` for every matching event while mounted. The handler sits in a ref, so an inline
+ * closure does not resubscribe; no-op outside Tauri.
  */
 export function useTauriEvent<T>(event: string, handler: (payload: T) => void): void {
   const handlerRef = useRef(handler);
@@ -48,12 +45,7 @@ export function useTauriEvent<T>(event: string, handler: (payload: T) => void): 
   }, [event]);
 }
 
-/**
- * Asks the backend to push one `test-event`; `null` when no backend answers.
- *
- * The command is a diagnostic: it exists so the bus can be exercised from the UI before the
- * real events of T15 arrive.
- */
+/** Asks the backend to push one `test-event`; `null` when no backend answers. */
 export async function emitTestEvent(): Promise<ApiResponse<TestEventPayload> | null> {
   if (!isTauri()) {
     return null;

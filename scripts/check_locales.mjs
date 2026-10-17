@@ -1,8 +1,5 @@
-// Checks that every offered locale carries the same translation keys.
-//
-// CONTRIBUTING.md requires a new user-visible string to land in both locale files in the
-// same commit; this script turns that rule into something `pnpm lint` can enforce.
-// Reserved tags (`ja-JP`, T30) are skipped until they are complete.
+// Checks that the offered locales carry the same keys, so `pnpm lint` enforces the rule that a
+// new user-visible string lands in both files at once. Reserved tags (ja-JP, T30) are skipped.
 
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";

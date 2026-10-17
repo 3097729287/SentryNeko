@@ -25,5 +25,11 @@
   },
   "pages": {
     "empty": "Nothing here yet."
+  },
+  "window": {
+    "minimize": "Minimize",
+    "maximize": "Maximize",
+    "restore": "Restore",
+    "close": "Close"
   }
 }

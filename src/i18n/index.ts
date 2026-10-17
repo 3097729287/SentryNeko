@@ -8,10 +8,7 @@ import enUS from "./locales/en-US.json";
 import jaJP from "./locales/ja-JP.json";
 import zhCN from "./locales/zh-CN.json";
 
-/**
- * Locale files keyed by tag. `ja-JP` is loaded but not selectable: `config.ts` decides
- * which tags i18next may resolve to.
- */
+/** Locale files by tag; `ja-JP` loads, but only `config.ts` decides what may be selected. */
 const resources = {
   "en-US": { translation: enUS },
   "zh-CN": { translation: zhCN },

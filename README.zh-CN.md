@@ -181,7 +181,8 @@ SentryNeko/
 │   │   ├── useAlarm.ts               # 闹钟 Hook
 │   │   ├── useAppEvents.ts           # 前台应用事件 Hook
 │   │   ├── useI18n.ts                # 语言切换 Hook
-│   │   └── useTauriEvent.ts          # Tauri 事件监听封装
+│   │   ├── useTauriEvent.ts          # Tauri 事件监听封装
+│   │   └── useWindowControls.ts      # 自绘标题栏的窗口控制
 │   ├── components/
 │   │   ├── TodoList.tsx              # 待办列表组件
 │   │   ├── TodoItem.tsx              # 单个待办项
@@ -191,6 +192,7 @@ SentryNeko/
 │   │   ├── AlarmList.tsx             # 闹钟列表
 │   │   ├── AppEventLog.tsx           # 前台应用事件日志列表
 │   │   ├── LanguageSwitcher.tsx      # 语言切换组件
+│   │   ├── TitleBar.tsx              # 自绘标题栏（拖拽、最小化、最大化、关闭）
 │   │   └── I18nProvider.tsx          # 国际化 Provider 组件
 │   ├── pages/
 │   │   ├── Dashboard.tsx             # 主面板

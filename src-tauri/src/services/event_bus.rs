@@ -23,10 +23,7 @@ pub struct TestEvent {
 
 /// What the bus pushes to: the Tauri handle in the application, a recorder in tests.
 pub trait EventSink: Send + Sync + 'static {
-    /// Hands one payload to the frontend.
-    ///
-    /// # Errors
-    /// Fails when the payload cannot be handed over.
+    /// Hands one payload to the frontend; fails when it cannot be handed over.
     fn emit(&self, event: &str, payload: serde_json::Value) -> ApiResult<()>;
 }
 
@@ -57,10 +54,7 @@ impl EventBus {
         }
     }
 
-    /// Pushes [`names::TEST_EVENT`] and answers with what was sent.
-    ///
-    /// # Errors
-    /// Fails when the payload cannot be serialized or pushed.
+    /// Pushes [`names::TEST_EVENT`] and answers with what was sent; fails when it cannot be sent.
     pub fn emit_test_event(&self) -> ApiResult<TestEvent> {
         let payload = TestEvent {
             sequence: self.sequence.fetch_add(1, Ordering::Relaxed) + 1,
