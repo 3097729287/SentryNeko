@@ -93,7 +93,9 @@ fn toggle(id: i64) -> ApiResult<Todo> {
 因此恢复后开机时刻不会漂移。前台这一组回答排行榜用什么：`app_usage` 接收一个时间窗
 （`from`、`to`，UTC epoch 秒）和一个 `limit`，按应用在该窗口内占据前台的秒数排名。窗口由前端按
 预设算好（「今天」从本地零点起），后端只负责把存储的行裁到窗口内、把窗口中再次出现的应用合并，
-并丢掉锁屏与登录界面外壳。
+并丢掉锁屏与登录界面外壳。热力图这一组回答图表要什么：`heatmap` 接收窗口和 `granularity`
+（`day`、`week`、`month`），按本地日、周一或月初返回每个桶——空桶也返回——桶里带在该处开始的
+专注秒数和在该处完成的任务数；规则写在 `docs/database.md`。
 
 | 命令 | 模块 | 参数 | 返回 | 任务 |
 | --- | --- | --- | --- | --- |
@@ -122,3 +124,4 @@ fn toggle(id: i64) -> ApiResult<Todo> {
 | `notify_pomodoro_phase` | `notification_commands` | `phase: Phase` | `Outcome`（`"toast"` 或 `"fallback"`） | T14 |
 | `get_uptime` | `system_commands` | — | `Uptime`（`{ bootAt, todaySeconds, totalSeconds }`） | T13 |
 | `app_usage` | `app_event_commands` | `from: i64`、`to: i64`、`limit: i64` | `AppUsage[]`（`{ appName, seconds }`） | T20 |
+| `heatmap` | `heatmap_commands` | `from: i64`、`to: i64`、`granularity: "day" \| "week" \| "month"` | `HeatmapBucket[]`（`{ start, focusSeconds, completedTasks }`） | T19 |

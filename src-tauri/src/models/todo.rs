@@ -94,11 +94,16 @@ impl Todo {
         Self::find(db, id)
     }
 
-    /// Sets the completion flag; a missing id is `NOT_FOUND`.
+    /// Sets the completion flag, stamping `completed_at` when the task is done and clearing it
+    /// when it is reopened; a missing id is `NOT_FOUND`.
     pub fn set_completed(db: &Db, id: i64, completed: bool) -> ApiResult<Self> {
         let changed = repository::execute(
             db,
-            "UPDATE todos SET completed = ?1, updated_at = ?2 WHERE id = ?3",
+            "UPDATE todos
+             SET completed = ?1,
+                 completed_at = CASE WHEN ?1 THEN ?2 ELSE NULL END,
+                 updated_at = ?2
+             WHERE id = ?3",
             params![completed, time::now_seconds(), id],
         )?;
 
@@ -278,6 +283,26 @@ mod tests {
         let completed = Todo::set_completed(&db, todo.id, true).expect("completed");
         assert!(completed.completed);
         assert_eq!(Todo::find(&db, todo.id).expect("found"), completed);
+        assert!(
+            completed_at(&db, todo.id).is_some(),
+            "completing stamps the time"
+        );
+
+        let reopened = Todo::set_completed(&db, todo.id, false).expect("reopened");
+        assert!(!reopened.completed);
+        assert_eq!(completed_at(&db, todo.id), None, "reopening clears it");
+    }
+
+    /// Reads the column the heatmap counts tasks by, which the `Todo` shape does not carry.
+    fn completed_at(db: &Db, id: i64) -> Option<i64> {
+        db.connection()
+            .expect("connection")
+            .query_row(
+                "SELECT completed_at FROM todos WHERE id = ?1",
+                [id],
+                |row| row.get::<_, Option<i64>>(0),
+            )
+            .expect("the row exists")
     }
 
     #[test]

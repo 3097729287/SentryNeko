@@ -20,12 +20,13 @@ pub const TABLES: [&str; 7] = [
 
 const SCHEMA: &str = r"
 CREATE TABLE IF NOT EXISTS todos (
-    id         INTEGER PRIMARY KEY AUTOINCREMENT,
-    title      TEXT    NOT NULL,
-    completed  INTEGER NOT NULL DEFAULT 0 CHECK (completed IN (0, 1)),
-    created_at INTEGER NOT NULL,
-    updated_at INTEGER NOT NULL,
-    tag_ids    TEXT    NOT NULL DEFAULT '[]'
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    title        TEXT    NOT NULL,
+    completed    INTEGER NOT NULL DEFAULT 0 CHECK (completed IN (0, 1)),
+    completed_at INTEGER,
+    created_at   INTEGER NOT NULL,
+    updated_at   INTEGER NOT NULL,
+    tag_ids      TEXT    NOT NULL DEFAULT '[]'
 );
 
 CREATE TABLE IF NOT EXISTS pomodoro_sessions (

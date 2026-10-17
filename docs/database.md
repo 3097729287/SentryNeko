@@ -65,7 +65,7 @@ The schema holds seven tables:
 
 | Table | Holds | Key columns |
 | --- | --- | --- |
-| `todos` | Tasks the user maintains | `title`, `completed`, `created_at`, `updated_at`, `tag_ids` |
+| `todos` | Tasks the user maintains | `title`, `completed`, `completed_at`, `created_at`, `updated_at`, `tag_ids` |
 | `pomodoro_sessions` | One focus or break interval | `phase`, `planned_seconds`, `actual_seconds`, `started_at`, `ended_at`, `todo_id` |
 | `app_events` | Foreground application activity | `app_name`, `window_title`, `started_at`, `ended_at` |
 | `alarms` | Recurring reminders | `label`, `hour`, `minute`, `repeat_days`, `enabled`, `created_at` |
@@ -103,6 +103,19 @@ the foreground window once a second:
 about, sums the rows of one app (an app revisited later in the window is merged with its earlier
 stretch instead of appearing twice), counts a row without `ended_at` up to the end of the window,
 and drops `LockApp` / `LogonUI` so locked time is not attributed to anybody.
+
+The heatmap (`models/heatmap.rs`) rolls `pomodoro_sessions` and `todos` up into buckets:
+
+- A bucket is a local day, a Monday-based week or a calendar month. The boundary is resolved
+  through the Windows time zone rules, so the two days a year whose clocks move keep the right
+  length instead of drifting by an hour.
+- Every day of the window is answered, empty ones included, so the chart can lay the days out
+  without filling the gaps itself.
+- A focus phase counts with its `actual_seconds` and belongs to the day it *started* in; a phase
+  that is still open counts once it is closed. Sessions from other phases are ignored.
+- A task counts on the day `completed_at` names. `set_completed` stamps it when the box is ticked
+  and clears it when the task is reopened, so renaming a finished task never moves it to another
+  day.
 
 ## Schema creation
 
