@@ -200,6 +200,7 @@ SentryNeko/
 │   │   ├── ToastHost.tsx             # In-app toast for a refused system notification
 │   │   ├── I18nProvider.tsx          # i18n provider component
 │   │   └── ui/                       # Shared component library
+│   │       ├── NumericInput.tsx      # Validated numeric input with wheel and arrow stepping
 │   │       └── SegmentedControl.tsx  # Segmented switch with a sliding highlight
 │   ├── pages/
 │   │   ├── Dashboard.tsx             # Main dashboard

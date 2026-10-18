@@ -6,6 +6,7 @@ import { useAlarmDefaults } from "../hooks/useAlarmDefaults";
 import { useI18n } from "../hooks/useI18n";
 import { METHOD_LABELS, NOTIFICATION_METHODS } from "../types/alarm";
 import type { NotificationMethod } from "../types/alarm";
+import { NumericInput } from "./ui/NumericInput";
 import { SegmentedControl } from "./ui/SegmentedControl";
 
 /** Wait after the last keystroke, so typing `10` writes once. */
@@ -18,13 +19,13 @@ const SAVED_NOTE_MS = 2_000;
 export function AlarmDefaultsSettings() {
   const { t } = useI18n();
   const { defaults, error, loading, save } = useAlarmDefaults();
-  const [seconds, setSeconds] = useState(String(defaults.ringSeconds));
+  const [seconds, setSeconds] = useState(defaults.ringSeconds);
   const [method, setMethod] = useState<NotificationMethod>(defaults.method);
   const [saved, setSaved] = useState(false);
 
   // The stored values land after the first render; every save answers with the stored row too.
   useEffect(() => {
-    setSeconds(String(defaults.ringSeconds));
+    setSeconds(defaults.ringSeconds);
     setMethod(defaults.method);
   }, [defaults]);
 
@@ -42,22 +43,20 @@ export function AlarmDefaultsSettings() {
     };
   }, [saved]);
 
-  const parsed = Number.parseInt(seconds, 10);
-  const valid = !Number.isNaN(parsed) && parsed >= 1;
-  const stored = parsed === defaults.ringSeconds && method === defaults.method;
+  const stored = seconds === defaults.ringSeconds && method === defaults.method;
 
   const write = (): void => {
-    if (loading || !valid || stored) {
+    if (loading || stored) {
       return;
     }
 
-    void save({ method, ringSeconds: parsed }).then((result) => {
+    void save({ method, ringSeconds: seconds }).then((result) => {
       setSaved(result !== null);
     });
   };
 
   useEffect(() => {
-    if (loading || !valid || stored) {
+    if (loading || stored) {
       return;
     }
 
@@ -66,26 +65,28 @@ export function AlarmDefaultsSettings() {
     return () => {
       window.clearTimeout(timer);
     };
-  }, [seconds, method, loading, valid, stored, save]);
+  }, [seconds, method, loading, stored, save]);
 
   return (
     <div className="settings-form">
       <div className="settings-pair">
-        <label className="set-field">
-          <span>{t("alarm.settings.ring")}</span>
-          <input
+        <div className="set-field">
+          <label htmlFor="alarm-ring-seconds">{t("alarm.settings.ring")}</label>
+          <NumericInput
+            decreaseLabel={t("numericInput.decrease", { label: t("alarm.settings.ring") })}
             disabled={loading}
+            id="alarm-ring-seconds"
+            increaseLabel={t("numericInput.increase", { label: t("alarm.settings.ring") })}
             max={60}
             min={1}
             onBlur={write}
-            onChange={(event) => {
+            onChange={(value) => {
               setSaved(false);
-              setSeconds(event.target.value);
+              setSeconds(value);
             }}
-            type="number"
             value={seconds}
           />
-        </label>
+        </div>
         <div className="set-field">
           <span>{t("alarm.settings.method")}</span>
           <SegmentedControl

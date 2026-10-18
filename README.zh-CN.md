@@ -200,6 +200,7 @@ SentryNeko/
 │   │   ├── ToastHost.tsx             # 系统通知被拒时的应用内提示
 │   │   ├── I18nProvider.tsx          # 国际化 Provider 组件
 │   │   └── ui/                       # 公共组件库
+│   │       ├── NumericInput.tsx      # 支持输入校验、滚轮和箭头调节的数字输入框
 │   │       └── SegmentedControl.tsx  # 公共分段控件（带滑动高亮）
 │   ├── pages/
 │   │   ├── Dashboard.tsx             # 主面板

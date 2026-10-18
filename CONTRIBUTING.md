@@ -99,7 +99,19 @@ cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings
 # frontend
 pnpm lint
 pnpm build
+
+# numeric input browser regressions (install Chromium once)
+pnpm exec playwright install chromium
+pnpm test:numeric-input
 ```
+
+`NumericInput` in `src/components/ui/` takes a numeric `value`, `onChange`, optional
+`min` / `max` / positive `step` (default `1`), and translated `increaseLabel` /
+`decreaseLabel` props. Use a linked label or `aria-label` for the input itself. Values
+are clamped and manual input is rounded to the nearest step relative to `min` (or
+zero). Temporary blanks, signs and decimal points stay editable and settle to the
+current value on blur or Enter. Wheel and arrow adjustments publish immediately;
+disabled and read-only inputs allow the page to scroll normally.
 
 Anything touching foreground-app collection, notifications, tray behavior or auto-start also needs a manual pass on real Windows hardware: switch between a few apps, leave the machine idle, lock the screen, and resume from sleep, then confirm the recorded events and durations look sane.
 

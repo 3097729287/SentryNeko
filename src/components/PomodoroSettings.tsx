@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useI18n } from "../hooks/useI18n";
 import { usePomodoro } from "../hooks/usePomodoro";
 import type { PomodoroDurations } from "../types/pomodoro";
+import { NumericInput } from "./ui/NumericInput";
 
 /** Wait after the last keystroke, so typing `25` writes once. */
 const SAVE_DELAY_MS = 600;
@@ -13,9 +14,9 @@ const SAVE_DELAY_MS = 600;
 const SAVED_NOTE_MS = 2_000;
 
 interface Draft {
-  focus: string;
-  shortBreak: string;
-  longBreak: string;
+  focus: number;
+  shortBreak: number;
+  longBreak: number;
 }
 
 /** Three minute fields and the ratio they add up to; every change saves itself. */
@@ -46,19 +47,17 @@ export function PomodoroSettings() {
 
   const idle = endsAt === null && sessionId === null;
   const next: PomodoroDurations = {
-    focusSeconds: toSeconds(draft.focus),
-    longBreakSeconds: toSeconds(draft.longBreak),
-    shortBreakSeconds: toSeconds(draft.shortBreak),
+    focusSeconds: draft.focus * 60,
+    longBreakSeconds: draft.longBreak * 60,
+    shortBreakSeconds: draft.shortBreak * 60,
   };
-  const valid =
-    minutes(draft.focus) > 0 && minutes(draft.shortBreak) > 0 && minutes(draft.longBreak) > 0;
   const stored =
     next.focusSeconds === durations.focusSeconds &&
     next.longBreakSeconds === durations.longBreakSeconds &&
     next.shortBreakSeconds === durations.shortBreakSeconds;
 
   const save = (): void => {
-    if (!idle || !valid || stored) {
+    if (!idle || stored) {
       return;
     }
 
@@ -66,7 +65,7 @@ export function PomodoroSettings() {
   };
 
   useEffect(() => {
-    if (!idle || !valid || stored) {
+    if (!idle || stored) {
       return;
     }
 
@@ -76,16 +75,16 @@ export function PomodoroSettings() {
       window.clearTimeout(timer);
     };
     // The three fields are the inputs the save reads.
-  }, [draft.focus, draft.shortBreak, draft.longBreak, idle, valid, stored, saveDurations]);
+  }, [draft.focus, draft.shortBreak, draft.longBreak, idle, stored, saveDurations]);
 
   const phases = [
-    { key: "focus", value: minutes(draft.focus) },
-    { key: "shortBreak", value: minutes(draft.shortBreak) },
-    { key: "longBreak", value: minutes(draft.longBreak) },
+    { key: "focus", value: draft.focus },
+    { key: "shortBreak", value: draft.shortBreak },
+    { key: "longBreak", value: draft.longBreak },
   ] as const;
   const total = phases.reduce((sum, phase) => sum + phase.value, 0);
 
-  const update = (key: keyof Draft) => (value: string) => {
+  const update = (key: keyof Draft) => (value: number) => {
     setSaved(false);
     setDraft((current) => ({ ...current, [key]: value }));
   };
@@ -93,48 +92,27 @@ export function PomodoroSettings() {
   return (
     <div className="settings-form">
       <div className="phase-grid">
-        <label className="set-field">
-          <span>{t("pomodoro.settings.focus")}</span>
-          <input
-            disabled={!idle}
-            max={240}
-            min={1}
-            onBlur={save}
-            onChange={(event) => {
-              update("focus")(event.target.value);
-            }}
-            type="number"
-            value={draft.focus}
-          />
-        </label>
-        <label className="set-field">
-          <span>{t("pomodoro.settings.shortBreak")}</span>
-          <input
-            disabled={!idle}
-            max={240}
-            min={1}
-            onBlur={save}
-            onChange={(event) => {
-              update("shortBreak")(event.target.value);
-            }}
-            type="number"
-            value={draft.shortBreak}
-          />
-        </label>
-        <label className="set-field">
-          <span>{t("pomodoro.settings.longBreak")}</span>
-          <input
-            disabled={!idle}
-            max={240}
-            min={1}
-            onBlur={save}
-            onChange={(event) => {
-              update("longBreak")(event.target.value);
-            }}
-            type="number"
-            value={draft.longBreak}
-          />
-        </label>
+        {phases.map((phase) => {
+          const label = t(`pomodoro.settings.${phase.key}`);
+          const id = `pomodoro-${phase.key}`;
+
+          return (
+            <div className="set-field" key={phase.key}>
+              <label htmlFor={id}>{label}</label>
+              <NumericInput
+                decreaseLabel={t("numericInput.decrease", { label })}
+                disabled={!idle}
+                id={id}
+                increaseLabel={t("numericInput.increase", { label })}
+                max={240}
+                min={1}
+                onBlur={save}
+                onChange={update(phase.key)}
+                value={phase.value}
+              />
+            </div>
+          );
+        })}
       </div>
       {total > 0 ? (
         <div aria-hidden="true" className="phase-bar">
@@ -182,22 +160,8 @@ export function PomodoroSettings() {
 
 function toDraft(durations: PomodoroDurations): Draft {
   return {
-    focus: String(Math.round(durations.focusSeconds / 60)),
-    longBreak: String(Math.round(durations.longBreakSeconds / 60)),
-    shortBreak: String(Math.round(durations.shortBreakSeconds / 60)),
+    focus: Math.round(durations.focusSeconds / 60),
+    longBreak: Math.round(durations.longBreakSeconds / 60),
+    shortBreak: Math.round(durations.shortBreakSeconds / 60),
   };
-}
-
-/** The minutes behind a field, so the ratio bar ignores a blank or malformed one. */
-function minutes(value: string): number {
-  const parsed = Number.parseInt(value, 10);
-
-  return Number.isNaN(parsed) || parsed < 0 ? 0 : parsed;
-}
-
-/** A blank or malformed field becomes zero, which the local validity check already refuses. */
-function toSeconds(value: string): number {
-  const parsed = Number.parseInt(value, 10);
-
-  return Number.isNaN(parsed) ? 0 : parsed * 60;
 }
