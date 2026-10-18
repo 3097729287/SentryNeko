@@ -75,7 +75,7 @@ The schema holds nine tables:
 
 | Table | Holds | Key columns |
 | --- | --- | --- |
-| `todos` | Tasks the user maintains | `title`, `completed`, `completed_at`, `created_at`, `updated_at`, `tag_ids` |
+| `todos` | Tasks the user maintains | `title`, `completed`, `completed_at`, `created_at`, `updated_at`, `tag_ids`, `due_date` |
 | `pomodoro_sessions` | One focus or break interval | `phase`, `planned_seconds`, `actual_seconds`, `started_at`, `ended_at`, `todo_id` |
 | `app_events` | Foreground application activity | `app_name`, `window_title`, `started_at`, `ended_at` |
 | `alarms` | One-off or weekly reminders | `label`, `hour`, `minute`, `repeat_days`, `enabled`, `created_at` |
@@ -84,6 +84,11 @@ The schema holds nine tables:
 | `todo_tags` | Link between a task and a tag | `todo_id`, `tag_id` |
 | `todo_recurrences` | Optional task schedule and current cycle | `todo_id` (primary key), `unit`, `interval`, `current_at`, `next_at` |
 | `todo_completions` | Completed recurring cycles retained for the heatmap | `todo_id`, `occurrence_at` (composite primary key), `completed_at` |
+
+`todos.due_date` is nullable UTC epoch seconds at midnight, encoding a calendar date from
+1970-01-01 to 9999-12-31. `NULL` means no due date, including for tasks created before this
+column existed. `Todo::update` saves the title and due date together without changing completion
+or tags. The frontend formats this value in UTC so timezone offsets cannot change the selected day.
 
 Tags are stored twice on purpose: `todos.tag_ids` is a JSON array of tag ids, so one task row
 answers "which tags" without a join, while `todo_tags` is the index the other direction reads —
@@ -198,9 +203,10 @@ leaves both sides — the rate follows the list the user sees.
 
 ## Schema creation
 
-`ensure` runs the script in a transaction on every start: a missing table or index is created, an
-existing one is left alone. Nothing is versioned, because the app has not shipped — a schema
-change is a local rebuild rather than a migration.
+`ensure` runs the script in a transaction on every start: a missing table or index is created.
+It also checks `pragma_table_info('todos')` and adds the nullable `due_date` column when absent,
+preserving existing tasks, tags and links. This additive upgrade is idempotent; there is no schema
+version table.
 
 ## Repository helpers
 
@@ -228,16 +234,16 @@ powershell -ExecutionPolicy Bypass -File scripts/init_db.ps1 [-DatabasePath <fil
 ```
 
 It needs `sqlite3` on `PATH`; without it the script stops with a message pointing at the app,
-which creates the schema on first run either way. Every statement uses `IF NOT EXISTS`, so
-running it repeatedly is safe.
+which creates the schema on first run either way. Table/index creation uses `IF NOT EXISTS`,
+and the script checks for `due_date` before adding it to existing databases, so repeat runs are safe.
 
-A test extracts the SQL from the script and runs it against a created database, asserting that
-both sides end up with the same tables.
+A test extracts the SQL from the script and runs it against both fresh and created databases,
+asserting that both sides end up with the same tables and todo columns.
 
 ## Adding a table or a column
 
 1. Add the DDL to `db/schema.rs`.
-2. Mirror it in `scripts/init_db.ps1`, with the same `IF NOT EXISTS` guards.
+2. Mirror it in `scripts/init_db.ps1`, with the same creation and upgrade guards.
 3. Run `cargo test` — the script check fails while the two sides disagree.
-4. Rebuild your local database: run `scripts/init_db.ps1` against a fresh file or delete the old
-   one. An existing database is not upgraded, since no version has shipped yet.
+4. For additive changes to existing tables, check for the column before adding it in both
+   `ensure` and the maintenance script; test that repeat runs preserve existing data.

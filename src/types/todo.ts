@@ -7,6 +7,8 @@ export interface Todo {
   /** UTC epoch seconds. */
   createdAt: number;
   updatedAt: number;
+  /** Calendar due date encoded as UTC midnight epoch seconds; null means no due date. */
+  dueDate: number | null;
   /** Ids of the tags the task carries, see `types/tag.ts`. */
   tagIds: readonly number[];
   recurrence: TodoRecurrence | null;

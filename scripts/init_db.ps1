@@ -30,7 +30,8 @@ CREATE TABLE IF NOT EXISTS todos (
     completed_at INTEGER,
     created_at   INTEGER NOT NULL,
     updated_at   INTEGER NOT NULL,
-    tag_ids      TEXT    NOT NULL DEFAULT '[]'
+    tag_ids      TEXT    NOT NULL DEFAULT '[]',
+    due_date     INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS pomodoro_sessions (
@@ -112,6 +113,20 @@ CREATE INDEX IF NOT EXISTS idx_todo_completions_completed_at ON todo_completions
 '@
 
 $schema | & $sqlite.Source $DatabasePath
+if ($LASTEXITCODE -ne 0) {
+    throw 'Could not create the database schema.'
+}
+
+$hasDueDate = & $sqlite.Source $DatabasePath "SELECT COUNT(*) FROM pragma_table_info('todos') WHERE name = 'due_date';"
+if ($LASTEXITCODE -ne 0) {
+    throw 'Could not inspect the todo schema.'
+}
+if ($hasDueDate -eq '0') {
+    & $sqlite.Source $DatabasePath 'ALTER TABLE todos ADD COLUMN due_date INTEGER;'
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Could not add the todo due-date column.'
+    }
+}
 
 Write-Host "Database ready: $DatabasePath"
 & $sqlite.Source $DatabasePath "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name;"

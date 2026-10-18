@@ -315,7 +315,7 @@
     "delete": "删除任务",
     "edit": "编辑任务",
     "empty": "这里还没有任务。",
-    "error": "列表加载失败。",
+    "error": "任务加载或保存失败。",
     "filter": {
       "all": "全部",
       "active": "进行中",
@@ -390,7 +390,20 @@
         "month_one": "每月",
         "month_other": "每 {{count}} 个月"
       }
-    }
+    },
+    "cancel": "取消",
+    "date": {
+      "clear": "清除",
+      "day": "日",
+      "month": "月",
+      "today": "今天",
+      "tomorrow": "明天",
+      "year": "年"
+    },
+    "dueDate": "截止日期（可选）",
+    "dueOn": "截止 {{date}}",
+    "save": "保存",
+    "setDueDate": "设置截止日期"
   },
   "window": {
     "minimize": "最小化",

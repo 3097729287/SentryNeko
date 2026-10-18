@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { FormEvent } from "react";
+import { TodoDatePicker } from "../../components/TodoDatePicker";
 
 import { useI18n } from "../../hooks/useI18n";
 import { useTodos } from "../../hooks/useTodos";
@@ -16,6 +17,7 @@ export function AddTodoForm() {
   const { t } = useI18n();
   const { add } = useTodos();
   const [title, setTitle] = useState("");
+  const [dueDate, setDueDate] = useState<number | null>(null);
   const [schedule, setSchedule] = useState<Schedule>("once");
   const [interval, setInterval] = useState("2");
   const [unit, setUnit] = useState<RecurrenceUnit>("day");
@@ -54,10 +56,11 @@ export function AddTodoForm() {
                     : "day",
           };
     setPending(true);
-    void add(trimmed, recurrence)
+    void add(trimmed, recurrence, dueDate)
       .then((stored) => {
         if (stored) {
           setTitle("");
+          setDueDate(null);
         }
       })
       .finally(() => setPending(false));
@@ -148,6 +151,7 @@ export function AddTodoForm() {
           </>
         )}
       </div>
+      <TodoDatePicker value={dueDate} onChange={setDueDate} disabled={pending} />
       {schedule !== "once" && (
         <p className="todo-schedule-hint muted">{t("todo.recurrence.hint")}</p>
       )}

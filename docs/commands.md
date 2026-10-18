@@ -96,9 +96,14 @@ immediately; subsequent cycles start at local midnight on the scheduled date. Re
 cycles before applying completion filters or counting. The calendar rules are in `docs/database.md`.
 
 The todo group is the list itself: `list_todos` filters by completion, every mutation answers
-with the stored row, `todo_counts` feeds the remaining counter, and `completion_rate` answers how
-many tasks of the `all` or `today` scope are done — the counting rules live in
-`docs/database.md`. The tag group is reserved —
+with the stored row (including nullable `dueDate`), `todo_counts` feeds the remaining counter,
+and `completion_rate` answers how many tasks of the `all` or `today` scope are done — the counting rules live in
+`docs/database.md`. `add_todo` accepts an optional due date and `update_todo` saves the title and
+due date together; `null` removes the date. `dueDate` is UTC epoch seconds at midnight from
+1970-01-01 through 9999-12-31, encoding a calendar date rather than a local instant. The picker
+and list use UTC components to preserve the selected date in any timezone; today/tomorrow use
+the user's local calendar. Values outside the range or between midnights are `INVALID_INPUT`.
+The tag group is reserved —
 no page calls it yet: it maintains the name index, links tags to a task through `set_todo_tags`,
 and reads the relation from either side (`todo_tags` for one task, `todos_with_tag` for one tag).
 The pomodoro group persists the timer: `start_pomodoro_session` opens a row when a phase starts,
@@ -150,7 +155,8 @@ refuses the write is `PERMISSION_DENIED`.
 | `set_color_mode` | `settings_commands` | `mode: String` | `String` (mode in force) | — |
 | `emit_test_event` | `event_commands` | — | `TestEvent` (`{ sequence }`) | T08 |
 | `list_todos` | `todo_commands` | `completed: bool?` | `Todo[]` | T10 |
-| `add_todo` | `todo_commands` | `title: String`, `recurrence: Recurrence?` | `Todo` | T10, T34 |
+| `add_todo` | `todo_commands` | `title: String`, `recurrence: Recurrence?`, `dueDate: i64?` | `Todo` | T10, T37 |
+| `update_todo` | `todo_commands` | `id: i64`, `title: String`, `dueDate: i64?` | `Todo` | T10 |
 | `rename_todo` | `todo_commands` | `id: i64`, `title: String` | `Todo` | T10 |
 | `set_todo_completed` | `todo_commands` | `id: i64`, `completed: bool` | `Todo` | T10 |
 | `delete_todo` | `todo_commands` | `id: i64` | — | T10 |

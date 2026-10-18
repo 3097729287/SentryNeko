@@ -11,9 +11,12 @@ use crate::utils::{time, windows};
 
 /// Columns every query selects, in the order [`Todo::from_row`] reads them.
 const COLUMNS: &str = "todos.id, todos.title, todos.completed, todos.created_at, todos.updated_at,
-                      todos.tag_ids, recurrence.unit, recurrence.interval, recurrence.next_at";
+                      todos.tag_ids, recurrence.unit, recurrence.interval, recurrence.next_at, todos.due_date";
 const SOURCE: &str =
     "todos LEFT JOIN todo_recurrences AS recurrence ON recurrence.todo_id = todos.id";
+
+/// Date-only values are UTC midnights from 1970-01-01 through 9999-12-31.
+const LAST_DUE_DATE: i64 = 253_402_214_400;
 
 /// A task the user maintains.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -30,6 +33,7 @@ pub struct Todo {
     pub recurrence: Option<Recurrence>,
     /// UTC epoch seconds of the next cycle boundary, absent for a one-time task.
     pub next_occurrence_at: Option<i64>,
+    pub due_date: Option<i64>,
 }
 
 /// Totals shown beside the list.
@@ -75,6 +79,7 @@ impl Todo {
             tag_ids: parse_tag_ids(&row.get::<_, String>(5)?)?,
             recurrence,
             next_occurrence_at: row.get(8)?,
+            due_date: row.get(9)?,
         })
     }
 
@@ -112,18 +117,44 @@ impl Todo {
         title: &str,
         recurrence: Option<Recurrence>,
     ) -> ApiResult<Self> {
-        Self::add_at(db, title, recurrence, time::now_seconds())
+        Self::add_with_options(db, title, recurrence, None)
     }
 
+    pub fn add_with_due_date(db: &Db, title: &str, due_date: Option<i64>) -> ApiResult<Self> {
+        Self::add_with_options(db, title, None, due_date)
+    }
+
+    /// Creates a task with both optional scheduling fields in one transaction.
+    pub fn add_with_options(
+        db: &Db,
+        title: &str,
+        recurrence: Option<Recurrence>,
+        due_date: Option<i64>,
+    ) -> ApiResult<Self> {
+        Self::add_with_options_at(db, title, recurrence, due_date, time::now_seconds())
+    }
+
+    #[cfg(test)]
     fn add_at(db: &Db, title: &str, recurrence: Option<Recurrence>, now: i64) -> ApiResult<Self> {
+        Self::add_with_options_at(db, title, recurrence, None, now)
+    }
+
+    fn add_with_options_at(
+        db: &Db,
+        title: &str,
+        recurrence: Option<Recurrence>,
+        due_date: Option<i64>,
+        now: i64,
+    ) -> ApiResult<Self> {
+        validate_due_date(due_date)?;
         let title = validate_title(title)?;
         let next = recurrence
             .map(|rule| rule.cycle_at(now, now).map(|cycle| cycle.1))
             .transpose()?;
         let id = repository::transaction(db, |transaction| {
             transaction.execute(
-                "INSERT INTO todos (title, completed, created_at, updated_at) VALUES (?1, 0, ?2, ?2)",
-                params![title, now],
+                "INSERT INTO todos (title, completed, created_at, updated_at, due_date) VALUES (?1, 0, ?2, ?2, ?3)",
+                params![title, now, due_date],
             )?;
             let id = transaction.last_insert_rowid();
             if let (Some(rule), Some(next)) = (recurrence, next) {
@@ -146,6 +177,20 @@ impl Todo {
             db,
             "UPDATE todos SET title = ?1, updated_at = ?2 WHERE id = ?3",
             params![title, time::now_seconds(), id],
+        )?;
+
+        require_changed(changed, id)?;
+        Self::find(db, id)
+    }
+
+    /// Saves the title and optional due date together; `None` explicitly clears the date.
+    pub fn update(db: &Db, id: i64, title: &str, due_date: Option<i64>) -> ApiResult<Self> {
+        let title = validate_title(title)?;
+        validate_due_date(due_date)?;
+        let changed = repository::execute(
+            db,
+            "UPDATE todos SET title = ?1, due_date = ?2, updated_at = ?3 WHERE id = ?4",
+            params![title, due_date, time::now_seconds(), id],
         )?;
 
         require_changed(changed, id)?;
@@ -357,6 +402,18 @@ fn validate_title(title: &str) -> ApiResult<String> {
     Ok(trimmed.to_owned())
 }
 
+fn validate_due_date(due_date: Option<i64>) -> ApiResult<()> {
+    if let Some(value) = due_date {
+        if !(0..=LAST_DUE_DATE).contains(&value) || value % 86_400 != 0 {
+            return Err(ApiError::invalid_input(
+                "due date must be a UTC midnight between 1970-01-01 and 9999-12-31",
+            ));
+        }
+    }
+
+    Ok(())
+}
+
 fn require_changed(changed: usize, id: i64) -> ApiResult<()> {
     if changed == 0 {
         return Err(ApiError::not_found(format!("no todo with id {id}")));
@@ -381,14 +438,17 @@ mod tests {
     fn add_trims_the_title_and_rejects_a_blank_one() {
         let db = migrated();
 
-        let todo = Todo::add(&db, "  write the docs  ").expect("the task is stored");
+        let todo =
+            Todo::add_with_due_date(&db, "  write the docs  ", None).expect("the task is stored");
         assert_eq!(todo.title, "write the docs");
         assert!(!todo.completed);
         assert_eq!(todo.recurrence, None);
         assert_eq!(todo.next_occurrence_at, None);
         assert_eq!(todo.created_at, todo.updated_at);
+        assert_eq!(todo.due_date, None);
 
-        let error = Todo::add(&db, "   ").expect_err("a blank title is refused");
+        let error =
+            Todo::add_with_due_date(&db, "   ", None).expect_err("a blank title is refused");
         assert_eq!(error.code(), ApiCode::InvalidInput);
         assert_eq!(Todo::list(&db, None).expect("list").len(), 1);
     }
@@ -397,8 +457,8 @@ mod tests {
     fn list_puts_open_tasks_first_and_filters_by_completion() {
         let db = migrated();
 
-        let first = Todo::add(&db, "first").expect("stored");
-        Todo::add(&db, "second").expect("stored");
+        let first = Todo::add_with_due_date(&db, "first", None).expect("stored");
+        Todo::add_with_due_date(&db, "second", None).expect("stored");
         Todo::set_completed(&db, first.id, true).expect("completed");
 
         let all = Todo::list(&db, None).expect("list");
@@ -421,7 +481,7 @@ mod tests {
     #[test]
     fn rename_and_set_completed_touch_the_stored_row() {
         let db = migrated();
-        let todo = Todo::add(&db, "draft").expect("stored");
+        let todo = Todo::add_with_due_date(&db, "draft", None).expect("stored");
 
         let renamed = Todo::rename(&db, todo.id, " final ").expect("renamed");
         assert_eq!(renamed.title, "final");
@@ -453,11 +513,81 @@ mod tests {
     }
 
     #[test]
+    fn due_dates_can_be_created_edited_and_cleared_without_changing_other_fields() {
+        let db = migrated();
+        let due_date = 1_709_164_800; // 2024-02-29, UTC midnight.
+        let todo = Todo::add_with_due_date(&db, "dated", Some(due_date)).expect("stored");
+        let tag = crate::models::tag::Tag::add(&db, "work").expect("tag");
+        Todo::set_tags(&db, todo.id, &[tag.id]).expect("tagged");
+        Todo::set_completed(&db, todo.id, true).expect("completed");
+
+        let renamed = Todo::rename(&db, todo.id, "renamed").expect("renamed");
+        assert_eq!(renamed.due_date, Some(due_date));
+
+        let changed =
+            Todo::update(&db, todo.id, " new title ", Some(due_date + 86_400)).expect("updated");
+        assert_eq!(changed.title, "new title");
+        assert_eq!(changed.due_date, Some(due_date + 86_400));
+        assert_eq!(changed.created_at, todo.created_at);
+        assert!(changed.completed);
+        assert_eq!(changed.tag_ids, [tag.id]);
+        assert_eq!(
+            Todo::list(&db, Some(true)).expect("list").as_slice(),
+            std::slice::from_ref(&changed)
+        );
+        assert_eq!(Todo::list_by_tag(&db, tag.id).expect("tag list"), [changed]);
+
+        let cleared = Todo::update(&db, todo.id, "new title", None).expect("cleared");
+        assert_eq!(cleared.due_date, None);
+        assert_eq!(Todo::find(&db, todo.id).expect("found"), cleared);
+    }
+
+    #[test]
+    fn invalid_due_dates_and_titles_leave_the_stored_task_unchanged() {
+        let db = migrated();
+        let todo = Todo::add_with_due_date(&db, "original", Some(0)).expect("stored");
+
+        for invalid in [-86_400, 1, LAST_DUE_DATE + 86_400, i64::MAX] {
+            let add =
+                Todo::add_with_due_date(&db, "invalid", Some(invalid)).expect_err("invalid date");
+            assert_eq!(add.code(), ApiCode::InvalidInput);
+            let update =
+                Todo::update(&db, todo.id, "changed", Some(invalid)).expect_err("invalid date");
+            assert_eq!(update.code(), ApiCode::InvalidInput);
+            assert_eq!(Todo::find(&db, todo.id).expect("found"), todo);
+        }
+
+        let blank = Todo::update(&db, todo.id, "  ", None).expect_err("blank title");
+        assert_eq!(blank.code(), ApiCode::InvalidInput);
+        assert_eq!(Todo::list(&db, None).expect("list"), [todo]);
+        let last = Todo::add_with_due_date(&db, "last supported date", Some(LAST_DUE_DATE))
+            .expect("stored");
+        assert_eq!(last.due_date, Some(LAST_DUE_DATE));
+    }
+
+    #[test]
+    fn due_dates_survive_reopening_the_database() {
+        let directory = tempfile::tempdir().expect("temporary directory");
+        let path = directory.path().join("todos.db");
+        let due_date = 1_709_164_800;
+        let todo = {
+            let db = Db::open(&path).expect("database opens");
+            schema::ensure(&db).expect("schema");
+            Todo::add_with_due_date(&db, "persisted", Some(due_date)).expect("stored")
+        };
+
+        let db = Db::open(&path).expect("database reopens");
+        schema::ensure(&db).expect("schema remains idempotent");
+        assert_eq!(Todo::find(&db, todo.id).expect("found"), todo);
+    }
+
+    #[test]
     fn unknown_ids_report_not_found() {
         let db = migrated();
 
         for result in [
             Todo::rename(&db, 404, "x").map(|_| ()),
+            Todo::update(&db, 404, "x", None).map(|_| ()),
             Todo::set_completed(&db, 404, true).map(|_| ()),
             Todo::delete(&db, 404),
             Todo::find(&db, 404).map(|_| ()),
@@ -479,8 +609,8 @@ mod tests {
             }
         );
 
-        let first = Todo::add(&db, "first").expect("stored");
-        Todo::add(&db, "second").expect("stored");
+        let first = Todo::add_with_due_date(&db, "first", None).expect("stored");
+        Todo::add_with_due_date(&db, "second", None).expect("stored");
         Todo::set_completed(&db, first.id, true).expect("completed");
 
         assert_eq!(
@@ -575,7 +705,7 @@ mod tests {
     #[test]
     fn set_tags_sorts_dedups_and_keeps_the_link_table_in_step() {
         let db = migrated();
-        let todo = Todo::add(&db, "tagged").expect("stored");
+        let todo = Todo::add_with_due_date(&db, "tagged", None).expect("stored");
         let work = crate::models::tag::Tag::add(&db, "work").expect("stored");
         let home = crate::models::tag::Tag::add(&db, "home").expect("stored");
 
@@ -601,7 +731,7 @@ mod tests {
     #[test]
     fn set_tags_rejects_unknown_ids_and_malformed_caches_are_reported() {
         let db = migrated();
-        let todo = Todo::add(&db, "tagged").expect("stored");
+        let todo = Todo::add_with_due_date(&db, "tagged", None).expect("stored");
 
         let unknown_tag = Todo::set_tags(&db, todo.id, &[404]).expect_err("unknown tag");
         assert_eq!(unknown_tag.code(), ApiCode::NotFound);

@@ -9,6 +9,7 @@ import type { Todo } from "../../types/todo";
 import { isRecurringTodo } from "../../types/todoDisplay";
 import { ageOf, tagNamesOf } from "./todos";
 import { TodoTagEditor } from "./TodoTagEditor";
+import { TodoDateEditor } from "./TodoDateEditor";
 
 export interface TodoItemProps {
   /** True for a task the page has not shown before, which is the only one that fades in. */
@@ -53,6 +54,7 @@ export function TodoItem({
   const { t, language } = useI18n();
   const [draft, setDraft] = useState<string | null>(null);
   const [tagging, setTagging] = useState(false);
+  const [editingDate, setEditingDate] = useState(false);
 
   const age = ageOf(todo.createdAt, now);
   const names = tagNamesOf(todo, tags);
@@ -162,6 +164,16 @@ export function TodoItem({
               </span>
             ))}
           </span>
+          <button className="todo-due" onClick={() => setEditingDate((value) => !value)} type="button">
+            {todo.dueDate == null ? t("todo.setDueDate") : (
+              <time dateTime={new Date(todo.dueDate * 1000).toISOString().slice(0, 10)}>
+                {t("todo.dueOn", { date: new Intl.DateTimeFormat(language, {
+                  dateStyle: "medium", timeZone: "UTC",
+                }).format(todo.dueDate * 1000) })}
+              </time>
+            )}
+          </button>
+          {editingDate ? <TodoDateEditor todo={todo} onClose={() => setEditingDate(false)} /> : null}
           {tagging ? (
             <TodoTagEditor
               onClose={() => {

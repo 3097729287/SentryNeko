@@ -85,9 +85,13 @@ fn toggle(id: i64) -> ApiResult<Todo> {
 读取清单或计数时先补上到期周期，再筛选完成状态或统计。日历规则见 `docs/database.md`。
 
 `emit_test_event` 是事件探针背后的诊断命令，它推送的事件定义在 `docs/events.md`。待办这一组
-就是清单本身：`list_todos` 按完成状态筛选，写操作都返回落库后的整行，`todo_counts` 供剩余
+就是清单本身：`list_todos` 按完成状态筛选，写操作都返回落库后的整行（含可为空的 `dueDate`），`todo_counts` 供剩余
 计数使用，`completion_rate` 回答 `all` 或 `today` 口径下任务已完成的比例——统计规则写在
-`docs/database.md`。标签这一组属于预留，目前没有页面调用：它维护名称索引，`set_todo_tags` 建立任务与
+`docs/database.md`。`add_todo` 接受可选截止日期，`update_todo` 一起保存标题和日期；传 `null` 清除日期。
+`dueDate` 使用 1970-01-01 至 9999-12-31 的 UTC 零点 epoch 秒编码日历日期，不表示本地瞬间。
+选择器和列表按 UTC 年月日读写，避免时区改变所选日期；今天/明天按用户本地日历计算。
+超出范围或不在 UTC 零点的值返回 `INVALID_INPUT`。
+标签这一组属于预留，目前没有页面调用：它维护名称索引，`set_todo_tags` 建立任务与
 标签的关联，并从两个方向读取关系（`todo_tags` 查某任务的标签，`todos_with_tag` 查某标签下的任务）。
 番茄钟这一组负责持久化：`start_pomodoro_session` 在阶段开始时插入一行，`finish_pomodoro_session`
 用实际秒数收尾——倒计时本身由前端按时间戳推进，不依赖 tick 计数，且由 store 驱动而非页面，
@@ -126,7 +130,8 @@ fn toggle(id: i64) -> ApiResult<Todo> {
 | `set_color_mode` | `settings_commands` | `mode: String` | `String`（生效后的模式） | — |
 | `emit_test_event` | `event_commands` | — | `TestEvent`（`{ sequence }`） | T08 |
 | `list_todos` | `todo_commands` | `completed: bool?` | `Todo[]` | T10 |
-| `add_todo` | `todo_commands` | `title: String`、`recurrence: Recurrence?` | `Todo` | T10、T34 |
+| `add_todo` | `todo_commands` | `title: String`, `recurrence: Recurrence?`, `dueDate: i64?` | `Todo` | T10, T37 |
+| `update_todo` | `todo_commands` | `id: i64`, `title: String`, `dueDate: i64?` | `Todo` | T10 |
 | `rename_todo` | `todo_commands` | `id: i64`、`title: String` | `Todo` | T10 |
 | `set_todo_completed` | `todo_commands` | `id: i64`、`completed: bool` | `Todo` | T10 |
 | `delete_todo` | `todo_commands` | `id: i64` | — | T10 |

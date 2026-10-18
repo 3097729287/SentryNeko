@@ -315,7 +315,7 @@
     "delete": "Delete task",
     "edit": "Edit task",
     "empty": "No tasks here.",
-    "error": "The list could not be loaded.",
+    "error": "Tasks could not be loaded or saved.",
     "filter": {
       "all": "All",
       "active": "Active",
@@ -390,7 +390,20 @@
         "month_one": "Monthly",
         "month_other": "Every {{count}} months"
       }
-    }
+    },
+    "cancel": "Cancel",
+    "date": {
+      "clear": "Clear",
+      "day": "Day",
+      "month": "Month",
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "year": "Year"
+    },
+    "dueDate": "Due date (optional)",
+    "dueOn": "Due {{date}}",
+    "save": "Save",
+    "setDueDate": "Set due date"
   },
   "window": {
     "minimize": "Minimize",

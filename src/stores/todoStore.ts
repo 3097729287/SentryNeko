@@ -21,7 +21,8 @@ export interface TodoState {
   error: ApiCode | null;
   setFilter: (filter: TodoFilter) => void;
   refresh: () => Promise<void>;
-  add: (title: string, recurrence?: TodoRecurrence | null) => Promise<boolean>;
+  add: (title: string, recurrence?: TodoRecurrence | null, dueDate?: number | null) => Promise<boolean>;
+  update: (id: number, title: string, dueDate: number | null) => Promise<boolean>;
   rename: (id: number, title: string) => Promise<boolean>;
   /** Replaces the tags a task carries; an empty list leaves it untagged. */
   updateTags: (id: number, tagIds: readonly number[]) => Promise<boolean>;
@@ -130,10 +131,10 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     set({ todos: list.data, counts: counts.data, loading: false });
   },
 
-  add: async (title, recurrence = null) => {
+  add: async (title, recurrence = null, dueDate = null) => {
     set({ error: null });
 
-    const response = await request<Todo>("add_todo", { title, recurrence });
+    const response = await request<Todo>("add_todo", { title, recurrence, dueDate });
 
     if (!isOk(response)) {
       set({ error: response.code });
@@ -189,6 +190,22 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       todos: state.todos.map((todo) => (todo.id === tagged.id ? tagged : todo)),
     }));
 
+    await get().refresh();
+    return true;
+  },
+
+  update: async (id, title, dueDate) => {
+    set({ error: null });
+
+    const response = await request<Todo>("update_todo", { id, title, dueDate });
+
+    if (!isOk(response)) {
+      set({ error: response.code });
+      return false;
+    }
+
+    const updated = response.data;
+    set((state) => ({ todos: state.todos.map((todo) => todo.id === updated.id ? updated : todo) }));
     await get().refresh();
     return true;
   },

@@ -1,7 +1,6 @@
 //! Schema creation: one idempotent script, run at every start.
 //!
-//! Nothing is versioned — the app has not shipped yet, so a database is created once and a schema
-//! change is a local rebuild instead of a migration.
+//! Missing tables/indexes are created and the optional todo due-date column is added in place.
 
 use crate::db::connection::Db;
 use crate::db::repository;
@@ -28,7 +27,8 @@ CREATE TABLE IF NOT EXISTS todos (
     completed_at INTEGER,
     created_at   INTEGER NOT NULL,
     updated_at   INTEGER NOT NULL,
-    tag_ids      TEXT    NOT NULL DEFAULT '[]'
+    tag_ids      TEXT    NOT NULL DEFAULT '[]',
+    due_date     INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS pomodoro_sessions (
@@ -109,10 +109,19 @@ CREATE TABLE IF NOT EXISTS todo_completions (
 CREATE INDEX IF NOT EXISTS idx_todo_completions_completed_at ON todo_completions (completed_at);
 ";
 
-/// Creates every missing table and index; running it again changes nothing.
+/// Creates missing tables/indexes and upgrades old todo rows without losing their data.
 pub fn ensure(db: &Db) -> ApiResult<()> {
     repository::transaction(db, |transaction| {
         transaction.execute_batch(SCHEMA)?;
+
+        let has_due_date: bool = transaction.query_row(
+            "SELECT EXISTS(SELECT 1 FROM pragma_table_info('todos') WHERE name = 'due_date')",
+            [],
+            |row| row.get(0),
+        )?;
+        if !has_due_date {
+            transaction.execute("ALTER TABLE todos ADD COLUMN due_date INTEGER", [])?;
+        }
 
         Ok(())
     })
@@ -149,6 +158,52 @@ mod tests {
                 .expect("sqlite_master is readable");
             assert_eq!(found, 1, "{table} is missing");
         }
+    }
+
+    #[test]
+    fn ensure_adds_due_dates_to_existing_tasks_without_losing_data() {
+        let db = Db::open_in_memory().expect("in-memory database opens");
+        let old_schema = SCHEMA.replace(",\n    due_date     INTEGER", "");
+        db.connection()
+            .expect("connection")
+            .execute_batch(&old_schema)
+            .expect("previous schema");
+        repository::execute(
+            &db,
+            "INSERT INTO todos (title, completed, completed_at, created_at, updated_at, tag_ids)
+             VALUES ('existing task', 1, 100, 50, 100, '[1]')",
+            [],
+        )
+        .expect("old task");
+        repository::execute(
+            &db,
+            "INSERT INTO tags (id, name, created_at) VALUES (1, 'work', 50)",
+            [],
+        )
+        .expect("old tag");
+        repository::execute(
+            &db,
+            "INSERT INTO todo_tags (todo_id, tag_id) VALUES (1, 1)",
+            [],
+        )
+        .expect("old link");
+
+        ensure(&db).expect("upgraded");
+        ensure(&db).expect("upgrade is idempotent");
+
+        let todo = crate::models::todo::Todo::find(&db, 1).expect("old task still exists");
+        assert_eq!(todo.title, "existing task");
+        assert!(todo.completed);
+        assert_eq!(todo.created_at, 50);
+        assert_eq!(todo.updated_at, 100);
+        assert_eq!(todo.tag_ids, [1]);
+        assert_eq!(todo.due_date, None);
+        assert_eq!(
+            repository::count(&db, "SELECT COUNT(*) FROM todo_tags", []).expect("links"),
+            1
+        );
+        crate::models::todo::Todo::update(&db, 1, "existing task", Some(0))
+            .expect("upgraded rows can save dates");
     }
 
     #[test]
@@ -238,5 +293,22 @@ mod tests {
             .expect("the rows are readable");
 
         assert_eq!(actual, expected);
+
+        let scripted = Db::open_in_memory().expect("script database opens");
+        scripted
+            .connection()
+            .expect("connection")
+            .execute_batch(&maintenance_script_sql(&script))
+            .expect("script creates a fresh database");
+        let todo_columns = |database: &Db| {
+            repository::query_all(
+                database,
+                "SELECT name || ':' || type FROM pragma_table_info('todos') ORDER BY cid",
+                [],
+                |row| Ok(row.get::<_, String>(0)?),
+            )
+            .expect("todo columns")
+        };
+        assert_eq!(todo_columns(&scripted), todo_columns(&db));
     }
 }

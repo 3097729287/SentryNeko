@@ -22,15 +22,31 @@ pub fn list_todos(
         .into()
 }
 
-/// Creates a task from a title.
+/// Creates a task with an optional calendar due date (UTC midnight epoch seconds).
 #[tauri::command]
 pub fn add_todo(
     db: State<'_, Db>,
     bus: State<'_, EventBus>,
     title: String,
     recurrence: Option<Recurrence>,
+    due_date: Option<i64>,
 ) -> ApiResponse<Todo> {
-    changed(Todo::add_with_recurrence(&db, &title, recurrence), &bus)
+    changed(
+        Todo::add_with_options(&db, &title, recurrence, due_date),
+        &bus,
+    )
+}
+
+/// Updates title and deadline while keeping recurrence, completion and tags.
+#[tauri::command]
+pub fn update_todo(
+    db: State<'_, Db>,
+    bus: State<'_, EventBus>,
+    id: i64,
+    title: String,
+    due_date: Option<i64>,
+) -> ApiResponse<Todo> {
+    changed(Todo::update(&db, id, &title, due_date), &bus)
 }
 
 /// Renames a task.

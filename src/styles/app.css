@@ -3315,3 +3315,97 @@ p {
   color: var(--accent);
   background: color-mix(in srgb, var(--accent) 12%, var(--surface));
 }
+
+.date-picker {
+  min-width: 0;
+  margin: 0;
+  padding: var(--space-2) var(--space-3) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.date-picker legend,
+.date-picker label span {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.date-picker legend {
+  padding-inline: var(--space-1);
+}
+
+.date-picker-controls,
+.date-picker-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--space-2);
+}
+
+.date-picker label {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.date-picker select {
+  padding: 7px var(--space-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+}
+
+.date-picker:disabled {
+  opacity: 0.5;
+}
+
+.todo-content,
+.todo-edit-form {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: var(--space-2);
+}
+
+.todo-due {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 12px;
+  text-align: start;
+  cursor: pointer;
+}
+
+.todo-due:hover {
+  color: var(--accent-text);
+}
+
+.todo-input {
+  flex: 1;
+  min-width: 0;
+  padding: 9px var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 13.5px;
+}
+
+.todo-input::placeholder {
+  color: var(--text-muted);
+}
+
+.todo-input:focus-visible {
+  border-color: var(--accent);
+}
+
+.todo-panel {
+  display: grid;
+  gap: var(--space-4);
+}

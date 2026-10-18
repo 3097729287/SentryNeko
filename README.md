@@ -42,7 +42,7 @@ Status legend: ✅ Planned (implemented in the current scope); 🚧 Reserved (fu
 
 | Feature | Description | Status |
 | --- | --- | --- |
-| Todo list | Create, read, update, delete; daily, weekly, monthly or custom recurring tasks with automatic cycle resets; toggle completion; filter (all / active / completed); remaining count; separate sections (default), merged list or two columns for one-time and recurring tasks, selected in Settings and saved locally | ✅ Planned |
+| Todo list | Create, read, update, delete; daily, weekly, monthly or custom recurring tasks with automatic cycle resets; optional due dates with a year/month/day picker; toggle completion; filter (all / active / completed); remaining count; separate sections (default), merged list or two columns for one-time and recurring tasks, selected in Settings and saved locally | ✅ Planned |
 | Pomodoro timer | 25-minute focus countdown, break countdown, custom durations, start / pause / reset | ✅ Planned |
 | Heatmap | Aggregate focus time and completed tasks by day / week / month, GitHub-style rendering | ✅ Planned |
 | Alarms | One-off or repeating alarms, custom time, Windows Toast notification plus in-app ringtone | ✅ Planned |

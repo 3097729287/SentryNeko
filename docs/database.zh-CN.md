@@ -68,7 +68,7 @@ app.manage(db);
 
 | 表 | 存放 | 关键列 |
 | --- | --- | --- |
-| `todos` | 用户维护的任务 | `title`、`completed`、`completed_at`、`created_at`、`updated_at`、`tag_ids` |
+| `todos` | 用户维护的任务 | `title`、`completed`、`completed_at`、`created_at`、`updated_at`、`tag_ids`、`due_date` |
 | `pomodoro_sessions` | 一次专注或休息区间 | `phase`、`planned_seconds`、`actual_seconds`、`started_at`、`ended_at`、`todo_id` |
 | `app_events` | 前台应用活动 | `app_name`、`window_title`、`started_at`、`ended_at` |
 | `alarms` | 单次或每周提醒 | `label`、`hour`、`minute`、`repeat_days`、`enabled`、`created_at` |
@@ -77,6 +77,10 @@ app.manage(db);
 | `todo_tags` | 任务与标签的关联 | `todo_id`、`tag_id` |
 | `todo_recurrences` | 可选的任务重复规则与当前周期 | `todo_id`（主键）、`unit`、`interval`、`current_at`、`next_at` |
 | `todo_completions` | 热力图保留的已完成重复周期 | `todo_id`、`occurrence_at`（联合主键）、`completed_at` |
+
+`todos.due_date` 可为空，使用 1970-01-01 至 9999-12-31 的 UTC 零点 epoch 秒编码日历日期。
+`NULL` 表示无截止日期，新增此列之前的任务也默认无日期。`Todo::update` 一起保存标题和截止日期，
+不改变完成状态和标签。前端使用 UTC 格式化，避免时区偏移改变用户所选的日期。
 
 标签刻意存两份：`todos.tag_ids` 是标签 id 的 JSON 数组，任务行不必 join 就能回答「带哪些
 标签」；`todo_tags` 是另一个方向的索引，`idx_todo_tags_tag_id` 用来查「哪些任务带某个标签」。
@@ -167,8 +171,8 @@ app.manage(db);
 
 ## 建表
 
-`ensure` 每次启动都在事务里执行整份脚本：缺的表和索引会建出来，已存在的保持原样。这里不做
-版本管理——应用尚未发布，改表结构就是本地重建，而不是写迁移。
+`ensure` 每次启动都在事务里执行整份脚本，创建缺失的表和索引，并检查 `pragma_table_info('todos')`，
+在缺少 `due_date` 时添加可空列，保留已有任务、标签和关联。这项增量升级可重复执行；没有表结构版本表。
 
 ## 仓储助手
 
@@ -196,14 +200,13 @@ powershell -ExecutionPolicy Bypass -File scripts/init_db.ps1 [-DatabasePath <fil
 ```
 
 脚本需要 `PATH` 上有 `sqlite3`；没有时脚本会直接停止，并提示改用应用本身——应用首次启动也会
-建表。所有语句都带 `IF NOT EXISTS`，重复执行安全。
+建表。表和索引使用 `IF NOT EXISTS`，并在旧库缺少 `due_date` 时才添加该列，重复执行安全。
 
-有一个测试会从脚本里抽出 SQL，在已建表的库上执行，断言两侧最终得到的表相同。
+有一个测试会从脚本里抽出 SQL，在空库及已建表的库上执行，断言两侧最终得到的表及任务列相同。
 
 ## 新增表或列
 
 1. 在 `db/schema.rs` 里加上 DDL。
-2. 在 `scripts/init_db.ps1` 里同步同样的 DDL（一样的 `IF NOT EXISTS`）。
+2. 在 `scripts/init_db.ps1` 里同步同样的 DDL、创建及升级条件检查。
 3. 跑 `cargo test`——两侧不一致时脚本检查会失败。
-4. 重建本地库：对空文件跑 `scripts/init_db.ps1`，或直接删掉旧库。已存在的库不会被升级，因为
-   还没有发布过版本。
+4. 给已有表增列时，在 `ensure` 和维护脚本中先检查列是否存在，再执行添加；测试重复执行会保留已有数据。
