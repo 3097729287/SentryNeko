@@ -81,6 +81,11 @@ app.manage(db);
 `{ "ringSeconds": 10, "method": "toast" }`——提示音重复多久，以及消息怎么走（`toast`，或
 `inApp` 只交给窗口）。
 
+仪表盘布局是第三行：键 `dashboard.grid`，值形如
+`{ "widgets": [{ "id": "focus-1", "kind": "focus", "x": 0, "y": 0, "w": 1, "h": 2, "source": "today" }] }`
+——首页显示哪些组件，每项有自己的标识、左上角所在的格子与在两列网格上横跨的格数。`id` 让每个放置项
+可以被单独寻址，所以同一种 `kind` 可以出现多次。这一行不存在时表示从未自定义过，页面回落到内置布局。
+
 `app_events` 由前台采集器（`collectors/foreground_app.rs`）写入，它每秒采样一次前台窗口：
 
 - 某个应用来到前台的采样点开一行（`started_at`），换另一个应用的那个采样点把上一行关掉

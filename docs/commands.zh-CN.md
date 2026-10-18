@@ -105,9 +105,13 @@ fn toggle(id: i64) -> ApiResult<Todo> {
 真正响铃的是 `services/scheduler.rs`，跑在拥有时钟的那个线程上，所以页面开没开都不影响闹钟。
 闹钟怎么响是设置而不是列，所以和时长放在一起：`get_alarm_defaults` 与 `set_alarm_defaults`
 读写响铃时长和通知方式，调度器在响的那一刻读取它们——改一次默认值，所有闹钟一起变，而不只是下
-一个。两个自启命令管的是另一半机器状态：`get_autostart` 报告当前用户的 Run 键会不会启动这个
-可执行文件，`set_autostart` 写入或删除那条记录，并返回此刻生效的状态；注册表拒绝写入时是
-`PERMISSION_DENIED`。
+一个。仪表盘这一组承载首页本身：`get_dashboard_layout` 读取已放置的组件，
+`apply_dashboard_changes` 应用一次排列产生的变更——移动、缩放或新增的组件各一条 `upsert`，被移除
+的组件一条 `remove`。每个放置项都有自己的 `id`，所以同一种组件可以放多个；每项还给出左上角所在的
+格子与横跨的格数（两列网格上的 `x`、`y`、`w`、`h`）以及它读取的数据来源。从未自定义过的配置没有
+这一行，`get_dashboard_layout` 返回 `null`，页面把内置布局作为第一批变更写入。两个自启命令管的是
+另一半机器状态：`get_autostart` 报告当前用户的 Run 键会不会启动这个可执行文件，`set_autostart`
+写入或删除那条记录，并返回此刻生效的状态；注册表拒绝写入时是 `PERMISSION_DENIED`。
 
 | 命令 | 模块 | 参数 | 返回 | 任务 |
 | --- | --- | --- | --- | --- |
@@ -150,3 +154,5 @@ fn toggle(id: i64) -> ApiResult<Todo> {
 | `set_alarm_defaults` | `settings_commands` | `defaults: AlarmDefaults` | `AlarmDefaults` | T18 |
 | `get_autostart` | `settings_commands` | — | `bool` —— 自启项是否指向当前可执行文件 | T26 |
 | `set_autostart` | `settings_commands` | `enabled: bool` | `bool` —— 此刻生效的状态 | T26 |
+| `get_dashboard_layout` | `settings_commands` | — | `DashboardLayout?`（`{ widgets: { id, kind, x, y, w, h, source }[] }`；未自定义时为 `null`） | — |
+| `apply_dashboard_changes` | `settings_commands` | `changes: WidgetChange[]`（`upsert` 带组件，或 `remove` 带 id） | `DashboardLayout` —— 应用后生效的布局 | — |

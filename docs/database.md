@@ -86,6 +86,13 @@ of `PomodoroDurations`. A missing row means the defaults apply. The alarm defaul
 shape: key `alarm.defaults`, value `{ "ringSeconds": 10, "method": "toast" }` — how long the tone
 repeats and how the message travels (`toast`, or `inApp` for the window alone).
 
+The dashboard layout is the third such row: key `dashboard.grid`, value
+`{ "widgets": [{ "id": "focus-1", "kind": "focus", "x": 0, "y": 0, "w": 1, "h": 2, "source": "today" }] }`
+— the widgets the home page shows, each with an identity of its own, the cell its top-left corner
+sits in and how many cells it spans on a two-column grid. The `id` is what makes a placement
+addressable, so the same `kind` may appear more than once. A missing row means the dashboard was
+never customised and the page falls back to its built-in layout.
+
 `app_events` is written by the foreground collector (`collectors/foreground_app.rs`), which samples
 the foreground window once a second:
 
