@@ -33,7 +33,16 @@ export function SegmentedControl<T extends string>({
     width: number;
   } | null>(null);
 
-  // Measured from the boxes, so padding and border of the track cannot offset the highlight.
+  /**
+   * Measured from the boxes, so padding and border of the track cannot offset the highlight.
+   *
+   * The numbers come from `offset*` rather than from `getBoundingClientRect`, because the page is
+   * scaled up on a wide window: a rect is measured in scaled pixels, and a scaled offset handed to
+   * an element inside the scaled page is scaled a second time, which would push the highlight out of
+   * the track by as much as the page is enlarged. `offset*` stays in the page's own pixels, and is
+   * already measured from the padding box — the space an absolutely placed child is positioned in —
+   * so the track's border needs no correcting.
+   */
   useLayoutEffect(() => {
     const track = trackRef.current;
     const active = track?.querySelector<HTMLElement>('[aria-pressed="true"]');
@@ -42,13 +51,11 @@ export function SegmentedControl<T extends string>({
       return;
     }
 
-    const trackBox = track.getBoundingClientRect();
-    const activeBox = active.getBoundingClientRect();
     const next = {
-      height: activeBox.height,
-      left: activeBox.left - trackBox.left - track.clientLeft,
-      top: activeBox.top - trackBox.top - track.clientTop,
-      width: activeBox.width,
+      height: active.offsetHeight,
+      left: active.offsetLeft,
+      top: active.offsetTop,
+      width: active.offsetWidth,
     };
 
     setHighlight((current) =>
