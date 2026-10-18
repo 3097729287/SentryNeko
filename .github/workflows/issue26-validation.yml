@@ -1,0 +1,26 @@
+name: Validate issue 26 backend
+on:
+  push:
+    branches: [validation/issue26-backend]
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install frontend tooling and generate icons
+        shell: pwsh
+        run: |
+          npm install --global pnpm@12.6.0
+          pnpm install --frozen-lockfile
+          pnpm icons
+      - name: Check Rust formatting
+        run: cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
+      - name: Check Rust lints
+        run: cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings
+      - name: Run Rust tests
+        run: cargo test --manifest-path src-tauri/Cargo.toml
