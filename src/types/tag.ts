@@ -1,4 +1,4 @@
-/** Tag types mirrored from `models/tag.rs` (reserved: no page reads them yet). */
+/** Tag types mirrored from `models/tag.rs`; the todo page reads and writes them. */
 
 export interface Tag {
   id: number;

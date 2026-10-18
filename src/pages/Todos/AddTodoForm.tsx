@@ -3,8 +3,8 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 
-import { useI18n } from "../hooks/useI18n";
-import { useTodos } from "../hooks/useTodos";
+import { useI18n } from "../../hooks/useI18n";
+import { useTodos } from "../../hooks/useTodos";
 
 /** Stores the typed title and clears the field once it landed. */
 export function AddTodoForm() {
@@ -29,17 +29,22 @@ export function AddTodoForm() {
   };
 
   return (
-    <form className="todo-form" onSubmit={submit}>
+    <form className="todo-composer" onSubmit={submit}>
+      <span aria-hidden="true" className="todo-composer-glyph">
+        <svg viewBox="0 0 16 16">
+          <path d="M8 3v10M3 8h10" />
+        </svg>
+      </span>
       <input
         aria-label={t("todo.placeholder")}
-        className="todo-input"
+        className="todo-composer-input"
         onChange={(event) => {
           setTitle(event.target.value);
         }}
         placeholder={t("todo.placeholder")}
         value={title}
       />
-      <button className="btn" disabled={title.trim() === ""} type="submit">
+      <button className="todo-composer-add" disabled={title.trim() === ""} type="submit">
         {t("todo.add")}
       </button>
     </form>

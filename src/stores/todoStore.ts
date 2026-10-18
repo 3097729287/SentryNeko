@@ -18,6 +18,8 @@ export interface TodoState {
   refresh: () => Promise<void>;
   add: (title: string) => Promise<boolean>;
   rename: (id: number, title: string) => Promise<boolean>;
+  /** Replaces the tags a task carries; an empty list leaves it untagged. */
+  updateTags: (id: number, tagIds: readonly number[]) => Promise<boolean>;
   toggle: (todo: Todo) => Promise<boolean>;
   remove: (id: number) => Promise<boolean>;
 }
@@ -46,6 +48,35 @@ async function request<T>(command: string, args: Record<string, unknown> = {}): 
   return invoke<ApiResponse<T>>(command, args);
 }
 
+/**
+ * Whether a task still belongs in the list the current filter shows.
+ *
+ * The list is always what the backend would answer for the filter, and a change made on the page
+ * has to keep it that way: a task ticked off under "active" is left out, and a task added under
+ * "completed" is not slipped in. Under "all" every task belongs, which is what lets a ticked task
+ * stay on the page and move between the two groups instead of leaving the list.
+ */
+function belongs(todo: Todo, filter: TodoFilter): boolean {
+  if (filter === "active") {
+    return !todo.completed;
+  }
+
+  if (filter === "completed") {
+    return todo.completed;
+  }
+
+  return true;
+}
+
+/** The counts after a task appears, changes or goes away; a missing side is passed as `null`. */
+function recounted(counts: TodoCounts, before: Todo | null, after: Todo | null): TodoCounts {
+  const total = counts.total + (after === null ? 0 : 1) - (before === null ? 0 : 1);
+  const completed =
+    counts.completed + (after?.completed === true ? 1 : 0) - (before?.completed === true ? 1 : 0);
+
+  return { total, completed, remaining: total - completed };
+}
+
 export const useTodoStore = create<TodoState>((set, get) => ({
   todos: [],
   counts: EMPTY_COUNTS,
@@ -58,7 +89,10 @@ export const useTodoStore = create<TodoState>((set, get) => ({
   },
 
   refresh: async () => {
-    set({ loading: true, error: null });
+    // A load in place must not blank the page out: only the first list, with nothing on screen to
+    // keep, gets to say it is loading. Every later one — a filter switch, a stale dashboard count —
+    // swaps its result in quietly, so the rows stay put and their animations are left alone.
+    set({ loading: get().todos.length === 0, error: null });
 
     const list = await request<Todo[]>("list_todos", {
       completed: completionArgument(get().filter),
@@ -89,7 +123,13 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       return false;
     }
 
-    await get().refresh();
+    const added = response.data;
+
+    set((state) => ({
+      todos: belongs(added, state.filter) ? [added, ...state.todos] : state.todos,
+      counts: recounted(state.counts, null, added),
+    }));
+
     return true;
   },
 
@@ -103,7 +143,33 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       return false;
     }
 
-    await get().refresh();
+    const renamed = response.data;
+
+    // Only the row's own text changed, so the list is patched in place: nothing else on the page
+    // has a reason to move.
+    set((state) => ({
+      todos: state.todos.map((todo) => (todo.id === renamed.id ? renamed : todo)),
+    }));
+
+    return true;
+  },
+
+  updateTags: async (id, tagIds) => {
+    set({ error: null });
+
+    const response = await request<Todo>("set_todo_tags", { id, tagIds: [...tagIds] });
+
+    if (!isOk(response)) {
+      set({ error: response.code });
+      return false;
+    }
+
+    const tagged = response.data;
+
+    set((state) => ({
+      todos: state.todos.map((todo) => (todo.id === tagged.id ? tagged : todo)),
+    }));
+
     return true;
   },
 
@@ -120,7 +186,17 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       return false;
     }
 
-    await get().refresh();
+    const moved = response.data;
+
+    // Under "all" the row stays in the list so the page can carry it over to its new group; under a
+    // filter the list no longer holds it, so it goes.
+    set((state) => ({
+      todos: belongs(moved, state.filter)
+        ? state.todos.map((item) => (item.id === moved.id ? moved : item))
+        : state.todos.filter((item) => item.id !== moved.id),
+      counts: recounted(state.counts, todo, moved),
+    }));
+
     return true;
   },
 
@@ -135,7 +211,11 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       return false;
     }
 
-    await get().refresh();
+    set((state) => ({
+      todos: state.todos.filter((todo) => todo.id !== id),
+      counts: recounted(state.counts, state.todos.find((todo) => todo.id === id) ?? null, null),
+    }));
+
     return true;
   },
 }));
