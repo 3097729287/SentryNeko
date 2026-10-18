@@ -12,8 +12,9 @@ use tauri::{Manager, RunEvent};
 
 use crate::collectors::foreground_app::RunningCollector;
 use crate::commands::{
-    alarm_commands, app_event_commands, event_commands, heatmap_commands, notification_commands,
-    pomodoro_commands, settings_commands, system_commands, tag_commands, todo_commands,
+    alarm_commands, app_event_commands, assistance_commands, event_commands, heatmap_commands,
+    notification_commands, pomodoro_commands, settings_commands, system_commands, tag_commands,
+    todo_commands,
 };
 use crate::config::Config;
 use crate::db::connection::Db;
@@ -65,6 +66,15 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            assistance_commands::get_ai_settings,
+            assistance_commands::set_ai_settings,
+            assistance_commands::generate_ai_suggestions,
+            assistance_commands::list_ai_suggestions,
+            assistance_commands::edit_ai_suggestion,
+            assistance_commands::confirm_ai_suggestion,
+            assistance_commands::reject_ai_suggestion,
+            assistance_commands::list_ai_operation_log,
+            assistance_commands::clear_ai_operation_log,
             settings_commands::get_language,
             settings_commands::set_language,
             settings_commands::get_color_mode,

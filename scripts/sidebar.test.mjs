@@ -12,6 +12,7 @@ test("first launch shows every available panel in the original order", () => {
     { id: "alarms", visible: true },
     { id: "events", visible: true },
     { id: "analytics", visible: true },
+    { id: "assistance", visible: true },
   ]);
 });
 
@@ -47,7 +48,7 @@ test("obsolete, invalid and duplicate entries cannot replace valid preferences",
 test("new panels are appended without changing existing order or visibility", () => {
   assert.deepEqual(normalizeSidebarLayout([{ id: "analytics", visible: false }]), [
     { id: "analytics", visible: false },
-    ...defaultSidebarLayout().slice(0, -1),
+    ...defaultSidebarLayout().filter((panel) => panel.id !== "analytics"),
   ]);
 });
 

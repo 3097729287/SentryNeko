@@ -179,5 +179,16 @@ fn toggle(id: i64) -> ApiResult<Todo> {
 | `apply_dashboard_changes` | `settings_commands` | `changes: WidgetChange[]`（`upsert` 带组件，或 `remove` 带 id） | `DashboardLayout` —— 应用后生效的布局 | — |
 | `get_todo_display_mode` | `settings_commands` | — | `"separated"`（默认）、`"merged"` 或 `"twoColumns"` | T35 |
 | `set_todo_display_mode` | `settings_commands` | `mode: String` | 保存后的显示方式；其他值返回 `INVALID_INPUT` | T35 |
+| `get_ai_settings` | `assistance_commands` | — | `AiSettings` | T36 |
+| `set_ai_settings` | `assistance_commands` | `settings: AiSettings` | `AiSettings` | T36 |
+| `generate_ai_suggestions` | `assistance_commands` | `prompt: String` | `Suggestion[]` | T36 |
+| `list_ai_suggestions` | `assistance_commands` | — | `Suggestion[]` | T36 |
+| `edit_ai_suggestion` | `assistance_commands` | `id: i64`, `revision: i64`, `action: AiAction` | — | T36 |
+| `confirm_ai_suggestion` | `assistance_commands` | `id: i64`, `revision: i64`, `confirmed: bool` | — | T36 |
+| `reject_ai_suggestion` | `assistance_commands` | `id: i64`, `revision: i64` | — | T36 |
+| `list_ai_operation_log` | `assistance_commands` | `before: i64?` | `OperationLog[]` | T36 |
+| `clear_ai_operation_log` | `assistance_commands` | — | — | T36 |
 
 截止日期排序在每个任务类型分区内统一应用：升序和降序都把无日期任务放在最后，相同日期按 id 从新到旧排列，不按完成状态打断顺序。默认排序仍把进行中任务放在前面。仅未完成且截止日期早于当前本地日历日的任务显示逾期；今天到期不算逾期。
+
+AI 命令使用 `AiSettings { model, port }` 和持久化的带版本建议。只有 `confirm_ai_suggestion` 在 `confirmed: true` 时执行操作，编辑预览不执行。确认时一起核对任务截止日期、循环规则和完成状态。详见 [AI 辅助](assistance.zh-CN.md)。

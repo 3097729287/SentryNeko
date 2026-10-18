@@ -2,6 +2,7 @@
 
 pub mod alarm;
 pub mod app_event;
+pub mod assistance;
 pub mod dashboard;
 pub mod font;
 pub mod heatmap;

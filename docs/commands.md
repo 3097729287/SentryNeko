@@ -111,8 +111,7 @@ due date together; `null` removes the date. `dueDate` is UTC epoch seconds at mi
 1970-01-01 through 9999-12-31, encoding a calendar date rather than a local instant. The picker
 and list use UTC components to preserve the selected date in any timezone; today/tomorrow use
 the user's local calendar. Values outside the range or between midnights are `INVALID_INPUT`.
-The tag group is reserved —
-no page calls it yet: it maintains the name index, links tags to a task through `set_todo_tags`,
+The tag group supplies the task page and the AI assistant: it maintains the name index, links tags to a task through `set_todo_tags`,
 and reads the relation from either side (`todo_tags` for one task, `todos_with_tag` for one tag).
 The pomodoro group persists the timer: `start_pomodoro_session` opens a row when a phase starts,
 and `finish_pomodoro_session` closes it with the seconds actually spent — the countdown itself
@@ -205,5 +204,16 @@ refuses the write is `PERMISSION_DENIED`.
 | `apply_dashboard_changes` | `settings_commands` | `changes: WidgetChange[]` (`upsert` with a widget, or `remove` with an id) | `DashboardLayout` — the layout now in force | — |
 | `get_todo_display_mode` | `settings_commands` | — | `"separated"` (default), `"merged"` or `"twoColumns"` | T35 |
 | `set_todo_display_mode` | `settings_commands` | `mode: String` | The saved display mode; other values return `INVALID_INPUT` | T35 |
+| `get_ai_settings` | `assistance_commands` | — | `AiSettings` | T36 |
+| `set_ai_settings` | `assistance_commands` | `settings: AiSettings` | `AiSettings` | T36 |
+| `generate_ai_suggestions` | `assistance_commands` | `prompt: String` | `Suggestion[]` | T36 |
+| `list_ai_suggestions` | `assistance_commands` | — | `Suggestion[]` | T36 |
+| `edit_ai_suggestion` | `assistance_commands` | `id: i64`, `revision: i64`, `action: AiAction` | — | T36 |
+| `confirm_ai_suggestion` | `assistance_commands` | `id: i64`, `revision: i64`, `confirmed: bool` | — | T36 |
+| `reject_ai_suggestion` | `assistance_commands` | `id: i64`, `revision: i64` | — | T36 |
+| `list_ai_operation_log` | `assistance_commands` | `before: i64?` | `OperationLog[]` | T36 |
+| `clear_ai_operation_log` | `assistance_commands` | — | — | T36 |
 
 Date sorting is global within each task-type section: both directions put undated tasks last, with newest id first for ties, regardless of completion. Default ordering keeps active tasks first. Overdue means an unfinished deadline before the user’s current local calendar day; a task due today is not overdue.
+
+AI commands use `AiSettings { model, port }` and persistent, revisioned suggestions. Only `confirm_ai_suggestion` with `confirmed: true` executes an operation; editing a preview never executes it. Confirmation checks task deadlines, recurrence and completion together. See [AI assistance](assistance.md).

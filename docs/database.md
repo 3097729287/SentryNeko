@@ -79,7 +79,7 @@ Rules:
 
 ## Schema
 
-The schema holds nine tables:
+The schema holds eleven tables:
 
 | Table | Holds | Key columns |
 | --- | --- | --- |
@@ -92,6 +92,8 @@ The schema holds nine tables:
 | `todo_tags` | Link between a task and a tag | `todo_id`, `tag_id` |
 | `todo_recurrences` | Optional task schedule and current cycle | `todo_id` (primary key), `unit`, `interval`, `current_at`, `next_at` |
 | `todo_completions` | Completed recurring cycles retained for the heatmap | `todo_id`, `occurrence_at` (composite primary key), `completed_at` |
+| `ai_suggestions` | Persistent AI review queue | `reason`, `action` (JSON), `expected_state` (JSON), `revision`, `status`, `created_at`, `updated_at` |
+| `ai_operation_log` | AI proposal/review audit trail | `suggestion_id`, `event`, `reason`, `action` (JSON), `result_id`, `created_at` |
 
 `todos.due_date` is nullable UTC epoch seconds at midnight, encoding a calendar date from
 1970-01-01 to 9999-12-31. `NULL` means no due date, including for tasks created before this
@@ -257,3 +259,5 @@ asserting that both sides end up with the same tables and todo columns.
    `ensure` and the maintenance script; test that repeat runs preserve existing data.
 
 Date sorting is global within each task-type section: both directions put undated tasks last, with newest id first for ties, regardless of completion. Default ordering keeps active tasks first. Overdue means an unfinished deadline before the user’s current local calendar day; a task due today is not overdue.
+
+`settings` key `ai.local` stores the local model and port. Pending suggestions retain action snapshots and revision numbers. Confirmation checks the current task cycle and commits the action and audit entry in one immediate transaction. Clearing history preserves pending suggestions and business data.

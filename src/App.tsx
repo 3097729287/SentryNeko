@@ -20,6 +20,7 @@ import { usePageZoom } from "./hooks/usePageZoom";
 import { BACKEND_EVENTS, useTauriEvent } from "./hooks/useTauriEvent";
 import { AlarmsPage } from "./pages/AlarmsPage";
 import { AnalyticsPage } from "./pages/AnalyticsPage";
+import { AssistancePage } from "./pages/AssistancePage";
 import { Dashboard } from "./pages/Dashboard";
 import { EventsPage } from "./pages/EventsPage";
 import { HeatmapPage } from "./pages/HeatmapPage";
@@ -45,6 +46,7 @@ const PANEL_PAGES = {
   alarms: AlarmsPage,
   events: EventsPage,
   analytics: AnalyticsPage,
+  assistance: AssistancePage,
 };
 
 const SETTINGS_ENTRY = { path: "/settings", label: "nav.settings", icon: "settings" } as const;

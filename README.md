@@ -108,6 +108,13 @@ by the always-visible Settings entry. Use the the drag editor or keyboard contro
 default layout. Preferences are stored locally under `sentryneko.sidebarLayout` in WebView storage,
 alongside the collapsed flag. Missing panels are appended on upgrade; invalid saved data falls
 back to the default layout. Hiding an entry leaves its page accessible through other links.
+### 9. AI assistance
+
+| Feature | Description | Status |
+| --- | --- | --- |
+| Semi-automatic AI assistant | Optional local Ollama suggestions; edit, reject or explicitly confirm each action; persistent operation log | ✅ Planned |
+
+See [AI assistance](docs/assistance.md) for local model setup, supported actions and review behavior.
 
 ### Summary
 

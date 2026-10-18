@@ -10,9 +10,9 @@ use crate::utils::response::{ApiError, ApiResult};
 use crate::utils::{time, windows};
 
 /// Columns every query selects, in the order [`Todo::from_row`] reads them.
-const COLUMNS: &str = "todos.id, todos.title, todos.completed, todos.created_at, todos.updated_at,
+pub(crate) const COLUMNS: &str = "todos.id, todos.title, todos.completed, todos.created_at, todos.updated_at,
                       todos.tag_ids, recurrence.unit, recurrence.interval, recurrence.next_at, todos.due_date";
-const SOURCE: &str =
+pub(crate) const SOURCE: &str =
     "todos LEFT JOIN todo_recurrences AS recurrence ON recurrence.todo_id = todos.id";
 
 /// Date-only values are UTC midnights from 1970-01-01 through 9999-12-31.
@@ -327,7 +327,7 @@ impl Todo {
     }
 }
 
-fn advance_recurring_in(transaction: &Transaction<'_>, now: i64) -> ApiResult<usize> {
+pub(crate) fn advance_recurring_in(transaction: &Transaction<'_>, now: i64) -> ApiResult<usize> {
     let due = {
         let mut statement = transaction.prepare(
             "SELECT todos.id, todos.created_at, recurrence.unit, recurrence.interval

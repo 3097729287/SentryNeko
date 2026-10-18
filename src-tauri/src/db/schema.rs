@@ -7,7 +7,7 @@ use crate::db::repository;
 use crate::utils::response::ApiResult;
 
 /// Tables owned by the schema, in creation order.
-pub const TABLES: [&str; 9] = [
+pub const TABLES: [&str; 11] = [
     "todos",
     "pomodoro_sessions",
     "app_events",
@@ -17,6 +17,8 @@ pub const TABLES: [&str; 9] = [
     "todo_tags",
     "todo_recurrences",
     "todo_completions",
+    "ai_suggestions",
+    "ai_operation_log",
 ];
 
 const SCHEMA: &str = r"
@@ -76,6 +78,29 @@ CREATE TABLE IF NOT EXISTS todo_tags (
     tag_id  INTEGER NOT NULL REFERENCES tags (id) ON DELETE CASCADE,
     PRIMARY KEY (todo_id, tag_id)
 );
+
+CREATE TABLE IF NOT EXISTS ai_suggestions (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    reason         TEXT NOT NULL,
+    action         TEXT NOT NULL,
+    expected_state TEXT NOT NULL,
+    revision       INTEGER NOT NULL DEFAULT 1 CHECK (revision > 0),
+    status         TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'rejected')),
+    created_at     INTEGER NOT NULL,
+    updated_at     INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS ai_operation_log (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    suggestion_id INTEGER NOT NULL,
+    event         TEXT NOT NULL CHECK (event IN ('proposed', 'edited', 'confirmed', 'rejected')),
+    reason        TEXT NOT NULL,
+    action        TEXT NOT NULL,
+    result_id     INTEGER,
+    created_at    INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_ai_suggestions_status ON ai_suggestions (status, id);
 
 CREATE INDEX IF NOT EXISTS idx_todos_completed
     ON todos (completed, created_at);

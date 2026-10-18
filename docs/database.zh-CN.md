@@ -70,7 +70,7 @@ app.manage(db);
 
 ## 表结构
 
-表结构共九张表：
+表结构共十一张表：
 
 | 表 | 存放 | 关键列 |
 | --- | --- | --- |
@@ -83,6 +83,8 @@ app.manage(db);
 | `todo_tags` | 任务与标签的关联 | `todo_id`、`tag_id` |
 | `todo_recurrences` | 可选的任务重复规则与当前周期 | `todo_id`（主键）、`unit`、`interval`、`current_at`、`next_at` |
 | `todo_completions` | 热力图保留的已完成重复周期 | `todo_id`、`occurrence_at`（联合主键）、`completed_at` |
+| `ai_suggestions` | 持久化 AI 审阅队列 | `reason`、`action`（JSON）、`expected_state`（JSON）、`revision`、`status`、`created_at`、`updated_at` |
+| `ai_operation_log` | AI 提议/审阅审计记录 | `suggestion_id`、`event`、`reason`、`action`（JSON）、`result_id`、`created_at` |
 
 `todos.due_date` 可为空，使用 1970-01-01 至 9999-12-31 的 UTC 零点 epoch 秒编码日历日期。
 `NULL` 表示无截止日期，新增此列之前的任务也默认无日期。`Todo::update` 一起保存标题和截止日期，
@@ -218,3 +220,5 @@ powershell -ExecutionPolicy Bypass -File scripts/init_db.ps1 [-DatabasePath <fil
 4. 给已有表增列时，在 `ensure` 和维护脚本中先检查列是否存在，再执行添加；测试重复执行会保留已有数据。
 
 截止日期排序在每个任务类型分区内统一应用：升序和降序都把无日期任务放在最后，相同日期按 id 从新到旧排列，不按完成状态打断顺序。默认排序仍把进行中任务放在前面。仅未完成且截止日期早于当前本地日历日的任务显示逾期；今天到期不算逾期。
+
+`settings` 的 `ai.local` 键保存本地模型与端口。待审建议记录目标快照和版本号。确认时检查当前任务周期，并在同一个立即事务中提交操作和审计记录。清除历史保留待审建议和业务数据。

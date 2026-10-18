@@ -7,6 +7,7 @@ export const SIDEBAR_PANELS = {
   alarms: { path: "/alarms", label: "nav.alarms" },
   events: { path: "/events", label: "nav.events" },
   analytics: { path: "/analytics", label: "nav.analytics" },
+  assistance: { path: "/assistance", label: "nav.assistance" },
 } as const;
 
 export type SidebarPanelId = keyof typeof SIDEBAR_PANELS;

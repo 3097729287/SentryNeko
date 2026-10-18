@@ -1313,6 +1313,160 @@ textarea {
   }
 }
 
+/* Optional AI review workspace */
+
+.ai-page,
+.ai-section,
+.ai-editor,
+.ai-fields {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.ai-page {
+  gap: var(--space-6);
+}
+
+.ai-heading,
+.ai-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.ai-heading {
+  justify-content: space-between;
+  width: 100%;
+}
+
+.ai-heading h2 {
+  margin: 0;
+  font-size: 1.285714rem;
+}
+
+.ai-suggestion,
+.ai-request,
+.ai-clear {
+  justify-items: stretch;
+}
+
+.ai-badge {
+  border-radius: 999px;
+  padding: 3px 10px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-size: 0.857143rem;
+}
+
+.ai-reason,
+.ai-preview,
+.ai-log p {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.ai-preview {
+  border-left: 3px solid var(--accent);
+  padding: var(--space-3);
+  background: var(--accent-soft);
+}
+
+.ai-confirm {
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+.ai-setup {
+  display: block;
+}
+
+.ai-setup summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.ai-setup[open] > p,
+.ai-setup-form {
+  margin-top: var(--space-4);
+}
+
+.ai-setup-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 140px auto;
+  align-items: end;
+  gap: var(--space-4);
+}
+
+.ai-fields {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.ai-fields label,
+.ai-setup-form label {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.ai-page input:not([type="checkbox"]),
+.ai-page select,
+.ai-page textarea {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
+.ai-page textarea {
+  resize: vertical;
+}
+
+.ai-tag-options {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.ai-tag-options label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.ai-log {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ai-log li {
+  display: grid;
+  gap: var(--space-2);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border);
+}
+
+.ai-log time {
+  color: var(--text-muted);
+  font-size: 0.857143rem;
+}
+
+@media (max-width: 1100px) {
+  .ai-setup-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 /* Settings */
 
 .settings {
