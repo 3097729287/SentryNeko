@@ -99,7 +99,17 @@ cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings
 # 前端
 pnpm lint
 pnpm build
+
+# 数字输入框浏览器回归测试（首次需安装 Chromium）
+pnpm exec playwright install chromium
+pnpm test:numeric-input
 ```
+
+`src/components/ui/` 中的 `NumericInput` 接收数值 `value`、`onChange`、可选的
+`min` / `max` / 正数 `step`（默认 `1`），以及翻译后的 `increaseLabel` /
+`decreaseLabel`。输入框本身使用关联的 label 或 `aria-label`。数值会限制在范围内，
+手动输入按相对 `min`（未指定则为零）的步长就近取整。清空、符号或小数点可暂时保留编辑，
+失焦或按 Enter 时恢复为当前数值。滚轮和箭头调节即时通知父组件；禁用或只读时允许页面正常滚动。
 
 涉及前台应用采集、通知、托盘行为或开机自启的改动，还需要在真实 Windows 机器上手动过一遍：在几个应用间切换、让机器空闲、锁屏、从休眠恢复，然后确认记录的事件与时长合理。
 

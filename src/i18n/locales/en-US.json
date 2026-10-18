@@ -235,6 +235,10 @@
       "test": "System notifications are blocked; this one is shown in the app instead."
     }
   },
+  "numericInput": {
+    "decrease": "Decrease {{label}}",
+    "increase": "Increase {{label}}"
+  },
   "pomodoro": {
     "cycle": {
       "label": "This cycle",
