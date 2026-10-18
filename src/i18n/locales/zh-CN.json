@@ -89,6 +89,13 @@
     "name": "SentryNeko",
     "tagline": "记录你的专注与待办"
   },
+  "appearance": {
+    "dark": "深色",
+    "hint": "跟随系统时，系统切换明暗会立即生效。",
+    "light": "浅色",
+    "system": "跟随系统",
+    "title": "外观"
+  },
   "autostart": {
     "error": "开机自启设置保存失败。",
     "title": "开机自启",

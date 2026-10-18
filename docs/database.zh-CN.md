@@ -38,7 +38,8 @@ app.manage(db);
 ```json
 {
   "databasePath": "C:\\Users\\you\\AppData\\Roaming\\com.sentryneko.desktop\\sentryneko.db",
-  "language": "en-US"
+  "language": "en-US",
+  "colorMode": "system"
 }
 ```
 
@@ -46,11 +47,13 @@ app.manage(db);
 | --- | --- | --- |
 | `databasePath` | 应用打开的 SQLite 文件 | `<应用数据目录>/sentryneko.db` |
 | `language` | 语言标签，见 `docs/i18n.md` | `en-US` |
+| `colorMode` | `dark`、`light` 或 `system`；`system` 跟随操作系统 | `system` |
 
 规则：
 
 - `databasePath` 为相对路径时，相对 `config.json` 所在目录解析；字段缺失则用默认值。
 - `language` 为未知标签时回落到 `Language::DEFAULT`，文件保持原样。
+- `colorMode` 为未知取值时同样回落到 `ColorMode::DEFAULT`（`system`）。
 - 文件无法解析时报 `IO`，解析器原文放进 `details`，且绝不覆盖原文件——手工修好或删除即可恢复。
 - 写入先落到 `config.json.tmp` 再改名就位，进程崩溃不会截断配置文件。
 - `settings`（下面那张表）存用户偏好；`config.json` 存「打开数据库之前就必须知道」的东西。

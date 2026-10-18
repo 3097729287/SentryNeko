@@ -1,7 +1,7 @@
 /* Design tokens and the window shell: the stylesheet every page inherits. */
 
 :root {
-  color-scheme: dark light;
+  color-scheme: dark;
 
   --bg: #0e1015;
   --bg-sidebar: #141821;
@@ -37,26 +37,27 @@
     "Noto Sans SC", sans-serif;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    --bg: #f6f7fb;
-    --bg-sidebar: #f1f3f8;
-    --surface: #ffffff;
-    --surface-hover: #f0f2f8;
-    --border: #e3e7f0;
-    --border-strong: #ccd3e0;
-    --text: #161922;
-    --text-muted: #626c81;
-    --accent: #5b47f0;
-    --accent-soft: rgb(91 71 240 / 10%);
-    --accent-text: #4a37d6;
-    --nav-active-bg: #ffffff;
-    --nav-active-shadow: 0 1px 2px rgb(16 20 32 / 10%), 0 0 0 1px rgb(16 20 32 / 4%);
-    --heat-1: rgb(91 71 240 / 18%);
-    --heat-2: rgb(91 71 240 / 36%);
-    --heat-3: rgb(91 71 240 / 62%);
-    --heat-4: #5b47f0;
-  }
+/* The boot script and the color mode store write `data-theme`; dark is the base. */
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f6f7fb;
+  --bg-sidebar: #f1f3f8;
+  --surface: #ffffff;
+  --surface-hover: #f0f2f8;
+  --border: #e3e7f0;
+  --border-strong: #ccd3e0;
+  --text: #161922;
+  --text-muted: #626c81;
+  --accent: #5b47f0;
+  --accent-soft: rgb(91 71 240 / 10%);
+  --accent-text: #4a37d6;
+  --nav-active-bg: #ffffff;
+  --nav-active-shadow: 0 1px 2px rgb(16 20 32 / 10%), 0 0 0 1px rgb(16 20 32 / 4%);
+  --heat-1: rgb(91 71 240 / 18%);
+  --heat-2: rgb(91 71 240 / 36%);
+  --heat-3: rgb(91 71 240 / 62%);
+  --heat-4: #5b47f0;
 }
 
 *,
