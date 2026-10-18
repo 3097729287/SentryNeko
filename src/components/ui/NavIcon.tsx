@@ -16,7 +16,8 @@ export type NavIconName =
   | "settings"
   | "todos";
 
-const DRAWINGS: Record<NavIconName, ReactNode> = {
+/** Exported so a dashboard panel that means the same thing can reuse the drawing verbatim. */
+export const NAV_DRAWINGS: Record<NavIconName, ReactNode> = {
   // Four tiles: the landing page that summarises everything else.
   dashboard: (
     <>
@@ -85,7 +86,7 @@ const DRAWINGS: Record<NavIconName, ReactNode> = {
 export function NavIcon({ name }: { name: NavIconName }) {
   return (
     <svg aria-hidden="true" className="nav-icon" viewBox="0 0 24 24">
-      {DRAWINGS[name]}
+      {NAV_DRAWINGS[name]}
     </svg>
   );
 }

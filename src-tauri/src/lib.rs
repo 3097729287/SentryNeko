@@ -83,6 +83,8 @@ pub fn run() {
             settings_commands::set_pomodoro_durations,
             settings_commands::get_alarm_defaults,
             settings_commands::set_alarm_defaults,
+            settings_commands::get_dashboard_layout,
+            settings_commands::apply_dashboard_changes,
             settings_commands::get_autostart,
             settings_commands::set_autostart,
             notification_commands::send_test_notification,

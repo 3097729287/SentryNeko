@@ -122,6 +122,28 @@
       "title": "Focus today"
     },
     "hours": "h",
+    "layout": {
+      "add": "Add {{name}}",
+      "cancel": "Cancel",
+      "canvas": "Layout canvas",
+      "columns": "Columns",
+      "edit": "Edit layout",
+      "empty": "The canvas is empty — drag a panel in from the library.",
+      "emptyPage": "Nothing on the dashboard yet — right-click the empty space to add a panel.",
+      "hint": "Drag a panel to move it, drag its corner to resize it, or use the arrow keys; right-click a panel to remove it, or the canvas to add one.",
+      "library": "Library",
+      "libraryAll": "Every panel is already on the dashboard.",
+      "libraryEmpty": "Drag a panel onto the canvas to add it; the − on a panel removes it.",
+      "menuAdd": "Add a panel",
+      "remove": "Remove {{name}}",
+      "reset": "Reset",
+      "rowHint": "Pick the grid, drag panels in and out of the library, then place each where you want it.",
+      "save": "Save",
+      "shortcuts": "Ctrl+S saves · Ctrl+Z undoes · Esc cancels",
+      "summary": "{{columns}} columns",
+      "title": "Dashboard layout",
+      "undo": "Undo"
+    },
     "loading": "Loading…",
     "minutes": "m",
     "pomodoro": {
@@ -145,6 +167,16 @@
       "open": "Open tasks",
       "remaining": "open",
       "title": "Todos"
+    },
+    "widget": {
+      "alarm": "Alarm",
+      "completion": "Completion",
+      "focus": "Focus",
+      "move": "{{name}} panel",
+      "pomodoro": "Pomodoro",
+      "size": "{{w}} × {{h}}",
+      "todos": "Todos",
+      "usage": "Apps"
     }
   },
   "events": {

@@ -124,10 +124,17 @@ maintains the reminders the scheduler watches: `list_alarms`, `add_alarm`, `upda
 does, on the thread that owns the clock, so an alarm fires whether or not the page is open. How an
 alarm rings is a setting rather than a column, so it lives with the durations: `get_alarm_defaults`
 and `set_alarm_defaults` carry the ring length and the notification method, and the scheduler reads
-them when an alarm fires — editing one therefore moves every alarm, not only the next. The two
-auto-start commands own the other piece of machine state: `get_autostart` reports whether the
-per-user run key starts this executable, and `set_autostart` writes or removes that entry, answering
-with what is now in force. A registry that refuses the write is `PERMISSION_DENIED`.
+them when an alarm fires — editing one therefore moves every alarm, not only the next. The dashboard
+group carries the home page itself: `get_dashboard_layout` reads the placed widgets and
+`apply_dashboard_changes` applies what one arrangement changed — an `upsert` per widget moved,
+resized or added, a `remove` per widget taken off. Each placement carries its own `id`, so one kind
+can appear several times; an entry also names the cell its top-left corner sits in and the cells it
+spans (`x`, `y`, `w`, `h` on a two-column grid) plus the data source it reads. A profile that has
+never been customised has no row, so `get_dashboard_layout` answers `null` and the page sends its
+built-in layout as the first change set. The two auto-start commands own the other piece of machine
+state: `get_autostart` reports whether the per-user run key starts this executable, and
+`set_autostart` writes or removes that entry, answering with what is now in force. A registry that
+refuses the write is `PERMISSION_DENIED`.
 
 | Command | Module | Arguments | Returns | Task |
 | --- | --- | --- | --- | --- |
@@ -170,3 +177,5 @@ with what is now in force. A registry that refuses the write is `PERMISSION_DENI
 | `set_alarm_defaults` | `settings_commands` | `defaults: AlarmDefaults` | `AlarmDefaults` | T18 |
 | `get_autostart` | `settings_commands` | — | `bool` — whether the login entry starts this executable | T26 |
 | `set_autostart` | `settings_commands` | `enabled: bool` | `bool` — the state now in force | T26 |
+| `get_dashboard_layout` | `settings_commands` | — | `DashboardLayout?` (`{ widgets: { id, kind, x, y, w, h, source }[] }`; `null` until customised) | — |
+| `apply_dashboard_changes` | `settings_commands` | `changes: WidgetChange[]` (`upsert` with a widget, or `remove` with an id) | `DashboardLayout` — the layout now in force | — |

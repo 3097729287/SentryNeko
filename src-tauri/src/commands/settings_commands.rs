@@ -7,6 +7,7 @@ use tauri::State;
 use crate::config::Config;
 use crate::db::connection::Db;
 use crate::models::alarm::AlarmDefaults;
+use crate::models::dashboard::{DashboardLayout, WidgetChange};
 use crate::models::pomodoro::PomodoroDurations;
 use crate::services::autostart::{Autostart, WindowsRunKey};
 use crate::services::i18n::Language;
@@ -42,6 +43,21 @@ pub fn set_alarm_defaults(
     defaults: AlarmDefaults,
 ) -> ApiResponse<AlarmDefaults> {
     AlarmDefaults::save(&db, defaults).into()
+}
+
+/// Reads the dashboard layout, `null` until the user has customised the widget list.
+#[tauri::command]
+pub fn get_dashboard_layout(db: State<'_, Db>) -> ApiResponse<Option<DashboardLayout>> {
+    DashboardLayout::load(&db).into()
+}
+
+/// Applies the changes one arrangement produced and answers with the layout now in force.
+#[tauri::command]
+pub fn apply_dashboard_changes(
+    db: State<'_, Db>,
+    changes: Vec<WidgetChange>,
+) -> ApiResponse<DashboardLayout> {
+    DashboardLayout::apply(&db, changes).into()
 }
 
 /// Reads whether Windows starts the application when the user signs in.
