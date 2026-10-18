@@ -1434,6 +1434,7 @@ p {
     (100cqw - (var(--dash-columns) - 1) * var(--dash-gap)) / var(--dash-columns)
   );
 
+  position: relative;
   display: grid;
   grid-template-columns: repeat(var(--dash-columns), minmax(0, 1fr));
   grid-auto-rows: var(--dash-cell);
@@ -1804,8 +1805,32 @@ p {
   padding: var(--space-1);
 }
 
+/*
+ * The visible half of a drag: the panel itself never leaves its cell, this dashed box is what moves
+ * under the pointer. Position comes entirely from a transform written by the pointer handler, so
+ * the drag does not touch React at all; it sits above the panels so it is never hidden behind one.
+ */
+.editor-ghost {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 6;
+  border: 2px dashed var(--accent);
+  border-radius: var(--radius-lg);
+  background: var(--accent-soft);
+  pointer-events: none;
+  will-change: transform;
+}
+
 .editor-slot {
   position: relative;
+  /* Scaling from the top-left corner is what makes the slide animation land exactly on the cell. */
+  transform-origin: 0 0;
+}
+
+/* Held: the panel stays where it is and only its outline answers, the ghost is what travels. */
+.editor-slot[data-dragging="true"] > .dash-panel {
+  border-color: var(--accent);
 }
 
 .editor-mask {

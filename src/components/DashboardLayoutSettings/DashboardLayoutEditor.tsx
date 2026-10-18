@@ -1,6 +1,6 @@
 /** Layout editor: the real dashboard panels, dragged into shape and saved as a whole. */
 
-import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type {
   CSSProperties,
   KeyboardEvent as ReactKeyboardEvent,
@@ -15,10 +15,8 @@ import {
   DASHBOARD_WIDGETS,
   clampPlacement,
   minSizeOf,
-  moveWidget,
-  resizeWidget,
 } from "../../types/dashboard";
-import type { DashboardLayout, DashboardWidgetId, WidgetPlacement } from "../../types/dashboard";
+import type { DashboardWidgetId, WidgetPlacement } from "../../types/dashboard";
 import { ActionIcon } from "../ui/ActionIcon";
 import { SegmentedControl } from "../ui/SegmentedControl";
 import { useDraftLayout } from "./useDraftLayout";
@@ -36,8 +34,9 @@ interface DragState {
   clientY: number;
   /** The panel's rectangle when the gesture started, so every frame measures from the same origin. */
   origin: WidgetPlacement;
-  /** Draft the gesture started from, used to drop the undo step of a drag that moved nothing. */
-  startLayout: DashboardLayout;
+  /** Where the ghost sits right now, in pixels relative to the grid. */
+  ghostX: number;
+  ghostY: number;
 }
 
 /**
@@ -50,11 +49,42 @@ const EditorPanel = memo(function EditorPanel({ id }: { id: DashboardWidgetId })
   return <Panel />;
 });
 
+/** Push-away timing: quick off the mark, soft landing. */
+const SHIFT_MS = 240;
+const SHIFT_EASE = "cubic-bezier(0.2, 0.8, 0.2, 1)";
+
+/** Box of one panel inside the grid, in pixels. */
+interface CellRect {
+  height: number;
+  left: number;
+  top: number;
+  width: number;
+}
+
 function samePlacement(a: WidgetPlacement, b: WidgetPlacement): boolean {
   return a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h;
 }
 
-/** Full-window editor; the grid is the dashboard itself, one pointer drag away from the layout. */
+function prefersReducedMotion(): boolean {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+/**
+ * Panel box derived from its cells rather than measured from the DOM.
+ *
+ * Measuring would read boxes mid-animation, which is exactly when they are wrong; the cells are
+ * already enough to know where a panel starts and ends.
+ */
+function rectOf(placement: WidgetPlacement, cell: number, gap: number): CellRect {
+  return {
+    height: placement.h * cell + (placement.h - 1) * gap,
+    left: placement.x * (cell + gap),
+    top: placement.y * (cell + gap),
+    width: placement.w * cell + (placement.w - 1) * gap,
+  };
+}
+
+/** Full-window editor; the grid is the dashboard itself, one pointer drop away from the layout. */
 export function DashboardLayoutEditor({ onClose }: DashboardLayoutEditorProps) {
   const { t } = useI18n();
   const { layout: saved, save } = useDashboardLayout();
@@ -66,8 +96,17 @@ export function DashboardLayoutEditor({ onClose }: DashboardLayoutEditorProps) {
   const dragRef = useRef<DragState | null>(null);
   /** Latest draft for the pointer handlers, which fire between renders. */
   const layoutRef = useRef(layout);
+  /** Cell the panel would land on; rendered as a dashed placeholder, never applied mid-drag. */
+  const [preview, setPreview] = useState<WidgetPlacement | null>(null);
+  const previewRef = useRef<WidgetPlacement | null>(null);
+  /** The dashed placeholder itself, moved straight from the pointer handler. */
+  const ghostRef = useRef<HTMLSpanElement | null>(null);
   const [metrics, setMetrics] = useState({ cell: 0, gap: 0 });
   const [dragging, setDragging] = useState<DashboardWidgetId | null>(null);
+  /** One node per panel, for the push-away animation and the pointer-follow transform. */
+  const slotRefs = useRef<Partial<Record<DashboardWidgetId, HTMLDivElement | null>>>({});
+  /** Panel boxes at the last render, so the next render knows where they came from. */
+  const rectsRef = useRef<Record<DashboardWidgetId, CellRect> | null>(null);
 
   layoutRef.current = layout;
 
@@ -97,6 +136,69 @@ export function DashboardLayoutEditor({ onClose }: DashboardLayoutEditorProps) {
       observer.disconnect();
     };
   }, [layout.columns]);
+
+  /*
+   * Push-away: a panel that had to move or resize slides from where it was to where it is now, the
+   * way icons make room on a phone home screen. It runs on the drop and nowhere else, because the
+   * layout itself only changes on the drop — while a drag is live every panel stays put and only
+   * the ghost moves.
+   */
+  useLayoutEffect(() => {
+    const { cell, gap } = metrics;
+
+    if (cell <= 0) {
+      return;
+    }
+
+    const next = {} as Record<DashboardWidgetId, CellRect>;
+
+    for (const id of DASHBOARD_WIDGETS) {
+      next[id] = rectOf(layout.placements[id], cell, gap);
+    }
+
+    const previous = rectsRef.current;
+
+    rectsRef.current = next;
+
+    if (previous === null || prefersReducedMotion()) {
+      return;
+    }
+
+    for (const id of DASHBOARD_WIDGETS) {
+      const slot = slotRefs.current[id];
+
+      if (slot === null || slot === undefined) {
+        continue;
+      }
+
+      const from = previous[id];
+      const to = next[id];
+      const dx = from.left - to.left;
+      const dy = from.top - to.top;
+      const sx = to.width === 0 ? 1 : from.width / to.width;
+      const sy = to.height === 0 ? 1 : from.height / to.height;
+
+      if (
+        Math.abs(dx) < 0.5 &&
+        Math.abs(dy) < 0.5 &&
+        Math.abs(sx - 1) < 0.005 &&
+        Math.abs(sy - 1) < 0.005
+      ) {
+        continue;
+      }
+
+      slot.getAnimations().forEach((animation) => {
+        animation.cancel();
+      });
+      slot.animate(
+        [
+          { transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})` },
+          { transform: "none" },
+        ],
+        { duration: SHIFT_MS, easing: SHIFT_EASE },
+      );
+    }
+  }, [layout, metrics]);
 
   const commit = useCallback(() => {
     save(layoutRef.current);
@@ -147,6 +249,27 @@ export function DashboardLayoutEditor({ onClose }: DashboardLayoutEditorProps) {
 
   const step = metrics.cell + metrics.gap;
 
+  /** Shows where the panel would land, without touching the layout. */
+  const showPreview = (placement: WidgetPlacement): void => {
+    if (previewRef.current !== null && samePlacement(previewRef.current, placement)) {
+      return;
+    }
+
+    previewRef.current = placement;
+    setPreview(placement);
+  };
+
+  /** The ghost is dragged by hand: writing the transform keeps React out of the pointer frames. */
+  const placeGhost = (x: number, y: number): void => {
+    const ghost = ghostRef.current;
+
+    if (ghost === null) {
+      return;
+    }
+
+    ghost.style.transform = `translate(${x}px, ${y}px)`;
+  };
+
   const handlePointerMove = (event: ReactPointerEvent<HTMLElement>): void => {
     const state = dragRef.current;
 
@@ -154,36 +277,44 @@ export function DashboardLayoutEditor({ onClose }: DashboardLayoutEditorProps) {
       return;
     }
 
-    const current = layoutRef.current;
-    const dx = Math.round((event.clientX - state.clientX) / step);
-    const dy = Math.round((event.clientY - state.clientY) / step);
+    const deltaX = event.clientX - state.clientX;
+    const deltaY = event.clientY - state.clientY;
+    const dx = Math.round(deltaX / step);
+    const dy = Math.round(deltaY / step);
     const min = minSizeOf(state.id);
 
     if (state.mode === "move") {
       const target = clampPlacement(
         state.id,
         { ...state.origin, x: state.origin.x + dx, y: state.origin.y + dy },
-        current.columns,
+        layoutRef.current.columns,
       );
 
-      if (samePlacement(current.placements[state.id], target)) {
-        return;
-      }
+      /*
+       * The ghost glides with the pointer and hangs off the cell it is over by at most half a cell,
+       * so it never runs away when the placement is pinned at the edge of the grid.
+       */
+      const slack = step / 2;
+      const offX = Math.max(-slack, Math.min(slack, deltaX - (target.x - state.origin.x) * step));
+      const offY = Math.max(-slack, Math.min(slack, deltaY - (target.y - state.origin.y) * step));
 
-      draft.drag(moveWidget(current, state.id, target));
+      state.ghostX = target.x * step + offX;
+      state.ghostY = target.y * step + offY;
+      placeGhost(state.ghostX, state.ghostY);
+
+      showPreview(target);
       return;
     }
 
     const size = {
       h: Math.max(min.h, state.origin.h + dy),
-      w: Math.min(current.columns - state.origin.x, Math.max(min.w, state.origin.w + dx)),
+      w: Math.min(
+        layoutRef.current.columns - state.origin.x,
+        Math.max(min.w, state.origin.w + dx),
+      ),
     };
 
-    if (size.w === current.placements[state.id].w && size.h === current.placements[state.id].h) {
-      return;
-    }
-
-    draft.drag(resizeWidget(current, state.id, size));
+    showPreview({ ...state.origin, h: size.h, w: size.w });
   };
 
   const beginDrag = (
@@ -197,17 +328,22 @@ export function DashboardLayoutEditor({ onClose }: DashboardLayoutEditorProps) {
 
     event.stopPropagation();
     event.currentTarget.setPointerCapture(event.pointerId);
+
+    const origin = layoutRef.current.placements[id];
+
     dragRef.current = {
       clientX: event.clientX,
       clientY: event.clientY,
+      ghostX: origin.x * step,
+      ghostY: origin.y * step,
       id,
       mode,
-      origin: layoutRef.current.placements[id],
+      origin,
       pointerId: event.pointerId,
-      startLayout: layoutRef.current,
     };
-    // One undo step for the whole gesture, not one per frame.
-    draft.begin();
+    // The ghost only exists once there is a preview, so it starts as the panel's own rectangle.
+    previewRef.current = null;
+    showPreview(origin);
     setDragging(id);
   };
 
@@ -222,20 +358,35 @@ export function DashboardLayoutEditor({ onClose }: DashboardLayoutEditorProps) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
 
-    dragRef.current = null;
-    setDragging(null);
+    const target = previewRef.current;
 
-    // A click that moved nothing should not cost the user an undo press.
-    if (layoutRef.current === state.startLayout) {
-      draft.abort();
+    dragRef.current = null;
+    previewRef.current = null;
+    setDragging(null);
+    setPreview(null);
+
+    if (target === null) {
+      return;
     }
+
+    const current = layoutRef.current.placements[state.id];
+
+    // Dropped on the cell it already had: the ghost just disappears, nothing moved.
+    if (samePlacement(current, target)) {
+      return;
+    }
+
+    // The drop is the only moment the layout changes, so every panel moves once, together.
+    if (state.mode === "move") {
+      draft.move(state.id, target);
+      return;
+    }
+
+    draft.resize(state.id, { h: target.h, w: target.w });
   };
 
   /** Arrow keys nudge a panel; holding shift resizes it instead. */
-  const handleKeyDown = (
-    event: ReactKeyboardEvent<HTMLElement>,
-    id: DashboardWidgetId,
-  ): void => {
+  const handleKeyDown = (event: ReactKeyboardEvent<HTMLElement>, id: DashboardWidgetId): void => {
     const placement = layout.placements[id];
     const min = minSizeOf(id);
     const horizontal = event.key === "ArrowLeft" || event.key === "ArrowRight";
@@ -275,6 +426,20 @@ export function DashboardLayoutEditor({ onClose }: DashboardLayoutEditorProps) {
       ),
     );
   };
+
+  const ghost = preview === null ? null : rectOf(preview, metrics.cell, metrics.gap);
+
+  // The ghost mounts with the drag, so its resting place has to be written after the first render.
+  useLayoutEffect(() => {
+    const state = dragRef.current;
+    const element = ghostRef.current;
+
+    if (state === null || element === null) {
+      return;
+    }
+
+    element.style.transform = `translate(${state.ghostX}px, ${state.ghostY}px)`;
+  }, [preview]);
 
   return (
     <div className="editor-overlay">
@@ -355,6 +520,14 @@ export function DashboardLayoutEditor({ onClose }: DashboardLayoutEditorProps) {
               ref={gridRef}
               style={{ "--dash-columns": layout.columns } as CSSProperties}
             >
+              {ghost === null ? null : (
+                <span
+                  aria-hidden="true"
+                  className="editor-ghost"
+                  ref={ghostRef}
+                  style={{ height: ghost.height, width: ghost.width }}
+                />
+              )}
               {DASHBOARD_WIDGETS.map((id) => {
                 const placement = layout.placements[id];
 
@@ -363,6 +536,9 @@ export function DashboardLayoutEditor({ onClose }: DashboardLayoutEditorProps) {
                     className="dash-slot editor-slot"
                     data-dragging={dragging === id}
                     key={id}
+                    ref={(element) => {
+                      slotRefs.current[id] = element;
+                    }}
                     style={{
                       gridColumn: `${placement.x + 1} / span ${placement.w}`,
                       gridRow: `${placement.y + 1} / span ${placement.h}`,

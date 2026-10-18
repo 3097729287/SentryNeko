@@ -19,12 +19,6 @@ export interface DraftLayoutResult {
   setColumns: (columns: number) => void;
   move: (id: DashboardWidgetId, placement: WidgetPlacement) => void;
   resize: (id: DashboardWidgetId, size: { w: number; h: number }) => void;
-  /** Opens one undo step before a drag, so the whole gesture undoes in one press. */
-  begin: () => void;
-  /** Applies a drag frame without adding an undo step. */
-  drag: (next: DashboardLayout) => void;
-  /** Drops the step `begin` opened, for a gesture that ended where it started. */
-  abort: () => void;
   undo: () => void;
   reset: () => void;
 }
@@ -42,7 +36,12 @@ function sameLayout(a: DashboardLayout, b: DashboardLayout): boolean {
   });
 }
 
-/** Local copy of `initial` plus an undo stack; nothing reaches the store until the caller saves. */
+/**
+ * Local copy of `initial` plus an undo stack; nothing reaches the store until the caller saves.
+ *
+ * One call is one undo step, which is why a drag is applied only when the pointer is released:
+ * the frames in between are a preview, not a layout.
+ */
 export function useDraftLayout(initial: DashboardLayout): DraftLayoutResult {
   const [layout, setLayout] = useState(initial);
   const [history, setHistory] = useState<readonly DashboardLayout[]>([]);
@@ -59,18 +58,6 @@ export function useDraftLayout(initial: DashboardLayout): DraftLayoutResult {
     },
     [layout],
   );
-
-  const begin = useCallback(() => {
-    setHistory((past) => [...past, layout]);
-  }, [layout]);
-
-  const drag = useCallback((next: DashboardLayout) => {
-    setLayout(next);
-  }, []);
-
-  const abort = useCallback(() => {
-    setHistory((past) => (past.length === 0 ? past : past.slice(0, -1)));
-  }, []);
 
   const undo = useCallback(() => {
     const previous = history.at(-1);
@@ -109,11 +96,8 @@ export function useDraftLayout(initial: DashboardLayout): DraftLayoutResult {
   }, [edit, layout.columns]);
 
   return {
-    abort,
-    begin,
     canUndo: history.length > 0,
     dirty: !sameLayout(layout, initial),
-    drag,
     layout,
     move,
     reset,
