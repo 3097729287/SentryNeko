@@ -49,8 +49,8 @@ function Fixture() {
   if (params.has("settings")) {
     return (
       <I18nProvider>
-        <PomodoroSettings />
-        <AlarmDefaultsSettings />
+        <button onClick={() => setShown(false)} type="button">Unmount settings</button>
+        {shown ? <><PomodoroSettings /><AlarmDefaultsSettings /></> : null}
       </I18nProvider>
     );
   }

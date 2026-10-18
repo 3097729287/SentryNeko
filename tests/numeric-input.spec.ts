@@ -191,3 +191,22 @@ test("settings arrows use the translated field names", async ({ page }) => {
   await expect(page.getByRole("button", { name: /^增大/ })).toHaveCount(4);
   await expect(page.getByRole("button", { name: /^减小/ })).toHaveCount(4);
 });
+
+for (const setting of [
+  { label: "Focus (minutes)", command: "set_pomodoro_durations" },
+  { label: "Ring duration (seconds)", command: "set_alarm_defaults" },
+]) {
+  test(`${setting.label} saves on blur before the settings form unmounts`, async ({ page }) => {
+    await page.goto(`${fixture}?settings`);
+    const input = page.getByRole("spinbutton", { name: setting.label, exact: true });
+    await expect(input).toBeEnabled();
+    await input.fill("27");
+    await page.getByRole("button", { name: "Unmount settings" }).click();
+    await expect(page.getByRole("spinbutton")).toHaveCount(0);
+    await expect.poll(() => page.evaluate(() => window.numericInputSaves)).toEqual([
+      { command: setting.command, value: setting.command === "set_pomodoro_durations"
+        ? { focusSeconds: 1620, shortBreakSeconds: 300, longBreakSeconds: 900 }
+        : { method: "toast", ringSeconds: 27 } },
+    ]);
+  });
+}

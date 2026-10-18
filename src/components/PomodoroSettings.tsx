@@ -106,6 +106,7 @@ export function PomodoroSettings() {
                 increaseLabel={t("numericInput.increase", { label })}
                 max={240}
                 min={1}
+                onBlur={save}
                 onChange={update(phase.key)}
                 value={phase.value}
               />

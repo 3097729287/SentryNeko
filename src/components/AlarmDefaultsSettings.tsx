@@ -79,6 +79,7 @@ export function AlarmDefaultsSettings() {
             increaseLabel={t("numericInput.increase", { label: t("alarm.settings.ring") })}
             max={60}
             min={1}
+            onBlur={write}
             onChange={(value) => {
               setSaved(false);
               setSeconds(value);
