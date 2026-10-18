@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   HashRouter,
   Navigate,
@@ -47,6 +47,18 @@ const PAGES = [
 /** Where the collapsed flag lives; it is chrome, so it never travels to `config.json`. */
 const SIDEBAR_STORAGE_KEY = "sentryneko.sidebarCollapsed";
 
+/**
+ * Window width at or below which the rail folds on its own. An open rail costs 236px, and the pages
+ * start to crowd once that leaves them under ~790px, so the window gives up the labels instead of
+ * the room.
+ */
+const AUTO_COLLAPSE_MAX_WIDTH = 1024;
+
+/** Whether the window is too narrow to keep the labelled rail open. */
+function isNarrowWindow(): boolean {
+  return window.matchMedia(`(max-width: ${AUTO_COLLAPSE_MAX_WIDTH}px)`).matches;
+}
+
 /** Reads the collapsed flag, starting expanded when storage is unavailable. */
 function readSidebarCollapsed(): boolean {
   try {
@@ -72,7 +84,11 @@ function Shell() {
   // Null until the first measurement: the highlight must appear already in place instead of
   // sliding in from the top of the list on mount.
   const [indicator, setIndicator] = useState<{ top: number; height: number } | null>(null);
-  const [collapsed, setCollapsed] = useState(readSidebarCollapsed);
+  // The user's choice and the window's demand stay apart: widening the window must give the user
+  // back whatever they had picked, not an arbitrary default.
+  const [preferredCollapsed, setPreferredCollapsed] = useState(readSidebarCollapsed);
+  const [narrow, setNarrow] = useState(isNarrowWindow);
+  const collapsed = preferredCollapsed || narrow;
   const [tooltip, setTooltip] = useState<NavTooltip | null>(null);
 
   // The shell owns the push, so the live tail keeps growing while another page is mounted.
@@ -87,6 +103,21 @@ function Shell() {
       navigate("/pomodoro");
     })();
   });
+
+  // Crossing the threshold folds or unfolds the rail on its own; a tooltip left open would then
+  // point at a row that has moved, so it is dropped with the same event.
+  useEffect(() => {
+    const query = window.matchMedia(`(max-width: ${AUTO_COLLAPSE_MAX_WIDTH}px)`);
+    const sync = () => {
+      setNarrow(query.matches);
+      setTooltip(null);
+    };
+
+    sync();
+    query.addEventListener("change", sync);
+
+    return () => query.removeEventListener("change", sync);
+  }, []);
 
   // The sliding highlight is placed from the active link, so no geometry is hard-coded.
   useLayoutEffect(() => {
@@ -103,9 +134,14 @@ function Shell() {
     );
   }, [pathname, language, collapsed]);
 
-  // Collapsing only changes the shell's own chrome, so the flag stays out of `config.json`.
+  // Collapsing only changes the shell's own chrome, so the flag stays out of `config.json`. A
+  // narrow window owns the rail outright: there is no toggle to reach and no room to give.
   function toggleSidebar() {
-    setCollapsed((current) => {
+    if (narrow) {
+      return;
+    }
+
+    setPreferredCollapsed((current) => {
       const next = !current;
 
       try {
@@ -179,25 +215,27 @@ function Shell() {
             </NavLink>
           ))}
         </nav>
-        <div className="sidebar-footer">
-          <button
-            aria-controls="app-sidebar"
-            aria-expanded={!collapsed}
-            aria-label={t(collapsed ? "nav.expand" : "nav.collapse")}
-            className="sidebar-toggle"
-            onClick={toggleSidebar}
-            onBlur={hideTooltip}
-            onFocus={(event) => showTooltip(t("nav.expand"), event.currentTarget)}
-            onMouseEnter={(event) => showTooltip(t("nav.expand"), event.currentTarget)}
-            onMouseLeave={hideTooltip}
-            type="button"
-          >
-            <svg aria-hidden="true" className="nav-icon" viewBox="0 0 24 24">
-              <path d={collapsed ? "M10 6l6 6-6 6" : "M14 6l-6 6 6 6"} />
-            </svg>
-            <span className="sidebar-toggle-label">{t("nav.collapse")}</span>
-          </button>
-        </div>
+        {narrow ? null : (
+          <div className="sidebar-footer">
+            <button
+              aria-controls="app-sidebar"
+              aria-expanded={!collapsed}
+              aria-label={t(collapsed ? "nav.expand" : "nav.collapse")}
+              className="sidebar-toggle"
+              onClick={toggleSidebar}
+              onBlur={hideTooltip}
+              onFocus={(event) => showTooltip(t("nav.expand"), event.currentTarget)}
+              onMouseEnter={(event) => showTooltip(t("nav.expand"), event.currentTarget)}
+              onMouseLeave={hideTooltip}
+              type="button"
+            >
+              <svg aria-hidden="true" className="nav-icon" viewBox="0 0 24 24">
+                <path d={collapsed ? "M10 6l6 6-6 6" : "M14 6l-6 6 6 6"} />
+              </svg>
+              <span className="sidebar-toggle-label">{t("nav.collapse")}</span>
+            </button>
+          </div>
+        )}
       </aside>
       {tooltip ? (
         <span
