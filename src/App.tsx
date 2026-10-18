@@ -209,7 +209,9 @@ function Shell() {
         </span>
       ) : null}
       <main className="content">
-        <Outlet />
+        <div className="content-inner">
+          <Outlet />
+        </div>
       </main>
       <AlarmRinging />
       <ToastHost />

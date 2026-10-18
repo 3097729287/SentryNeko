@@ -378,12 +378,22 @@ p {
 
 /* Content */
 
+/*
+ * The scroll container fills the whole column, so the scrollbar tracks the window edge instead of
+ * ending where the reading column does. The cap and the centring live on the inner box: extra
+ * width becomes an even margin on both sides rather than one wide empty strip on the right.
+ */
 .content {
   grid-column: 2;
   grid-row: 2;
-  max-width: 880px;
   overflow-y: auto;
-  padding: var(--space-6) var(--space-7) 72px;
+  padding: var(--space-6) 0 72px;
+}
+
+.content-inner {
+  max-width: 880px;
+  margin-inline: auto;
+  padding-inline: var(--space-7);
 }
 
 /* Primitives pages reuse */
