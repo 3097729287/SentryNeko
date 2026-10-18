@@ -64,6 +64,7 @@ Status legend: `[ ]` not started　`[~]` in progress　`[x]` done　`[!]` blocke
 | [x] | T24 | Analytics page (`AnalyticsPage`) | T20, T21, T22 | Aggregates the stats above; page-level loading and error states implemented |
 | [x] | T25 | System tray: stay resident when minimized + context menu | T02, T11 | Menu offers start Pomodoro, today's stats, show/hide window; closing the main window does not quit the app |
 | [x] | T26 | Auto-start with Windows (registry / Task Scheduler) | T25 | A settings switch writes `HKCU\...\Run` for the running executable; switching it on twice leaves one entry, switching it off removes it, and a login start waits in the tray |
+| [x] | T35 | Task list display modes (#26) | T10, T16, T34 | Settings switch between separate sections (default), one merged list with task type indicators and two columns; the preference survives a restart without changing tasks |
 
 ## P3 Reserved (stubs only, not implemented)
 

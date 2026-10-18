@@ -93,6 +93,14 @@ sits in and how many cells it spans on a two-column grid. The `id` is what makes
 addressable, so the same `kind` may appear more than once. A missing row means the dashboard was
 never customised and the page falls back to its built-in layout.
 
+The task list layout uses key `todo.displayMode` with a JSON string value: `"separated"`
+(the default when the row is absent), `"merged"` or `"twoColumns"`. Settings saves it through
+`set_todo_display_mode`; startup reads it through `get_todo_display_mode` before rendering.
+Changing this row never changes tasks, completion state, recurrence rules or list ordering.
+Separate sections stack vertically; the two-column layout sits side by side and stacks when
+the list has at most 560 CSS pixels of room. Merged mode retains the task type and schedule
+indicators. Completion filters and the remaining count apply to both types in every layout.
+
 `app_events` is written by the foreground collector (`collectors/foreground_app.rs`), which samples
 the foreground window once a second:
 
