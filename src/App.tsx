@@ -14,6 +14,7 @@ import { AlarmRinging } from "./components/AlarmRinging";
 import { I18nProvider } from "./components/I18nProvider";
 import { TitleBar } from "./components/TitleBar";
 import { ToastHost } from "./components/ToastHost";
+import { NavIcon } from "./components/ui/NavIcon";
 import { useI18n } from "./hooks/useI18n";
 import { BACKEND_EVENTS, useTauriEvent } from "./hooks/useTauriEvent";
 import { AlarmsPage } from "./pages/AlarmsPage";
@@ -28,17 +29,35 @@ import { useAppEventStore } from "./stores/appEventStore";
 import { usePomodoroStore } from "./stores/pomodoroStore";
 import type { AppEvent } from "./types/appEvent";
 
-/** Every page of the shell, in navigation order; each label doubles as the page heading. */
+/**
+ * Every page of the shell, in navigation order; each label doubles as the page heading, and the
+ * icon keeps the entry recognisable once the sidebar collapses to its icon-only width.
+ */
 const PAGES = [
-  { path: "/", label: "nav.dashboard", Page: Dashboard },
-  { path: "/todos", label: "nav.todos", Page: TodosPage },
-  { path: "/pomodoro", label: "nav.pomodoro", Page: PomodoroPage },
-  { path: "/heatmap", label: "nav.heatmap", Page: HeatmapPage },
-  { path: "/alarms", label: "nav.alarms", Page: AlarmsPage },
-  { path: "/events", label: "nav.events", Page: EventsPage },
-  { path: "/analytics", label: "nav.analytics", Page: AnalyticsPage },
-  { path: "/settings", label: "nav.settings", Page: SettingsPage },
+  { path: "/", label: "nav.dashboard", icon: "dashboard", Page: Dashboard },
+  { path: "/todos", label: "nav.todos", icon: "todos", Page: TodosPage },
+  { path: "/pomodoro", label: "nav.pomodoro", icon: "pomodoro", Page: PomodoroPage },
+  { path: "/heatmap", label: "nav.heatmap", icon: "heatmap", Page: HeatmapPage },
+  { path: "/alarms", label: "nav.alarms", icon: "alarms", Page: AlarmsPage },
+  { path: "/events", label: "nav.events", icon: "events", Page: EventsPage },
+  { path: "/analytics", label: "nav.analytics", icon: "analytics", Page: AnalyticsPage },
+  { path: "/settings", label: "nav.settings", icon: "settings", Page: SettingsPage },
 ] as const;
+
+/** Where the collapsed flag lives; it is chrome, so it never travels to `config.json`. */
+const SIDEBAR_STORAGE_KEY = "sentryneko.sidebarCollapsed";
+
+/** Reads the collapsed flag, starting expanded when storage is unavailable. */
+function readSidebarCollapsed(): boolean {
+  try {
+    return localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+/** The floating name of a collapsed entry, anchored in viewport coordinates. */
+type NavTooltip = { label: string; left: number; top: number };
 
 /** Window frame shared by every page: brand, navigation and language choice. */
 function Shell() {
@@ -48,10 +67,13 @@ function Shell() {
   const startPomodoro = usePomodoroStore((state) => state.start);
   const navigate = useNavigate();
   const navRef = useRef<HTMLElement>(null);
+  const sidebarRef = useRef<HTMLElement>(null);
   const { pathname } = useLocation();
   // Null until the first measurement: the highlight must appear already in place instead of
   // sliding in from the top of the list on mount.
   const [indicator, setIndicator] = useState<{ top: number; height: number } | null>(null);
+  const [collapsed, setCollapsed] = useState(readSidebarCollapsed);
+  const [tooltip, setTooltip] = useState<NavTooltip | null>(null);
 
   // The shell owns the push, so the live tail keeps growing while another page is mounted.
   useTauriEvent<AppEvent>(BACKEND_EVENTS.appSwitch, recordAppSwitch);
@@ -79,12 +101,52 @@ function Shell() {
     setIndicator((current) =>
       current && current.top === next.top && current.height === next.height ? current : next,
     );
-  }, [pathname, language]);
+  }, [pathname, language, collapsed]);
+
+  // Collapsing only changes the shell's own chrome, so the flag stays out of `config.json`.
+  function toggleSidebar() {
+    setCollapsed((current) => {
+      const next = !current;
+
+      try {
+        localStorage.setItem(SIDEBAR_STORAGE_KEY, String(next));
+      } catch {
+        // Storage disabled: the rail still narrows, the choice just does not survive a restart.
+      }
+
+      return next;
+    });
+    setTooltip(null);
+  }
+
+  // The label is drawn by the shell instead of inside the link: the navigation scrolls, so a label
+  // positioned next to an entry would be clipped at the sidebar edge. It is anchored on that edge
+  // rather than on the link, because the link stops short of it while the rail is icon-only.
+  function showTooltip(label: string, anchor: HTMLElement) {
+    if (!collapsed) {
+      return;
+    }
+
+    const rect = anchor.getBoundingClientRect();
+    const edge = sidebarRef.current?.getBoundingClientRect().right ?? rect.right;
+
+    setTooltip({ label, left: edge + 8, top: rect.top + rect.height / 2 });
+  }
+
+  function hideTooltip() {
+    setTooltip(null);
+  }
 
   return (
-    <div className="app-shell">
+    <div className="app-shell" data-collapsed={collapsed ? "true" : "false"}>
       <TitleBar />
-      <aside className="sidebar" data-tauri-drag-region="deep">
+      <aside
+        className="sidebar"
+        data-tauri-drag-region="deep"
+        id="app-sidebar"
+        onScroll={hideTooltip}
+        ref={sidebarRef}
+      >
         <div className="brand">
           <span className="brand-mark">
             <span aria-hidden="true" className="brand-dot" />
@@ -100,13 +162,52 @@ function Shell() {
               style={{ height: indicator.height, transform: `translateY(${indicator.top}px)` }}
             />
           ) : null}
-          {PAGES.map(({ path, label }) => (
-            <NavLink className="nav-link" end={path === "/"} key={path} to={path}>
-              {t(label)}
+          {PAGES.map(({ path, label, icon }) => (
+            <NavLink
+              aria-label={t(label)}
+              className="nav-link"
+              end={path === "/"}
+              key={path}
+              onBlur={hideTooltip}
+              onFocus={(event) => showTooltip(t(label), event.currentTarget)}
+              onMouseEnter={(event) => showTooltip(t(label), event.currentTarget)}
+              onMouseLeave={hideTooltip}
+              to={path}
+            >
+              <NavIcon name={icon} />
+              <span className="nav-label">{t(label)}</span>
             </NavLink>
           ))}
         </nav>
+        <div className="sidebar-footer">
+          <button
+            aria-controls="app-sidebar"
+            aria-expanded={!collapsed}
+            aria-label={t(collapsed ? "nav.expand" : "nav.collapse")}
+            className="sidebar-toggle"
+            onClick={toggleSidebar}
+            onBlur={hideTooltip}
+            onFocus={(event) => showTooltip(t("nav.expand"), event.currentTarget)}
+            onMouseEnter={(event) => showTooltip(t("nav.expand"), event.currentTarget)}
+            onMouseLeave={hideTooltip}
+            type="button"
+          >
+            <svg aria-hidden="true" className="nav-icon" viewBox="0 0 24 24">
+              <path d={collapsed ? "M10 6l6 6-6 6" : "M14 6l-6 6 6 6"} />
+            </svg>
+            <span className="sidebar-toggle-label">{t("nav.collapse")}</span>
+          </button>
+        </div>
       </aside>
+      {tooltip ? (
+        <span
+          aria-hidden="true"
+          className="nav-tooltip"
+          style={{ left: tooltip.left, top: tooltip.top }}
+        >
+          {tooltip.label}
+        </span>
+      ) : null}
       <main className="content">
         <Outlet />
       </main>

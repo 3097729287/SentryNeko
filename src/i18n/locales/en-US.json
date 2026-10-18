@@ -184,13 +184,15 @@
     "label": "Interface language"
   },
   "nav": {
+    "analytics": "Analytics",
+    "collapse": "Collapse sidebar",
     "dashboard": "Dashboard",
+    "events": "Events",
+    "expand": "Expand sidebar",
     "todos": "Todos",
     "pomodoro": "Pomodoro",
     "heatmap": "Heatmap",
     "alarms": "Alarms",
-    "events": "Events",
-    "analytics": "Analytics",
     "settings": "Settings"
   },
   "notification": {
