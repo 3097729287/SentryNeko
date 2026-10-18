@@ -295,11 +295,50 @@
       "all": "All",
       "active": "Active",
       "completed": "Completed",
+      "empty": "Nothing under this filter.",
       "label": "Filter by status"
+    },
+    "group": {
+      "active": "Active",
+      "completed": "Completed"
     },
     "loading": "Loading…",
     "placeholder": "What needs doing?",
+    "progress": {
+      "label": "Progress"
+    },
     "remaining": "{{remaining}} left",
+    "search": {
+      "clear": "Clear search",
+      "empty": "No tasks match “{{query}}”.",
+      "label": "Search tasks",
+      "placeholder": "Search title or tag…",
+      "results": "{{count}} matches"
+    },
+    "select": {
+      "all": "Select all",
+      "complete": "Mark done",
+      "count": "{{count}} selected",
+      "delete": "Delete selected",
+      "enter": "Select tasks",
+      "exit": "Exit selection",
+      "invert": "Invert",
+      "item": "Select “{{title}}”"
+    },
+    "subtitle": "{{total}} tasks · {{remaining}} left",
+    "tags": {
+      "create": "New tag",
+      "done": "Done",
+      "empty": "No tags yet — create one below.",
+      "label": "Tags",
+      "name": "Tag name"
+    },
+    "time": {
+      "days": "{{count}}d ago",
+      "hours": "{{count}}h ago",
+      "minutes": "{{count}}m ago",
+      "now": "just now"
+    },
     "toggle": "Mark as done"
   },
   "window": {

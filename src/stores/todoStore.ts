@@ -18,6 +18,8 @@ export interface TodoState {
   refresh: () => Promise<void>;
   add: (title: string) => Promise<boolean>;
   rename: (id: number, title: string) => Promise<boolean>;
+  /** Replaces the tags a task carries; an empty list leaves it untagged. */
+  updateTags: (id: number, tagIds: readonly number[]) => Promise<boolean>;
   toggle: (todo: Todo) => Promise<boolean>;
   remove: (id: number) => Promise<boolean>;
 }
@@ -97,6 +99,20 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     set({ error: null });
 
     const response = await request<Todo>("rename_todo", { id, title });
+
+    if (!isOk(response)) {
+      set({ error: response.code });
+      return false;
+    }
+
+    await get().refresh();
+    return true;
+  },
+
+  updateTags: async (id, tagIds) => {
+    set({ error: null });
+
+    const response = await request<Todo>("set_todo_tags", { id, tagIds: [...tagIds] });
 
     if (!isOk(response)) {
       set({ error: response.code });

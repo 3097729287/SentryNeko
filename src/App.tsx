@@ -25,7 +25,7 @@ import { EventsPage } from "./pages/EventsPage";
 import { HeatmapPage } from "./pages/HeatmapPage";
 import { PomodoroPage } from "./pages/PomodoroPage";
 import { SettingsPage } from "./pages/SettingsPage";
-import { TodosPage } from "./pages/TodosPage";
+import { TodosPage } from "./pages/Todos";
 import { useAppEventStore } from "./stores/appEventStore";
 import { usePomodoroStore } from "./stores/pomodoroStore";
 import type { AppEvent } from "./types/appEvent";
