@@ -195,7 +195,15 @@
     }
   },
   "pomodoro": {
+    "cycle": {
+      "label": "本轮进度",
+      "value": "{{done}} / {{total}} 个专注"
+    },
     "error": "计时器无法连接后端。",
+    "next": {
+      "label": "接下来",
+      "value": "{{phase}} · {{minutes}} 分钟"
+    },
     "pause": "暂停",
     "phase": {
       "focus": "专注",
@@ -207,6 +215,7 @@
     "settings": {
       "error": "时长保存失败。",
       "focus": "专注（分钟）",
+      "link": "调整时长",
       "locked": "停止计时后才能修改时长。",
       "longBreak": "长休息（分钟）",
       "saved": "已保存",
@@ -214,7 +223,12 @@
       "slice": "{{phase}} · {{minutes}} 分钟",
       "title": "番茄钟时长"
     },
-    "start": "开始"
+    "start": "开始",
+    "state": {
+      "idle": "未开始",
+      "paused": "已暂停",
+      "running": "进行中"
+    }
   },
   "settings": {
     "alarm": {
