@@ -75,6 +75,13 @@ fn toggle(id: i64) -> ApiResult<Todo> {
 
 ## 命令索引
 
+字体设置使用 `FontSettings`（`{ family: string | null, size: number }`）：`null` 跟随系统
+界面字体，`JetBrains Mono` 选择内置字体，其他名称选择 Windows 已安装字体。
+`get_font_settings` 读取 `config.json`；`set_font_settings` 校验 10–32 的整数字号，字体名
+须非空、不超过 128 个字符，且不含控制字符或首尾空白。`get_system_fonts` 在线程池中
+枚举 Windows 字体，返回排序、去重后的名称，并排除竖排字体（`@`）别名。
+已保存的字体若被卸载，界面回退到系统字体，同时保留原选择。
+
 前端可以调用的命令都列在这里。语言这两个是 `src/i18n/` 的后端接口：`get_language` 返回
 `config.json` 中的标签，`set_language` 对 `Language::ALL` 之外的标签返回 `INVALID_INPUT`。
 外观这一对同理：`get_color_mode` 读回已存的 `dark` / `light` / `system`，`set_color_mode`
@@ -128,6 +135,9 @@ fn toggle(id: i64) -> ApiResult<Todo> {
 | `set_language` | `settings_commands` | `language: String` | `String`（生效后的标签） | T07 |
 | `get_color_mode` | `settings_commands` | — | `String`（`dark`、`light` 或 `system`） | — |
 | `set_color_mode` | `settings_commands` | `mode: String` | `String`（生效后的模式） | — |
+| `get_font_settings` | `settings_commands` | — | `FontSettings`（`{ family, size }`） | T34 |
+| `set_font_settings` | `settings_commands` | `settings: FontSettings` | `FontSettings`（生效后的设置） | T34 |
+| `get_system_fonts` | `settings_commands` | — | `String[]`（Windows 已安装字体名称） | T34 |
 | `emit_test_event` | `event_commands` | — | `TestEvent`（`{ sequence }`） | T08 |
 | `list_todos` | `todo_commands` | `completed: bool?`, `sort: TodoSort?` (`default`, `dueDateAsc`, `dueDateDesc`) | `Todo[]` | T10 |
 | `add_todo` | `todo_commands` | `title: String`, `recurrence: Recurrence?`, `dueDate: i64?` | `Todo` | T10, T37 |

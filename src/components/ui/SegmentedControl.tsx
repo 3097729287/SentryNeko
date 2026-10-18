@@ -53,22 +53,32 @@ export function SegmentedControl<T extends string>({
       return;
     }
 
-    const next = {
-      height: active.offsetHeight,
-      left: active.offsetLeft,
-      top: active.offsetTop,
-      width: active.offsetWidth,
+    const measure = (): void => {
+      const next = {
+        height: active.offsetHeight,
+        left: active.offsetLeft,
+        top: active.offsetTop,
+        width: active.offsetWidth,
+      };
+
+      setHighlight((current) =>
+        current &&
+        current.left === next.left &&
+        current.top === next.top &&
+        current.width === next.width &&
+        current.height === next.height
+          ? current
+          : next,
+      );
     };
 
-    setHighlight((current) =>
-      current &&
-      current.left === next.left &&
-      current.top === next.top &&
-      current.width === next.width &&
-      current.height === next.height
-        ? current
-        : next,
-    );
+    measure();
+    // Family and size can change outside this component, including after a font finishes loading.
+    const observer = new ResizeObserver(measure);
+    observer.observe(track);
+    observer.observe(active);
+
+    return () => observer.disconnect();
   });
 
   return (

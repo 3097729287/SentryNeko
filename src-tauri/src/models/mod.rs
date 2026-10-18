@@ -3,6 +3,7 @@
 pub mod alarm;
 pub mod app_event;
 pub mod dashboard;
+pub mod font;
 pub mod heatmap;
 pub mod pomodoro;
 pub mod recurrence;

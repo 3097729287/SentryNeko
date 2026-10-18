@@ -40,7 +40,8 @@ app.manage(db);
 {
   "databasePath": "C:\\Users\\you\\AppData\\Roaming\\com.sentryneko.desktop\\sentryneko.db",
   "language": "en-US",
-  "colorMode": "system"
+  "colorMode": "system",
+  "fontSettings": { "family": null, "size": 14 }
 }
 ```
 
@@ -49,6 +50,7 @@ app.manage(db);
 | `databasePath` | SQLite file the application opens | `<app data dir>/sentryneko.db` |
 | `language` | Language tag, listed in `docs/i18n.md` | Detected system language, falling back to `en-US` |
 | `colorMode` | `dark`, `light` or `system`; `system` follows the operating system | `system` |
+| `fontSettings` | Font family (`null` for system default, `JetBrains Mono` for the bundled font, or an installed family name) and integer base size in pixels (10–32) | `{ "family": null, "size": 14 }` |
 
 Rules:
 
@@ -63,6 +65,12 @@ Rules:
   precedence on subsequent launches; settings can override it.
 - An unknown `language` tag falls back to `Language::DEFAULT` and leaves the file as it is.
 - An unknown `colorMode` falls back to `ColorMode::DEFAULT` (`system`) the same way.
+- Missing font preferences, an out-of-range size or an invalid family name fall back to the
+  default system font at 14 px. Existing configuration files need no migration.
+- Typography is restored before rendering. The frontend mirrors it in local storage for browser
+  preview and startup fallback, applies changes immediately, and serializes backend writes so
+  rapid adjustments cannot persist an older choice after a newer one. Failed saves remain visible
+  on the settings page; the last successfully saved configuration is authoritative on restart.
 - A file that does not parse is reported as `IO` with the parser message in `details` and is
   never overwritten — fix or delete it by hand to recover.
 - Writes land in `config.json.tmp` and are renamed into place, so a crash cannot truncate the file.

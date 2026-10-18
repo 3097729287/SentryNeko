@@ -8,6 +8,7 @@ use crate::config::Config;
 use crate::db::connection::Db;
 use crate::models::alarm::AlarmDefaults;
 use crate::models::dashboard::{DashboardLayout, WidgetChange};
+use crate::models::font::FontSettings;
 use crate::models::pomodoro::PomodoroDurations;
 use crate::models::todo_display::TodoDisplayMode;
 use crate::services::autostart::{Autostart, WindowsRunKey};
@@ -15,6 +16,35 @@ use crate::services::i18n::Language;
 use crate::services::theme::ColorMode;
 use crate::services::tray::Tray;
 use crate::utils::response::{ApiError, ApiResponse, ApiResult};
+use crate::utils::windows;
+
+/// Reads the font family and base size stored in `config.json`.
+#[tauri::command]
+pub fn get_font_settings(config: State<'_, Config>) -> ApiResponse<FontSettings> {
+    config.font_settings().into()
+}
+
+/// Validates and stores typography as one preference.
+#[tauri::command]
+pub fn set_font_settings(
+    settings: FontSettings,
+    config: State<'_, Config>,
+) -> ApiResponse<FontSettings> {
+    config.set_font_settings(settings).into()
+}
+
+/// Enumerates locally installed font families without accessing font files or the network.
+#[tauri::command]
+pub async fn get_system_fonts() -> ApiResponse<Vec<String>> {
+    tauri::async_runtime::spawn_blocking(windows::system_font_families)
+        .await
+        .unwrap_or_else(|error| {
+            Err(ApiError::internal(format!(
+                "font enumeration failed: {error}"
+            )))
+        })
+        .into()
+}
 
 /// Reads the task list layout; a missing preference means separate sections.
 #[tauri::command]

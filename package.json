@@ -15,6 +15,7 @@
     "test:sidebar": "tsc --ignoreConfig --target es2022 --module esnext --skipLibCheck --outDir .cache/sidebar-test src/types/sidebar.ts && node --test scripts/sidebar.test.mjs"
   },
   "dependencies": {
+    "@fontsource-variable/jetbrains-mono": "5.3.0",
     "@tauri-apps/api": "^2.12.4",
     "i18next": "^26.4.7",
     "react": "^19.3.1",

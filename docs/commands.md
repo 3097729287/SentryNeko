@@ -83,6 +83,14 @@ Rules (also enforced by `CONTRIBUTING.md`):
 
 ## Command index
 
+Typography uses `FontSettings` (`{ family: string | null, size: number }`): `null` follows the
+system UI font, `JetBrains Mono` selects the bundled font, and other names select installed
+Windows families. `get_font_settings` reads `config.json`; `set_font_settings` validates an
+integer size from 10 through 32 and a nonempty family name of at most 128 characters without
+control characters or surrounding whitespace. `get_system_fonts` enumerates Windows fonts on
+a worker thread, returning sorted unique family names without vertical-writing (`@`) aliases.
+Missing installed fonts fall back to the system UI stack without discarding the saved choice.
+
 Every command the frontend may call is listed here. The language pair is the interface behind
 `src/i18n/`: `get_language` answers with the tag stored in `config.json`, and `set_language`
 rejects anything outside `Language::ALL` with `INVALID_INPUT`. The appearance pair does the same
@@ -153,6 +161,9 @@ refuses the write is `PERMISSION_DENIED`.
 | `set_language` | `settings_commands` | `language: String` | `String` (tag in force) | T07 |
 | `get_color_mode` | `settings_commands` | — | `String` (`dark`, `light` or `system`) | — |
 | `set_color_mode` | `settings_commands` | `mode: String` | `String` (mode in force) | — |
+| `get_font_settings` | `settings_commands` | — | `FontSettings` (`{ family, size }`) | T34 |
+| `set_font_settings` | `settings_commands` | `settings: FontSettings` | `FontSettings` (settings in force) | T34 |
+| `get_system_fonts` | `settings_commands` | — | `String[]` (installed Windows font families) | T34 |
 | `emit_test_event` | `event_commands` | — | `TestEvent` (`{ sequence }`) | T08 |
 | `list_todos` | `todo_commands` | `completed: bool?`, `sort: TodoSort?` (`default`, `dueDateAsc`, `dueDateDesc`) | `Todo[]` | T10 |
 | `add_todo` | `todo_commands` | `title: String`, `recurrence: Recurrence?`, `dueDate: i64?` | `Todo` | T10, T37 |

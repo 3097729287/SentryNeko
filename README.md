@@ -100,6 +100,7 @@ Status legend: ✅ Planned (implemented in the current scope); 🚧 Reserved (fu
 | Alarm defaults | Default ring duration and notification method | ✅ Planned |
 | Language settings | Switch the interface language | ✅ Planned |
 | Sidebar panels | Show/hide and reorder panels from Settings; changes apply immediately and persist across launches | ✅ Planned |
+| Font settings | Bundled JetBrains Mono or installed Windows fonts; 10–32 px base size with direct input, wheel and arrows; applied immediately and saved locally | ✅ Planned |
 | Data management | Export / import data, clear history | 🚧 Reserved |
 
 The default sidebar shows Dashboard, Todos, Pomodoro, Heatmap, Alarms, Events and Analytics, followed
@@ -319,3 +320,5 @@ pnpm tauri build
 The original application icon (`src-tauri/app-icon.svg`) combines a violet cat silhouette with a clock, using the same slate, violet and off-white palette as the interface. It is covered by the project's Apache License 2.0. Run `pnpm icons` after editing the SVG to regenerate the window, tray and installer icons; generated files under `src-tauri/icons/` are not tracked.
 
 The sidebar settings entry opens a modal drag editor. Pointer and keyboard reordering animate smoothly, visibility changes apply immediately, and closing the editor restores focus to its Edit button.
+
+JetBrains Mono is provided by the locked `@fontsource-variable/jetbrains-mono` dependency under the SIL Open Font License 1.1. The package supplies the font assets at build time; no font binaries are tracked in this repository. Vite includes those assets in the application bundle, so the installed app loads the font offline. System fonts supply missing glyphs, including Chinese.

@@ -192,6 +192,23 @@
       "loading": "Loading…"
     }
   },
+  "font": {
+    "builtIn": "Built-in",
+    "decrease": "Decrease font size",
+    "error": "The font settings could not be saved.",
+    "family": "Font",
+    "hint": "Choose a built-in or installed Windows font. Changes apply immediately.",
+    "increase": "Increase font size",
+    "listError": "System fonts could not be loaded.",
+    "loading": "Loading system fonts…",
+    "range": "{{min}}–{{max}} px · Type, scroll, or use the arrows.",
+    "saved": "Saved",
+    "saving": "Saving…",
+    "size": "Font size (px)",
+    "systemDefault": "System default",
+    "systemFonts": "System fonts",
+    "title": "Typography"
+  },
   "heatmap": {
     "cell": "{{date}} · {{minutes}} min focused · {{tasks}} tasks",
     "empty": "No focus time in the last year yet.",

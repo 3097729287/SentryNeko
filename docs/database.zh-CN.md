@@ -39,7 +39,8 @@ app.manage(db);
 {
   "databasePath": "C:\\Users\\you\\AppData\\Roaming\\com.sentryneko.desktop\\sentryneko.db",
   "language": "en-US",
-  "colorMode": "system"
+  "colorMode": "system",
+  "fontSettings": { "family": null, "size": 14 }
 }
 ```
 
@@ -48,6 +49,7 @@ app.manage(db);
 | `databasePath` | 应用打开的 SQLite 文件 | `<应用数据目录>/sentryneko.db` |
 | `language` | 语言标签，见 `docs/i18n.md` | 检测到的系统语言，兜底为 `en-US` |
 | `colorMode` | `dark`、`light` 或 `system`；`system` 跟随操作系统 | `system` |
+| `fontSettings` | 字体名（`null` 为系统默认，`JetBrains Mono` 为内置字体，也可指定已安装字体）及 10–32 的整数字号，单位 px | `{ "family": null, "size": 14 }` |
 
 规则：
 
@@ -58,6 +60,10 @@ app.manage(db);
   新建配置仍要求写入成功。后续启动优先使用已存选择，设置页可以手动覆盖。
 - `language` 为未知标签时回落到 `Language::DEFAULT`，文件保持原样。
 - `colorMode` 为未知取值时同样回落到 `ColorMode::DEFAULT`（`system`）。
+- 字体偏好缺失、字号越界或字体名无效时，回落到 14 px 系统默认字体，旧配置无需迁移。
+- 首屏渲染前恢复字体。前端在本地存储中保留镜像，用于浏览器预览与启动回退；修改即时
+  生效，后端写入按序执行，连续调整时旧值不会覆盖新值。保存失败会在设置页显示，重启
+  时以最后成功保存的配置为准。
 - 文件无法解析时报 `IO`，解析器原文放进 `details`，且绝不覆盖原文件——手工修好或删除即可恢复。
 - 写入先落到 `config.json.tmp` 再改名就位，进程崩溃不会截断配置文件。
 - `settings`（下面那张表）存用户偏好；`config.json` 存「打开数据库之前就必须知道」的东西。

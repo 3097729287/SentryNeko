@@ -68,6 +68,7 @@ Status legend: `[ ]` not started　`[~]` in progress　`[x]` done　`[!]` blocke
 | [x] | T35 | Task list display modes (#26) | T10, T16 | Settings switch between separate sections (default), one merged list with task type indicators and two columns; the preference survives a restart without changing tasks; recurring metadata comes from #25 |
 | [x] | T37 | One-time and recurring tasks (#25) | T10, T17 | Daily, weekly, monthly and custom calendar intervals; distinct list badges; automatic cycle resets and restart catch-up; completed cycles retained in the heatmap |
 | [x] | T38 | Sidebar panel settings (#38) | T09, T16 | Visibility toggles and up/down controls apply immediately; layout survives restarts; defaults show every panel; Settings stays reachable |
+| [x] | T39 | Font preferences (#37) and reusable numeric input (#36) | T05, T16 | Bundled JetBrains Mono and installed Windows families; 10–32 px base size with typing, wheel and arrow controls; live application and persistence across restarts |
 
 ## P3 Reserved (stubs only, not implemented)
 

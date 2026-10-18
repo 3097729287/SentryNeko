@@ -6,6 +6,28 @@
 use std::ffi::c_void;
 use std::ptr;
 
+use crate::utils::response::{ApiError, ApiResult};
+
+/// `LOGFONTW`, with a 32-code-unit family name. Layout must match `wingdi.h`.
+#[repr(C)]
+#[derive(Default)]
+struct LogFont {
+    height: i32,
+    width: i32,
+    escapement: i32,
+    orientation: i32,
+    weight: i32,
+    italic: u8,
+    underline: u8,
+    strike_out: u8,
+    char_set: u8,
+    out_precision: u8,
+    clip_precision: u8,
+    quality: u8,
+    pitch_and_family: u8,
+    face_name: [u16; 32],
+}
+
 /// Opaque handle type: `HWND` for windows, `HANDLE` for kernel objects.
 type Handle = *mut c_void;
 
@@ -74,12 +96,89 @@ const ERROR_FILE_NOT_FOUND: i32 = 2;
 
 #[link(name = "user32")]
 extern "system" {
+    fn GetDC(window: WindowHandle) -> Handle;
+    fn ReleaseDC(window: WindowHandle, context: Handle) -> i32;
     fn GetForegroundWindow() -> WindowHandle;
     fn MessageBeep(sound: u32) -> i32;
     fn IsWindowVisible(window: WindowHandle) -> i32;
     fn GetWindowTextLengthW(window: WindowHandle) -> i32;
     fn GetWindowTextW(window: WindowHandle, buffer: *mut u16, capacity: i32) -> i32;
     fn GetWindowThreadProcessId(window: WindowHandle, process_id: *mut u32) -> u32;
+}
+
+#[link(name = "gdi32")]
+extern "system" {
+    fn EnumFontFamiliesExW(
+        context: Handle,
+        filter: *const LogFont,
+        callback: unsafe extern "system" fn(*const LogFont, *const c_void, u32, isize) -> i32,
+        parameter: isize,
+        flags: u32,
+    ) -> i32;
+}
+
+/// Sorted, unique family names available to the current Windows user.
+pub fn system_font_families() -> ApiResult<Vec<String>> {
+    let context = unsafe { GetDC(ptr::null_mut()) };
+
+    if context.is_null() {
+        return Err(
+            ApiError::internal("cannot create a font enumeration context")
+                .with_details(std::io::Error::last_os_error().to_string()),
+        );
+    }
+
+    // DEFAULT_CHARSET (1) and an empty name enumerate every family, across writing systems.
+    let filter = LogFont {
+        char_set: 1,
+        ..LogFont::default()
+    };
+    let mut families = Vec::<String>::new();
+
+    unsafe {
+        // Enumeration is synchronous: the vector stays alive and exclusively borrowed here.
+        EnumFontFamiliesExW(
+            context,
+            &filter,
+            collect_font_family,
+            &mut families as *mut Vec<String> as isize,
+            0,
+        );
+        ReleaseDC(ptr::null_mut(), context);
+    }
+
+    families.sort_by_cached_key(|family| family.to_lowercase());
+    families.dedup_by(|left, right| left.to_lowercase() == right.to_lowercase());
+
+    if families.is_empty() {
+        return Err(ApiError::internal(
+            "Windows did not report any installed font families",
+        ));
+    }
+
+    Ok(families)
+}
+
+unsafe extern "system" fn collect_font_family(
+    font: *const LogFont,
+    _metrics: *const c_void,
+    _font_type: u32,
+    parameter: isize,
+) -> i32 {
+    // Windows supplies a LOGFONTW at the start of its extended font structure.
+    let name = unsafe { &(*font).face_name };
+    let end = name
+        .iter()
+        .position(|unit| *unit == 0)
+        .unwrap_or(name.len());
+    let family = String::from_utf16_lossy(&name[..end]);
+
+    // `@` families are vertical-writing aliases of the same font, unsuitable for the UI.
+    if !family.is_empty() && !family.starts_with('@') {
+        unsafe { &mut *(parameter as *mut Vec<String>) }.push(family);
+    }
+
+    1
 }
 
 #[link(name = "kernel32")]
@@ -619,6 +718,19 @@ fn text_of(bytes: &[u8]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn installed_font_families_are_sorted_unique_and_horizontal() {
+        let families = super::system_font_families().expect("Windows enumerates installed fonts");
+        assert!(!families.is_empty());
+        assert!(families
+            .iter()
+            .all(|name| !name.is_empty() && !name.starts_with('@')));
+        assert!(families
+            .windows(2)
+            .all(|pair| pair[0].to_lowercase() < pair[1].to_lowercase()));
+        assert_eq!(std::mem::size_of::<super::LogFont>(), 92);
+    }
 
     fn now() -> i64 {
         std::time::SystemTime::now()

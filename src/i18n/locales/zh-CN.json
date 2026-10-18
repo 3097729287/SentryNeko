@@ -192,6 +192,23 @@
       "loading": "加载中…"
     }
   },
+  "font": {
+    "builtIn": "内置字体",
+    "decrease": "减小字号",
+    "error": "字体设置保存失败。",
+    "family": "字体",
+    "hint": "选择内置字体或 Windows 已安装字体，修改立即生效。",
+    "increase": "增大字号",
+    "listError": "无法加载系统字体。",
+    "loading": "正在加载系统字体…",
+    "range": "{{min}}–{{max}} px · 可输入、滚动鼠标或点击箭头调整。",
+    "saved": "已保存",
+    "saving": "正在保存…",
+    "size": "字号（px）",
+    "systemDefault": "系统默认",
+    "systemFonts": "系统字体",
+    "title": "字体"
+  },
   "heatmap": {
     "cell": "{{date}} · 专注 {{minutes}} 分钟 · 完成 {{tasks}} 个任务",
     "empty": "过去一年还没有专注记录。",

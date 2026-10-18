@@ -151,16 +151,25 @@ function Shell() {
       return;
     }
 
-    const next = { top: active.offsetTop, height: active.offsetHeight };
+    const measure = (): void => {
+      const next = { top: active.offsetTop, height: active.offsetHeight };
 
-    setIndicator((current) =>
-      current && current.top === next.top && current.height === next.height ? current : next,
-    );
+      setIndicator((current) =>
+        current && current.top === next.top && current.height === next.height ? current : next,
+      );
+    };
+
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(active);
+    if (navRef.current) {
+      observer.observe(navRef.current);
+    }
+
+    return () => observer.disconnect();
   }, [pathname, language, collapsed, sidebarLayout]);
 
-  useEffect(() => {
-    setTooltip(null);
-  }, [sidebarLayout]);
+  useEffect(() => { setTooltip(null); }, [sidebarLayout]);
 
   // Collapsing only changes the shell's own chrome, so the flag stays out of `config.json`. A
   // narrow window owns the rail outright: there is no toggle to reach and no room to give.
