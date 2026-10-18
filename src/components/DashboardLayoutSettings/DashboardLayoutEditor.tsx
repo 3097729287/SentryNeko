@@ -7,6 +7,7 @@ import type {
   MouseEvent as ReactMouseEvent,
   PointerEvent as ReactPointerEvent,
 } from "react";
+import { createPortal } from "react-dom";
 
 import { useDashboardLayout } from "../../hooks/useDashboardLayout";
 import { useI18n } from "../../hooks/useI18n";
@@ -596,7 +597,7 @@ export function DashboardLayoutEditor({ onClose }: DashboardLayoutEditorProps) {
     element.style.transform = `translate(${state.ghostX}px, ${state.ghostY}px)`;
   }, [preview]);
 
-  return (
+  return createPortal(
     <div className="editor-overlay">
       <div
         aria-label={t("dashboard.layout.title")}
@@ -841,6 +842,7 @@ export function DashboardLayoutEditor({ onClose }: DashboardLayoutEditorProps) {
           }}
         />
       )}
-    </div>
+    </div>,
+    document.body,
   );
 }
