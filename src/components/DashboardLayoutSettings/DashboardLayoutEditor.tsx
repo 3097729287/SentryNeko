@@ -14,11 +14,16 @@ import {
   DASHBOARD_COLUMNS,
   DASHBOARD_WIDGETS,
   clampPlacement,
+  hiddenWidgets,
   minSizeOf,
+  visibleWidgets,
+  wantedSizeOf,
 } from "../../types/dashboard";
 import type { DashboardWidgetId, WidgetPlacement } from "../../types/dashboard";
 import { ActionIcon } from "../ui/ActionIcon";
 import { SegmentedControl } from "../ui/SegmentedControl";
+import { WidgetIcon } from "../ui/WidgetIcon";
+import { useCanvasScale } from "./useCanvasScale";
 import { useDraftLayout } from "./useDraftLayout";
 
 interface DashboardLayoutEditorProps {
@@ -27,7 +32,7 @@ interface DashboardLayoutEditorProps {
 
 interface DragState {
   id: DashboardWidgetId;
-  mode: "move" | "resize";
+  mode: "move" | "resize" | "add";
   pointerId: number;
   /** Pointer position when the gesture started. */
   clientX: number;
@@ -40,8 +45,8 @@ interface DragState {
 }
 
 /**
- * A panel inside the editor never changes while a drag runs, so keeping it out of the re-render
- * loop leaves the pointer frames cheap even with six live panels on screen.
+ * A panel never changes while a drag runs, so keeping it out of the re-render loop leaves the
+ * pointer frames cheap even with six live panels on screen.
  */
 const EditorPanel = memo(function EditorPanel({ id }: { id: DashboardWidgetId }) {
   const Panel = DASHBOARD_PANELS[id];
@@ -84,6 +89,23 @@ function rectOf(placement: WidgetPlacement, cell: number, gap: number): CellRect
   };
 }
 
+/**
+ * The rectangle a parked panel asks for: its wanted size, trimmed to the current column count.
+ *
+ * `x` and `y` are zero because the ghost is positioned by the pointer; only the cells it spans matter.
+ */
+function wantedPlacement(id: DashboardWidgetId, columns: number): WidgetPlacement {
+  const wanted = wantedSizeOf(id);
+  const min = minSizeOf(id);
+
+  return {
+    h: Math.max(min.h, wanted.h),
+    w: Math.max(min.w, Math.min(wanted.w, columns)),
+    x: 0,
+    y: 0,
+  };
+}
+
 /** Full-window editor; the grid is the dashboard itself, one pointer drop away from the layout. */
 export function DashboardLayoutEditor({ onClose }: DashboardLayoutEditorProps) {
   const { t } = useI18n();
@@ -91,7 +113,6 @@ export function DashboardLayoutEditor({ onClose }: DashboardLayoutEditorProps) {
   const draft = useDraftLayout(saved);
   const { layout } = draft;
 
-  const gridRef = useRef<HTMLDivElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<DragState | null>(null);
   /** Latest draft for the pointer handlers, which fire between renders. */
@@ -101,7 +122,9 @@ export function DashboardLayoutEditor({ onClose }: DashboardLayoutEditorProps) {
   const previewRef = useRef<WidgetPlacement | null>(null);
   /** The dashed placeholder itself, moved straight from the pointer handler. */
   const ghostRef = useRef<HTMLSpanElement | null>(null);
-  const [metrics, setMetrics] = useState({ cell: 0, gap: 0 });
+  // The canvas is laid out at a fixed size and scaled to the room it has, so every measurement
+  // here is in canvas pixels: the scale is what turns them into pixels on screen.
+  const { frameRef, gridRef, metrics } = useCanvasScale(layout.columns);
   const [dragging, setDragging] = useState<DashboardWidgetId | null>(null);
   /** One node per panel, for the push-away animation and the pointer-follow transform. */
   const slotRefs = useRef<Partial<Record<DashboardWidgetId, HTMLDivElement | null>>>({});
@@ -109,33 +132,6 @@ export function DashboardLayoutEditor({ onClose }: DashboardLayoutEditorProps) {
   const rectsRef = useRef<Record<DashboardWidgetId, CellRect> | null>(null);
 
   layoutRef.current = layout;
-
-  // Cell size and gap come from the rendered grid, so dragging maps pixels to cells exactly.
-  useEffect(() => {
-    const grid = gridRef.current;
-
-    if (!grid) {
-      return;
-    }
-
-    const measure = (): void => {
-      const gap = Number.parseFloat(getComputedStyle(grid).columnGap) || 0;
-      const width = grid.getBoundingClientRect().width;
-      const cell = (width - (layout.columns - 1) * gap) / layout.columns;
-
-      setMetrics({ cell: Number.isFinite(cell) && cell > 0 ? cell : 0, gap });
-    };
-
-    measure();
-
-    const observer = new ResizeObserver(measure);
-
-    observer.observe(grid);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [layout.columns]);
 
   /*
    * Push-away: a panel that had to move or resize slides from where it was to where it is now, the
@@ -247,7 +243,10 @@ export function DashboardLayoutEditor({ onClose }: DashboardLayoutEditorProps) {
     };
   }, []);
 
-  const step = metrics.cell + metrics.gap;
+  /** One cell of travel in canvas pixels, which is the space the ghost and its rectangle live in. */
+  const cellStep = metrics.cell + metrics.gap;
+  /** The same cell on screen, which is the space the pointer moves in. */
+  const step = cellStep * metrics.scale;
 
   /** Shows where the panel would land, without touching the layout. */
   const showPreview = (placement: WidgetPlacement): void => {
@@ -283,6 +282,40 @@ export function DashboardLayoutEditor({ onClose }: DashboardLayoutEditorProps) {
     const dy = Math.round(deltaY / step);
     const min = minSizeOf(state.id);
 
+    if (state.mode === "add") {
+      const grid = gridRef.current;
+
+      if (grid !== null) {
+        const scale = metrics.scale || 1;
+        const rect = grid.getBoundingClientRect();
+        const ghost = rectOf(state.origin, metrics.cell, metrics.gap);
+
+        // The pointer moves on screen and the ghost lives in canvas pixels, so the scale comes off
+        // before the two are compared. The panel is centred on the pointer, then pinned inside the
+        // canvas so it cannot glide off it.
+        const x = Math.max(
+          0,
+          Math.min(grid.offsetWidth - ghost.width, (event.clientX - rect.left) / scale - ghost.width / 2),
+        );
+        const y = Math.max(
+          0,
+          Math.min(grid.offsetHeight - ghost.height, (event.clientY - rect.top) / scale - ghost.height / 2),
+        );
+        const target = clampPlacement(
+          state.id,
+          { ...state.origin, x: Math.round(x / cellStep), y: Math.round(y / cellStep) },
+          layoutRef.current.columns,
+        );
+
+        state.ghostX = x;
+        state.ghostY = y;
+        placeGhost(x, y);
+        showPreview(target);
+      }
+
+      return;
+    }
+
     if (state.mode === "move") {
       const target = clampPlacement(
         state.id,
@@ -294,12 +327,19 @@ export function DashboardLayoutEditor({ onClose }: DashboardLayoutEditorProps) {
        * The ghost glides with the pointer and hangs off the cell it is over by at most half a cell,
        * so it never runs away when the placement is pinned at the edge of the grid.
        */
-      const slack = step / 2;
-      const offX = Math.max(-slack, Math.min(slack, deltaX - (target.x - state.origin.x) * step));
-      const offY = Math.max(-slack, Math.min(slack, deltaY - (target.y - state.origin.y) * step));
+      const scale = metrics.scale || 1;
+      const slack = cellStep / 2;
+      const offX = Math.max(
+        -slack,
+        Math.min(slack, deltaX / scale - (target.x - state.origin.x) * cellStep),
+      );
+      const offY = Math.max(
+        -slack,
+        Math.min(slack, deltaY / scale - (target.y - state.origin.y) * cellStep),
+      );
 
-      state.ghostX = target.x * step + offX;
-      state.ghostY = target.y * step + offY;
+      state.ghostX = target.x * cellStep + offX;
+      state.ghostY = target.y * cellStep + offY;
       placeGhost(state.ghostX, state.ghostY);
 
       showPreview(target);
@@ -315,6 +355,32 @@ export function DashboardLayoutEditor({ onClose }: DashboardLayoutEditorProps) {
     };
 
     showPreview({ ...state.origin, h: size.h, w: size.w });
+  };
+
+  /**
+   * Starts a drag from the library: the ghost only appears once the pointer has moved far enough
+   * to leave the card, so a plain click still lands as a one-click add to the first gap.
+   */
+  const beginLibraryDrag = (event: ReactPointerEvent<HTMLButtonElement>, id: DashboardWidgetId): void => {
+    if (event.button !== 0) {
+      return;
+    }
+
+    event.stopPropagation();
+    event.currentTarget.setPointerCapture(event.pointerId);
+
+    dragRef.current = {
+      clientX: event.clientX,
+      clientY: event.clientY,
+      ghostX: 0,
+      ghostY: 0,
+      id,
+      mode: "add",
+      origin: wantedPlacement(id, layoutRef.current.columns),
+      pointerId: event.pointerId,
+    };
+    // The preview is created by the first pointer move, not by the press.
+    previewRef.current = null;
   };
 
   const beginDrag = (
@@ -334,8 +400,8 @@ export function DashboardLayoutEditor({ onClose }: DashboardLayoutEditorProps) {
     dragRef.current = {
       clientX: event.clientX,
       clientY: event.clientY,
-      ghostX: origin.x * step,
-      ghostY: origin.y * step,
+      ghostX: origin.x * cellStep,
+      ghostY: origin.y * cellStep,
       id,
       mode,
       origin,
@@ -366,6 +432,29 @@ export function DashboardLayoutEditor({ onClose }: DashboardLayoutEditorProps) {
     setPreview(null);
 
     if (target === null) {
+      // A press without travel: the click that follows handles a library card, the ghost just
+      // disappears for a panel.
+      return;
+    }
+
+    if (state.mode === "add") {
+      const grid = gridRef.current;
+      const rect = grid?.getBoundingClientRect();
+
+      // Dropped back on the library or outside the canvas counts as a cancel, so a wayward card
+      // never parks a panel where the pointer was not.
+      if (rect !== undefined && rect !== null) {
+        const inside =
+          event.clientX >= rect.left &&
+          event.clientX <= rect.right &&
+          event.clientY >= rect.top &&
+          event.clientY <= rect.bottom;
+
+        if (inside) {
+          draft.add(state.id, target);
+        }
+      }
+
       return;
     }
 
@@ -427,7 +516,10 @@ export function DashboardLayoutEditor({ onClose }: DashboardLayoutEditorProps) {
     );
   };
 
+  const visible = visibleWidgets(layout);
+  const parked = hiddenWidgets(layout);
   const ghost = preview === null ? null : rectOf(preview, metrics.cell, metrics.gap);
+  const ghostLabel = dragRef.current?.id ?? null;
 
   // The ghost mounts with the drag, so its resting place has to be written after the first render.
   useLayoutEffect(() => {
@@ -514,69 +606,157 @@ export function DashboardLayoutEditor({ onClose }: DashboardLayoutEditorProps) {
         </header>
 
         <div className="editor-body">
-          <div className="dash-grid">
+          <div className="editor-canvas">
+            {visible.length === 0 ? (
+              <div className="editor-empty">{t("dashboard.layout.empty")}</div>
+            ) : null}
             <div
-              className="dash-cells"
-              ref={gridRef}
-              style={{ "--dash-columns": layout.columns } as CSSProperties}
+              className="dash-canvas"
+              ref={frameRef}
+              style={{ height: metrics.height * metrics.scale }}
             >
-              {ghost === null ? null : (
-                <span
-                  aria-hidden="true"
-                  className="editor-ghost"
-                  ref={ghostRef}
-                  style={{ height: ghost.height, width: ghost.width }}
-                />
-              )}
-              {DASHBOARD_WIDGETS.map((id) => {
-                const placement = layout.placements[id];
-
-                return (
-                  <div
-                    className="dash-slot editor-slot"
-                    data-dragging={dragging === id}
-                    key={id}
-                    ref={(element) => {
-                      slotRefs.current[id] = element;
-                    }}
-                    style={{
-                      gridColumn: `${placement.x + 1} / span ${placement.w}`,
-                      gridRow: `${placement.y + 1} / span ${placement.h}`,
-                    }}
+              <div
+                className="dash-canvas-stage"
+                style={{ "--canvas-scale": metrics.scale } as CSSProperties}
+              >
+              <div
+                aria-label={t("dashboard.layout.canvas")}
+                className="dash-cells"
+                ref={gridRef}
+                style={{ "--dash-columns": layout.columns } as CSSProperties}
+              >
+                {ghost === null ? null : (
+                  <span
+                    aria-hidden="true"
+                    className="editor-ghost"
+                    ref={ghostRef}
+                    style={{ height: ghost.height, width: ghost.width }}
                   >
-                    <EditorPanel id={id} />
-                    <span
-                      aria-label={t("dashboard.widget.move", {
-                        name: t(`dashboard.widget.${id}`),
-                      })}
-                      className="editor-mask"
-                      onKeyDown={(event) => {
-                        handleKeyDown(event, id);
+                    {ghostLabel === null ? null : (
+                      <span className="editor-ghost-label">{t(`dashboard.widget.${ghostLabel}`)}</span>
+                    )}
+                  </span>
+                )}
+                {visible.map((id) => {
+                  const placement = layout.placements[id];
+
+                  return (
+                    <div
+                      className="dash-slot editor-slot"
+                      data-dragging={dragging === id}
+                      key={id}
+                      ref={(element) => {
+                        slotRefs.current[id] = element;
                       }}
-                      onPointerCancel={endDrag}
-                      onPointerDown={(event) => {
-                        beginDrag(event, id, "move");
+                      style={{
+                        gridColumn: `${placement.x + 1} / span ${placement.w}`,
+                        gridRow: `${placement.y + 1} / span ${placement.h}`,
                       }}
-                      onPointerMove={handlePointerMove}
-                      onPointerUp={endDrag}
-                      role="button"
-                      tabIndex={0}
-                    />
-                    <span
-                      aria-hidden="true"
-                      className="editor-grip"
-                      onPointerCancel={endDrag}
-                      onPointerDown={(event) => {
-                        beginDrag(event, id, "resize");
-                      }}
-                      onPointerMove={handlePointerMove}
-                      onPointerUp={endDrag}
-                    />
-                  </div>
-                );
-              })}
+                    >
+                      <EditorPanel id={id} />
+                      <span
+                        aria-label={t("dashboard.widget.move", {
+                          name: t(`dashboard.widget.${id}`),
+                        })}
+                        className="editor-mask"
+                        onKeyDown={(event) => {
+                          handleKeyDown(event, id);
+                        }}
+                        onPointerCancel={endDrag}
+                        onPointerDown={(event) => {
+                          beginDrag(event, id, "move");
+                        }}
+                        onPointerMove={handlePointerMove}
+                        onPointerUp={endDrag}
+                        role="button"
+                        tabIndex={0}
+                      />
+                      <button
+                        aria-label={t("dashboard.layout.remove", {
+                          name: t(`dashboard.widget.${id}`),
+                        })}
+                        className="editor-remove"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          draft.remove(id);
+                        }}
+                        title={t("dashboard.layout.remove", {
+                          name: t(`dashboard.widget.${id}`),
+                        })}
+                        type="button"
+                      >
+                        <ActionIcon name="remove" />
+                      </button>
+                      <span
+                        aria-hidden="true"
+                        className="editor-grip"
+                        onPointerCancel={endDrag}
+                        onPointerDown={(event) => {
+                          beginDrag(event, id, "resize");
+                        }}
+                        onPointerMove={handlePointerMove}
+                        onPointerUp={endDrag}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+              </div>
             </div>
           </div>
+          <aside className="editor-library" aria-label={t("dashboard.layout.library")}>
+            <header className="editor-library-head">
+              <h3>{t("dashboard.layout.library")}</h3>
+              <span className="editor-library-count" aria-hidden="true">
+                {visible.length}/{visible.length + parked.length}
+              </span>
+            </header>
+            {parked.length === 0 ? (
+              <p className="editor-library-empty">{t("dashboard.layout.libraryAll")}</p>
+            ) : (
+              <div className="editor-library-list">
+                {parked.map((id) => (
+                  <button
+                    aria-label={t("dashboard.layout.add", {
+                      name: t(`dashboard.widget.${id}`),
+                    })}
+                    className="library-card"
+                    key={id}
+                    onClick={() => {
+                      draft.add(id);
+                    }}
+                    onPointerCancel={endDrag}
+                    onPointerDown={(event) => {
+                      beginLibraryDrag(event, id);
+                    }}
+                    onPointerMove={handlePointerMove}
+                    onPointerUp={endDrag}
+                    title={t("dashboard.layout.add", {
+                      name: t(`dashboard.widget.${id}`),
+                    })}
+                    type="button"
+                  >
+                    <span className="library-glyph" aria-hidden="true">
+                      <WidgetIcon id={id} />
+                    </span>
+                    <span className="library-meta">
+                      <span className="library-name">{t(`dashboard.widget.${id}`)}</span>
+                      <span className="library-size">
+                        {t("dashboard.widget.size", {
+                          h: wantedPlacement(id, layout.columns).h,
+                          w: wantedPlacement(id, layout.columns).w,
+                        })}
+                      </span>
+                    </span>
+                    <span className="library-plus" aria-hidden="true">
+                      <ActionIcon name="plus" />
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+            <p className="editor-library-note">{t("dashboard.layout.libraryEmpty")}</p>
+          </aside>
         </div>
 
         <footer className="editor-foot">

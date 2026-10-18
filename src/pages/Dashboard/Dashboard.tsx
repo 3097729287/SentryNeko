@@ -4,10 +4,15 @@ import type { CSSProperties } from "react";
 
 import { useDashboardLayout } from "../../hooks/useDashboardLayout";
 import { useI18n } from "../../hooks/useI18n";
-import { DASHBOARD_WIDGETS } from "../../types/dashboard";
+import { visibleWidgets } from "../../types/dashboard";
 import { DASHBOARD_PANELS } from "./panels";
 
-/** Renders the dashboard in the grid the user arranged in the layout editor. */
+/**
+ * Renders the dashboard in the grid the user arranged in the layout editor.
+ *
+ * Cells are as wide as the page allows, so the panels are the real thing at their real size: the
+ * page grows with the window rather than being scaled to it, and nothing here shrinks the text.
+ */
 export function Dashboard() {
   const { t } = useI18n();
   const { layout } = useDashboardLayout();
@@ -16,11 +21,8 @@ export function Dashboard() {
     <>
       <h1>{t("nav.dashboard")}</h1>
       <div className="dash-grid">
-        <div
-          className="dash-cells"
-          style={{ "--dash-columns": layout.columns } as CSSProperties}
-        >
-          {DASHBOARD_WIDGETS.map((id) => {
+        <div className="dash-cells" style={{ "--dash-columns": layout.columns } as CSSProperties}>
+          {visibleWidgets(layout).map((id) => {
             const placement = layout.placements[id];
             const Panel = DASHBOARD_PANELS[id];
 

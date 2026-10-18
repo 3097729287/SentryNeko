@@ -5,7 +5,7 @@
 
 import type { ReactNode } from "react";
 
-export type ActionIconName = "cancel" | "check" | "edit" | "reset" | "undo";
+export type ActionIconName = "cancel" | "check" | "edit" | "plus" | "remove" | "reset" | "undo";
 
 const DRAWINGS: Record<ActionIconName, ReactNode> = {
   // Pencil over a corner: the button opens an editor.
@@ -33,6 +33,15 @@ const DRAWINGS: Record<ActionIconName, ReactNode> = {
   cancel: <path d="M6 6l12 12M18 6 6 18" />,
   // Tick: keep it.
   check: <path d="M5 12.5 10 17.5 19 7" />,
+  // Plus: drop a parked panel back onto the grid.
+  plus: <path d="M12 5v14M5 12h14" />,
+  // Minus in a circle: take a panel off the grid.
+  remove: (
+    <>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M8 12h8" />
+    </>
+  ),
 };
 
 /** Draws one action icon; size, colour and stroke come from `.action-icon`. */

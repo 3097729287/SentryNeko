@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 
-import { defaultLayout, isDashboardLayout } from "../types/dashboard";
+import { defaultLayout, normalizeLayout } from "../types/dashboard";
 import type { DashboardLayout } from "../types/dashboard";
 
 /** Key the layout is mirrored under; the browser preview and the app share it. */
@@ -28,7 +28,8 @@ function mirroredLayout(): DashboardLayout {
 
     const parsed: unknown = JSON.parse(raw);
 
-    return isDashboardLayout(parsed) ? parsed : defaultLayout();
+    // Layouts saved before the library existed are missing the parked list; normalization adds it.
+    return normalizeLayout(parsed) ?? defaultLayout();
   } catch {
     // Storage disabled or holding junk: fall back to the default grid.
     return defaultLayout();

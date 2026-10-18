@@ -34,6 +34,13 @@ export type DashboardPlacements = Record<DashboardWidgetId, WidgetPlacement>;
 export interface DashboardLayout {
   columns: number;
   placements: DashboardPlacements;
+  /**
+   * Panels taken off the grid and parked in the library.
+   *
+   * Their rectangles are kept while they are out, so putting one back where it was costs nothing,
+   * and a layout that never removed anything is the same as before this list existed.
+   */
+  hidden: DashboardWidgetId[];
 }
 
 /** Smallest rectangle each panel still reads in; the editor refuses to go below it. */
@@ -64,6 +71,21 @@ export function overlaps(a: WidgetPlacement, b: WidgetPlacement): boolean {
 /** Smallest rectangle `id` may occupy. */
 export function minSizeOf(id: DashboardWidgetId): { w: number; h: number } {
   return MIN_SIZE[id];
+}
+
+/** Rectangle `id` asks for when it is dropped onto the grid from the library. */
+export function wantedSizeOf(id: DashboardWidgetId): { w: number; h: number } {
+  return WANTED_SIZE[id];
+}
+
+/** The panels the page actually draws, in the order a fresh layout fills them. */
+export function visibleWidgets(layout: DashboardLayout): readonly DashboardWidgetId[] {
+  return DASHBOARD_WIDGETS.filter((id) => !layout.hidden.includes(id));
+}
+
+/** The panels parked in the library. */
+export function hiddenWidgets(layout: DashboardLayout): readonly DashboardWidgetId[] {
+  return DASHBOARD_WIDGETS.filter((id) => layout.hidden.includes(id));
 }
 
 /** Trims a rectangle so it fits `columns` and keeps the panel's minimum size. */
@@ -186,13 +208,14 @@ export function defaultLayout(columns: number = DEFAULT_COLUMNS): DashboardLayou
     };
   }
 
-  return { columns, placements: arrange(DASHBOARD_WIDGETS, sizes, columns) };
+  return { columns, hidden: [], placements: arrange(DASHBOARD_WIDGETS, sizes, columns) };
 }
 
 /** Renders `placements` on `columns` cells, pushing any overlap down. */
 export function layoutOf(placements: DashboardPlacements, columns: number): DashboardLayout {
   return {
     columns,
+    hidden: [],
     placements: pack(placements, columns, "focus"),
   };
 }
@@ -204,9 +227,53 @@ export function moveWidget(
   placement: WidgetPlacement,
 ): DashboardLayout {
   return {
-    columns: layout.columns,
+    ...layout,
     placements: pack({ ...layout.placements, [id]: placement }, layout.columns, id),
   };
+}
+
+/**
+ * Puts a parked panel back on the grid.
+ *
+ * Without a rectangle the panel takes the first gap of its wanted size, so the library can offer a
+ * one-click add next to the drag; with one, the drop point wins and the panels it covers move down.
+ */
+export function showWidget(
+  layout: DashboardLayout,
+  id: DashboardWidgetId,
+  placement?: WidgetPlacement,
+): DashboardLayout {
+  const wanted = wantedSizeOf(id);
+  const size = {
+    h: Math.max(minSizeOf(id).h, wanted.h),
+    w: Math.max(minSizeOf(id).w, Math.min(wanted.w, layout.columns)),
+  };
+  const spot =
+    placement ??
+    firstFit(
+      size,
+      visibleWidgets(layout).map((other) => layout.placements[other]),
+      layout.columns,
+    );
+
+  return {
+    columns: layout.columns,
+    hidden: layout.hidden.filter((other) => other !== id),
+    placements: pack(
+      { ...layout.placements, [id]: clampPlacement(id, { ...spot, ...size }, layout.columns) },
+      layout.columns,
+      id,
+    ),
+  };
+}
+
+/** Takes `id` off the grid and parks it in the library, remembering its rectangle. */
+export function hideWidget(layout: DashboardLayout, id: DashboardWidgetId): DashboardLayout {
+  if (layout.hidden.includes(id)) {
+    return layout;
+  }
+
+  return { ...layout, hidden: [...layout.hidden, id] };
 }
 
 /** Grows or shrinks `id`; the panels it now covers move down. */
@@ -239,7 +306,7 @@ export function withColumns(layout: DashboardLayout, columns: number): Dashboard
     sizes[id] = { h: placement.h, w: placement.w };
   }
 
-  return { columns, placements: arrange(order, sizes, columns) };
+  return { columns, hidden: layout.hidden, placements: arrange(order, sizes, columns) };
 }
 
 /** Whether `value` is a layout the app can render. */
@@ -254,6 +321,16 @@ export function isDashboardLayout(value: unknown): value is DashboardLayout {
     typeof layout.columns !== "number" ||
     !Number.isInteger(layout.columns) ||
     layout.columns < 2
+  ) {
+    return false;
+  }
+
+  // Layouts saved before the library existed carry no list at all, which is the same as "nothing
+  // parked"; anything else has to name real panels.
+  if (
+    layout.hidden !== undefined &&
+    (!Array.isArray(layout.hidden) ||
+      !layout.hidden.every((id) => (DASHBOARD_WIDGETS as readonly string[]).includes(id)))
   ) {
     return false;
   }
@@ -279,4 +356,18 @@ export function isDashboardLayout(value: unknown): value is DashboardLayout {
       return typeof cell === "number" && Number.isInteger(cell) && cell >= 0;
     });
   });
+}
+
+/**
+ * Turns stored JSON into a layout the app can render, or `null` when it cannot.
+ *
+ * The only gap `isDashboardLayout` tolerates is a missing library list, so plugging it in here
+ * keeps every reader dealing with a complete layout.
+ */
+export function normalizeLayout(value: unknown): DashboardLayout | null {
+  if (!isDashboardLayout(value)) {
+    return null;
+  }
+
+  return { columns: value.columns, hidden: value.hidden ?? [], placements: value.placements };
 }

@@ -5,8 +5,10 @@ import { useCallback, useState } from "react";
 import {
   DASHBOARD_WIDGETS,
   defaultLayout,
+  hideWidget,
   moveWidget,
   resizeWidget,
+  showWidget,
   withColumns,
 } from "../../types/dashboard";
 import type { DashboardLayout, DashboardWidgetId, WidgetPlacement } from "../../types/dashboard";
@@ -16,6 +18,10 @@ export interface DraftLayoutResult {
   /** True while the draft differs from the layout the editor opened with. */
   dirty: boolean;
   canUndo: boolean;
+  /** Puts a parked panel back on the grid, at `placement` or the first gap when none is given. */
+  add: (id: DashboardWidgetId, placement?: WidgetPlacement) => void;
+  /** Takes a panel off the grid into the library. */
+  remove: (id: DashboardWidgetId) => void;
   setColumns: (columns: number) => void;
   move: (id: DashboardWidgetId, placement: WidgetPlacement) => void;
   resize: (id: DashboardWidgetId, size: { w: number; h: number }) => void;
@@ -29,6 +35,10 @@ function sameLayout(a: DashboardLayout, b: DashboardLayout): boolean {
   }
 
   return DASHBOARD_WIDGETS.every((id) => {
+    if (a.hidden.includes(id) !== b.hidden.includes(id)) {
+      return false;
+    }
+
     const left = a.placements[id];
     const right = b.placements[id];
 
@@ -91,15 +101,31 @@ export function useDraftLayout(initial: DashboardLayout): DraftLayoutResult {
     [edit, layout],
   );
 
+  const add = useCallback(
+    (id: DashboardWidgetId, placement?: WidgetPlacement) => {
+      edit(showWidget(layout, id, placement));
+    },
+    [edit, layout],
+  );
+
+  const remove = useCallback(
+    (id: DashboardWidgetId) => {
+      edit(hideWidget(layout, id));
+    },
+    [edit, layout],
+  );
+
   const reset = useCallback(() => {
     edit(defaultLayout(layout.columns));
   }, [edit, layout.columns]);
 
   return {
+    add,
     canUndo: history.length > 0,
     dirty: !sameLayout(layout, initial),
     layout,
     move,
+    remove,
     reset,
     resize,
     setColumns,
