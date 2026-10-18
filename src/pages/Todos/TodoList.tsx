@@ -30,8 +30,40 @@ interface Placement {
   top: number;
 }
 
-/** How long a row plays its leaving animation before the task is really taken off the list. */
-const LEAVE_MS = 200;
+/**
+ * Where a row sits down the document, in the layout's own pixels.
+ *
+ * A row's box is the wrong thing to measure here, twice over. It reports where a running flip has
+ * carried the row instead of where it will settle, so a second change mid-slide would read that
+ * animation as a new position and send a corrective move after it. And it is scaled by `zoom`, which
+ * the reading column carries so that a wide window can enlarge the whole page — but the `translateY`
+ * a flip writes is in layout pixels, so a slide measured off a box overshoots by the zoom factor.
+ *
+ * `offsetTop` has neither problem, only the drawback of being relative to the row's own list, which
+ * is why the chain is walked up to the root: a task moving between groups has to be compared in one
+ * coordinate space. Each step rounds to whole pixels, so under `zoom` two different lists can come
+ * out a few pixels apart — a few pixels of starting offset on a slide, against a whole slide that is
+ * wrong by the zoom factor itself.
+ */
+function pageTop(element: HTMLElement): number {
+  let top = 0;
+  let node: HTMLElement | null = element;
+
+  while (node !== null) {
+    top += node.offsetTop;
+    node = node.offsetParent as HTMLElement | null;
+  }
+
+  return top;
+}
+
+/**
+ * How long a row fades before the task is really taken off the list.
+ *
+ * It is the card's own fade, to the millisecond: any longer and the list sits still after the row
+ * has already gone, any shorter and the row would leave while it is still on screen.
+ */
+const LEAVE_MS = 140;
 
 /** How long a task takes to travel to its new place when it changes group. */
 const MOVE_MS = 320;
@@ -104,6 +136,10 @@ export function TodoList() {
    * the divider while the rows it passed slide up to fill the gap it left.
    *
    * A row that is new to the page is skipped: the entrance animation already covers it.
+   *
+   * Each row is measured where it will settle rather than where a running flip currently has it, so
+   * a second change mid-slide does not read the animation as a new position and start a corrective
+   * move of its own.
    */
   useLayoutEffect(() => {
     const landed = new Map<number, Placement>();
@@ -113,7 +149,7 @@ export function TodoList() {
         const element = rowElements.current.get(todo.id);
 
         if (element !== undefined) {
-          landed.set(todo.id, { group, top: element.getBoundingClientRect().top });
+          landed.set(todo.id, { group, top: pageTop(element) });
         }
       });
     });
@@ -152,32 +188,82 @@ export function TodoList() {
         }, SETTLE_MS);
       }
     });
-  }, [groups]);
+    // `leaving` is a dependency as well: the frame a row is pinned out of the flow is a frame where
+    // the rows below close the gap, and that is the distance this needs to carry them over.
+  }, [groups, leaving]);
 
   /** The selected tasks as the store holds them, so a pick made under another filter still works. */
   const chosen = useMemo(() => todos.filter((todo) => selected.has(todo.id)), [todos, selected]);
 
   /**
-   * Marks rows as leaving, then runs the action once the animation has played.
+   * Lifts a row out of the flow where it stands.
    *
-   * The marks come off either way: a row that failed comes back where it was, and a row that only
-   * moved between groups comes back to sit in its new one.
+   * The position goes into custom properties rather than into `top`/`left` directly, because the row
+   * element carries a style object React owns — its place in the list, for the entrance stagger —
+   * and that object is diffed on every render.
    */
-  const retire = useCallback((ids: readonly number[], action: () => Promise<boolean>) => {
-    setLeaving((current) => new Set([...current, ...ids]));
+  const pin = useCallback((id: number): boolean => {
+    const element = rowElements.current.get(id);
 
-    window.setTimeout(() => {
-      void action().then(() => {
-        setLeaving((current) => {
-          const next = new Set(current);
+    if (element === undefined || element.parentElement === null) {
+      return false;
+    }
 
-          ids.forEach((id) => next.delete(id));
+    // Offsets rather than a box: these are the layout pixels the `top` and `width` behind them are
+    // read back as, while a box would come back scaled by `zoom` and pin the row off by that factor.
+    element.style.setProperty("--exit-top", `${element.offsetTop}px`);
+    element.style.setProperty("--exit-left", `${element.offsetLeft}px`);
+    element.style.setProperty("--exit-width", `${element.offsetWidth}px`);
 
-          return next;
-        });
-      });
-    }, LEAVE_MS);
+    return true;
   }, []);
+
+  /** Puts a row that stayed on the list back into the flow, where it was. */
+  const unpin = useCallback((id: number): void => {
+    const element = rowElements.current.get(id);
+
+    if (element === undefined) {
+      return;
+    }
+
+    element.style.removeProperty("--exit-top");
+    element.style.removeProperty("--exit-left");
+    element.style.removeProperty("--exit-width");
+  }, []);
+
+  /**
+   * Takes rows off the list.
+   *
+   * Each row is pinned where it stands before it is marked as leaving, so it stops taking up room in
+   * the same frame: the card fades on the spot while the rows below close the gap it left, carried
+   * there by the flip above. Leaving the row in the flow until it had faded would make the list wait
+   * for it and only then close up, which reads as two moves where the eye expects one.
+   *
+   * The marks come off either way: a row that failed comes back into the flow where it was, and a
+   * row that only moved between groups comes back to sit in its new one.
+   */
+  const retire = useCallback(
+    (ids: readonly number[], action: () => Promise<boolean>) => {
+      const pinned = ids.filter(pin);
+
+      setLeaving((current) => new Set([...current, ...ids]));
+
+      window.setTimeout(() => {
+        void action().then(() => {
+          pinned.forEach(unpin);
+
+          setLeaving((current) => {
+            const next = new Set(current);
+
+            ids.forEach((id) => next.delete(id));
+
+            return next;
+          });
+        });
+      }, LEAVE_MS);
+    },
+    [pin, unpin],
+  );
 
   /**
    * Runs an action that only moves tasks around the page.

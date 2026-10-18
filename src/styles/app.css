@@ -915,6 +915,8 @@ p {
 /* Rows */
 
 .todo-list {
+  /* A leaving row is pinned against the list, so the list is what it is pinned to. */
+  position: relative;
   display: grid;
   gap: 8px;
   margin: 0;
@@ -923,18 +925,17 @@ p {
 }
 
 /*
- * A row is a grid whose only track shrinks to nothing, which is what the leaving animation rides on:
- * the wrapper animates `grid-template-rows` while the card inside fades and lifts, so the rows below
- * slide up instead of jumping. Only the two composited properties move on the card itself.
+ * A leaving row is lifted out of the flow and pinned where it already stood. That is what lets the
+ * two halves of the exit run at once: the card fades on the spot while the rows below close the gap
+ * it left, and the flip in TodoList carries them there. Holding the row in the flow until it faded,
+ * or collapsing its track, would make the list wait and then move afterwards — two separate moves
+ * where the eye expects one.
  */
-.todo-row {
-  display: grid;
-  grid-template-rows: 1fr;
-  transition: grid-template-rows 200ms ease;
-}
-
 .todo-row[data-leaving="true"] {
-  grid-template-rows: 0fr;
+  position: absolute;
+  top: var(--exit-top);
+  left: var(--exit-left, 0);
+  width: var(--exit-width, 100%);
   /* The row is on its way out; a second click would queue a second action. */
   pointer-events: none;
 }
@@ -976,9 +977,8 @@ p {
   transform: translateY(-1px);
 }
 
+/* Nothing clips it any more: the card shrinks in place, and the row it sits in holds its height. */
 .todo-row[data-leaving="true"] .todo-card {
-  /* Clipped only while it collapses, so the content cannot spill past the shrinking row. */
-  overflow: hidden;
   opacity: 0;
   transform: translateY(-6px) scale(0.98);
 }
@@ -1238,8 +1238,8 @@ p {
 /* Nobody asked for a show: the list simply appears. */
 
 @media (prefers-reduced-motion: reduce) {
+  .todo-card,
   .todo-card[data-enter="true"],
-  .todo-row,
   .todo-check:checked,
   .todo-ring-value {
     animation: none;

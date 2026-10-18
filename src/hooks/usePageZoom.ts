@@ -38,12 +38,21 @@ export function usePageZoom(containerRef: RefObject<HTMLElement | null>): void {
       return;
     }
 
-    const sync = (): void => {
-      const design = Number.parseFloat(
-        getComputedStyle(container).getPropertyValue("--page-base-width"),
-      );
+    // The design width is a constant of the stylesheet, so it is read once. Dragging a window edge
+    // fires this on every frame, and asking for computed style that often is itself enough to make
+    // the column re-lay-out while the window is still moving.
+    const design = Number.parseFloat(
+      getComputedStyle(container).getPropertyValue("--page-base-width"),
+    );
 
-      container.style.setProperty("--page-zoom", String(pageZoom(container.clientWidth, design)));
+    const sync = (): void => {
+      const zoom = String(pageZoom(container.clientWidth, design));
+
+      // Written only when it changed: the column carries `zoom`, so every write lays the whole page
+      // out again, and a window dragged around below the design width never changes the answer.
+      if (container.style.getPropertyValue("--page-zoom") !== zoom) {
+        container.style.setProperty("--page-zoom", zoom);
+      }
     };
 
     // Measured before the first paint, so the page is never drawn at the wrong size for a frame.
