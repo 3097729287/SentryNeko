@@ -1,0 +1,48 @@
+name: Validate integrated SentryNeko PRs
+on:
+  push:
+    branches: [validation/pr-integration-20261019]
+permissions:
+  contents: read
+jobs:
+  windows-msvc:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install frontend dependencies and generate icons
+        shell: pwsh
+        run: |
+          npm install --global pnpm@12.6.0
+          pnpm install --frozen-lockfile
+          pnpm icons
+      - name: Confirm the MSVC toolchain
+        run: rustup show active-toolchain
+      - name: Check Rust formatting
+        run: cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
+      - name: Check Rust lints
+        run: cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets --locked -- -D warnings
+      - name: Run the complete Rust suite
+        run: cargo test --manifest-path src-tauri/Cargo.toml --locked
+      - name: Check frontend types, locales, date and layout logic
+        shell: pwsh
+        run: |
+          pnpm lint
+          pnpm test
+          pnpm exec tsc --ignoreConfig --noEmit --strict --target es2022 --module esnext --moduleResolution bundler --lib "es2022,dom" --skipLibCheck tests/assistance.spec.ts tests/font-settings.spec.ts tests/sidebar-layout.spec.ts tests/todo-integration.spec.ts playwright.config.ts
+          pnpm build
+      - name: Run Chromium regression tests
+        shell: pwsh
+        run: |
+          pnpm exec playwright install chromium
+          pnpm exec playwright test --workers=2
+      - name: Save browser screenshots and traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-regression-results
+          path: test-results/
+          if-no-files-found: ignore
