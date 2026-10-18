@@ -89,6 +89,13 @@
     "name": "SentryNeko",
     "tagline": "Track your focus and your todos"
   },
+  "appearance": {
+    "dark": "Dark",
+    "hint": "Following the system switches as soon as Windows does.",
+    "light": "Light",
+    "system": "System",
+    "title": "Appearance"
+  },
   "autostart": {
     "error": "The login entry could not be updated.",
     "title": "Start with Windows",

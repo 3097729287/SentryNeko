@@ -1,9 +1,10 @@
-/** Settings page: the pomodoro durations, the alarm defaults, auto-start and the language. */
+/** Settings page: the appearance, language, pomodoro durations, alarm defaults and auto-start. */
 
 import { useEffect } from "react";
 import type { ReactNode } from "react";
 
 import { AlarmDefaultsSettings } from "../components/AlarmDefaultsSettings";
+import { AppearanceSettings } from "../components/AppearanceSettings";
 import { AutostartSettings } from "../components/AutostartSettings";
 import { LanguageSwitcher } from "../components/LanguageSwitcher";
 import { PomodoroSettings } from "../components/PomodoroSettings";
@@ -47,20 +48,23 @@ export function SettingsPage() {
     <>
       <h1>{t("nav.settings")}</h1>
       <div className="settings">
-        <SettingsRow hint={t("settings.language.hint")} index="01" title={t("language.label")}>
+        <SettingsRow hint={t("appearance.hint")} index="01" title={t("appearance.title")}>
+          <AppearanceSettings />
+        </SettingsRow>
+        <SettingsRow hint={t("settings.language.hint")} index="02" title={t("language.label")}>
           <LanguageSwitcher />
         </SettingsRow>
         <SettingsRow
           hint={t("settings.pomodoro.hint")}
-          index="02"
+          index="03"
           title={t("pomodoro.settings.title")}
         >
           <PomodoroSettings />
         </SettingsRow>
-        <SettingsRow hint={t("settings.alarm.hint")} index="03" title={t("alarm.settings.title")}>
+        <SettingsRow hint={t("settings.alarm.hint")} index="04" title={t("alarm.settings.title")}>
           <AlarmDefaultsSettings />
         </SettingsRow>
-        <SettingsRow hint={t("settings.autostart.hint")} index="04" title={t("autostart.title")}>
+        <SettingsRow hint={t("settings.autostart.hint")} index="05" title={t("autostart.title")}>
           <AutostartSettings />
         </SettingsRow>
       </div>

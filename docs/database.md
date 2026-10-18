@@ -39,7 +39,8 @@ app.manage(db);
 ```json
 {
   "databasePath": "C:\\Users\\you\\AppData\\Roaming\\com.sentryneko.desktop\\sentryneko.db",
-  "language": "en-US"
+  "language": "en-US",
+  "colorMode": "system"
 }
 ```
 
@@ -47,12 +48,14 @@ app.manage(db);
 | --- | --- | --- |
 | `databasePath` | SQLite file the application opens | `<app data dir>/sentryneko.db` |
 | `language` | Language tag, listed in `docs/i18n.md` | `en-US` |
+| `colorMode` | `dark`, `light` or `system`; `system` follows the operating system | `system` |
 
 Rules:
 
 - A relative `databasePath` resolves against the directory holding `config.json`; an absent
   field falls back to its default.
 - An unknown `language` tag falls back to `Language::DEFAULT` and leaves the file as it is.
+- An unknown `colorMode` falls back to `ColorMode::DEFAULT` (`system`) the same way.
 - A file that does not parse is reported as `IO` with the parser message in `details` and is
   never overwritten — fix or delete it by hand to recover.
 - Writes land in `config.json.tmp` and are renamed into place, so a crash cannot truncate the file.

@@ -10,6 +10,7 @@ use crate::models::alarm::AlarmDefaults;
 use crate::models::pomodoro::PomodoroDurations;
 use crate::services::autostart::{Autostart, WindowsRunKey};
 use crate::services::i18n::Language;
+use crate::services::theme::ColorMode;
 use crate::services::tray::Tray;
 use crate::utils::response::{ApiError, ApiResponse, ApiResult};
 
@@ -116,6 +117,43 @@ fn known_tags() -> String {
         .join(", ")
 }
 
+/// Reads the appearance stored in `config.json`.
+#[tauri::command]
+pub fn get_color_mode(config: State<'_, Config>) -> ApiResponse<String> {
+    read_color_mode(&config).into()
+}
+
+/// Stores the appearance in `config.json` and answers with the mode now in force.
+#[tauri::command]
+pub fn set_color_mode(mode: String, config: State<'_, Config>) -> ApiResponse<String> {
+    write_color_mode(&config, &mode)
+        .map(|chosen| chosen.code().to_owned())
+        .into()
+}
+
+fn read_color_mode(config: &Config) -> ApiResult<String> {
+    config.color_mode().map(|mode| mode.code().to_owned())
+}
+
+fn write_color_mode(config: &Config, code: &str) -> ApiResult<ColorMode> {
+    let mode = ColorMode::from_code(code).ok_or_else(|| {
+        ApiError::invalid_input(format!("unknown color mode: {code}"))
+            .with_details(format!("expected one of: {}", known_modes()))
+    })?;
+
+    config.set_color_mode(mode)?;
+
+    Ok(mode)
+}
+
+fn known_modes() -> String {
+    ColorMode::ALL
+        .iter()
+        .map(|mode| mode.code())
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -150,6 +188,32 @@ mod tests {
             "details list the known tags: {error:?}"
         );
         assert_eq!(read_language(&config).expect("language"), "en-US");
+    }
+
+    #[test]
+    fn get_color_mode_reports_the_stored_mode() {
+        let directory = temporary_directory();
+        let config = Config::open(directory.path()).expect("the configuration is created");
+
+        assert_eq!(read_color_mode(&config).expect("mode"), "system");
+
+        write_color_mode(&config, "dark").expect("the mode is written");
+        assert_eq!(read_color_mode(&config).expect("mode"), "dark");
+    }
+
+    #[test]
+    fn set_color_mode_rejects_unknown_modes() {
+        let directory = temporary_directory();
+        let config = Config::open(directory.path()).expect("the configuration is created");
+
+        let error = write_color_mode(&config, "sepia").expect_err("the mode is rejected");
+
+        assert_eq!(error.code(), ApiCode::InvalidInput);
+        assert!(
+            error.details().expect("details").contains("light"),
+            "details list the known modes: {error:?}"
+        );
+        assert_eq!(read_color_mode(&config).expect("mode"), "system");
     }
 
     #[test]

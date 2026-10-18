@@ -1,4 +1,4 @@
-//! Application configuration: database location, active language and user settings.
+//! Application configuration: database location, active language, appearance and user settings.
 
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::db::connection::DATABASE_FILE_NAME;
 use crate::services::i18n::Language;
+use crate::services::theme::ColorMode;
 use crate::utils::response::{ApiCode, ApiError, ApiResult};
 
 /// Configuration file created inside the application data directory.
@@ -20,6 +21,8 @@ struct StoredConfig {
     database_path: Option<PathBuf>,
     #[serde(default)]
     language: String,
+    #[serde(default)]
+    color_mode: String,
 }
 
 /// Configuration as the application runs it, with every default resolved.
@@ -27,6 +30,7 @@ struct StoredConfig {
 struct AppConfig {
     database_path: PathBuf,
     language: Language,
+    color_mode: ColorMode,
 }
 
 /// Loads, holds and rewrites `config.json`; share it through Tauri managed state.
@@ -100,6 +104,28 @@ impl Config {
         Ok(previous)
     }
 
+    /// Color mode in force.
+    pub fn color_mode(&self) -> ApiResult<ColorMode> {
+        Ok(self.snapshot()?.color_mode)
+    }
+
+    /// Persists `mode` and returns the mode it replaced.
+    pub fn set_color_mode(&self, mode: ColorMode) -> ApiResult<ColorMode> {
+        let mut current = self.current.write().map_err(|_| lock_error("write"))?;
+        let previous = current.color_mode;
+
+        if previous != mode {
+            let updated = AppConfig {
+                color_mode: mode,
+                ..current.clone()
+            };
+            self.persist(&updated)?;
+            *current = updated;
+        }
+
+        Ok(previous)
+    }
+
     fn snapshot(&self) -> ApiResult<AppConfig> {
         self.current
             .read()
@@ -136,6 +162,7 @@ impl StoredConfig {
         AppConfig {
             database_path,
             language: Language::from_code(&self.language).unwrap_or(Language::DEFAULT),
+            color_mode: ColorMode::from_code(&self.color_mode).unwrap_or(ColorMode::DEFAULT),
         }
     }
 }
@@ -145,6 +172,7 @@ impl From<&AppConfig> for StoredConfig {
         Self {
             database_path: Some(config.database_path.clone()),
             language: config.language.code().to_owned(),
+            color_mode: config.color_mode.code().to_owned(),
         }
     }
 }
@@ -202,6 +230,42 @@ mod tests {
             serde_json::json!(directory.path().join(DATABASE_FILE_NAME).to_string_lossy())
         );
         assert_eq!(stored["language"], serde_json::json!("en-US"));
+        assert_eq!(stored["colorMode"], serde_json::json!("system"));
+    }
+
+    #[test]
+    fn the_color_mode_survives_a_restart() {
+        let directory = temporary_directory();
+
+        {
+            let config = Config::open(directory.path()).expect("the configuration is created");
+            assert_eq!(
+                config
+                    .set_color_mode(ColorMode::Dark)
+                    .expect("the mode is written"),
+                ColorMode::DEFAULT
+            );
+            assert_eq!(config.color_mode().expect("mode"), ColorMode::Dark);
+
+            let stored: serde_json::Value = serde_json::from_str(
+                &std::fs::read_to_string(config.path()).expect("the configuration is readable"),
+            )
+            .expect("the configuration is json");
+            assert_eq!(stored["colorMode"], serde_json::json!("dark"));
+        }
+
+        let reopened = Config::open(directory.path()).expect("the configuration is read back");
+        assert_eq!(reopened.color_mode().expect("mode"), ColorMode::Dark);
+    }
+
+    #[test]
+    fn an_unknown_color_mode_falls_back_to_the_system() {
+        let directory = temporary_directory();
+        write_config(directory.path(), r#"{ "colorMode": "sepia" }"#);
+
+        let config = Config::open(directory.path()).expect("the configuration is read");
+
+        assert_eq!(config.color_mode().expect("mode"), ColorMode::DEFAULT);
     }
 
     #[test]

@@ -62,6 +62,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             settings_commands::get_language,
             settings_commands::set_language,
+            settings_commands::get_color_mode,
+            settings_commands::set_color_mode,
             event_commands::emit_test_event,
             todo_commands::list_todos,
             todo_commands::add_todo,

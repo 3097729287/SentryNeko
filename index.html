@@ -3,6 +3,29 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      // Paints the stored appearance before the stylesheet loads, so a light choice never
+      // flashes dark. The store keeps this mirror in step on every change.
+      (function () {
+        var mode;
+        try {
+          mode = localStorage.getItem("sentryneko.colorMode");
+        } catch (error) {
+          mode = "system";
+        }
+        if (mode !== "light" && mode !== "dark") {
+          mode = "system";
+        }
+        var theme =
+          mode === "system"
+            ? window.matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light"
+            : mode;
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.style.colorScheme = theme;
+      })();
+    </script>
     <title>SentryNeko</title>
   </head>
   <body>
