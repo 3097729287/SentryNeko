@@ -3250,3 +3250,68 @@ p {
     animation: none;
   }
 }
+
+.todo-form {
+  display: grid;
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
+}
+
+.todo-form-main {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.todo-schedule-controls,
+.todo-schedule-label {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.todo-schedule-label,
+.todo-schedule-hint {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.todo-schedule-label .todo-input {
+  flex: initial;
+  width: auto;
+}
+
+.todo-schedule-label .todo-interval {
+  width: 80px;
+}
+
+.todo-schedule-hint {
+  margin: 0;
+}
+
+.todo-content {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.todo-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 11px;
+}
+
+.todo-kind {
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-hover);
+  color: var(--text-muted);
+}
+
+.todo-card[data-recurring="true"] .todo-kind {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+}

@@ -64,7 +64,7 @@ app.manage(db);
 
 ## 表结构
 
-表结构共七张表：
+表结构共九张表：
 
 | 表 | 存放 | 关键列 |
 | --- | --- | --- |
@@ -75,10 +75,26 @@ app.manage(db);
 | `settings` | 键值型设置 | `key`、`value`、`updated_at` |
 | `tags` | 任务可携带的标签名 | `name`（唯一、大小写不敏感）、`created_at` |
 | `todo_tags` | 任务与标签的关联 | `todo_id`、`tag_id` |
+| `todo_recurrences` | 可选的任务重复规则与当前周期 | `todo_id`（主键）、`unit`、`interval`、`current_at`、`next_at` |
+| `todo_completions` | 热力图保留的已完成重复周期 | `todo_id`、`occurrence_at`（联合主键）、`completed_at` |
 
 标签刻意存两份：`todos.tag_ids` 是标签 id 的 JSON 数组，任务行不必 join 就能回答「带哪些
 标签」；`todo_tags` 是另一个方向的索引，`idx_todo_tags_tag_id` 用来查「哪些任务带某个标签」。
 `Todo::set_tags` 在一个事务里同时写两边，`Tag::delete` 会把 id 从所有仍列着它的任务缓存里删掉。
+
+没有 `todo_recurrences` 记录即为一次性任务，因此新增这两张表不会改变已有任务或完成状态。
+重复任务保留原有任务 id 和标签，按 1–365 天、周或月的间隔重复，以创建时的本地日期为锚点：
+
+- 首个周期从创建时开始，后续周期在计划日期的本地零点开始；使用 Windows 时区规则，而非固定
+  24 小时时长。若调钟跳过零点，则使用当天第一个有效整点。
+- 月份较短时取月末，但不改变原始锚点：1 月 31 日 → 2 月 28/29 日 → 3 月 31 日。自定义间隔
+  使用同样的日历计算。
+- 后台调度器每秒检查 `next_at`；启动和读取任务清单、计数时也会补周期。错过多个周期时直接进入
+  当前周期，清单始终保留一项，不生成积压任务。
+- 周期切换时，先把已完成周期存进 `todo_completions`，再重置 `completed` 与 `completed_at`；
+  规则与任务在同一事务内更新，重试不会重复记录。未完成周期也会重置，但不记录完成。
+- 周期结束前取消完成会移除本周期的完成状态；删除任务会级联删除规则和历史完成记录。重复设置
+  完成保留首次完成时间；恰在周期边界完成时计入新周期。
 
 番茄钟时长是 `settings` 里的一行：键 `pomodoro.durations`，值是 `PomodoroDurations` 的 JSON；
 这一行不存在时按默认值处理。闹钟默认设置同样是一行：键 `alarm.defaults`，值形如
@@ -125,9 +141,11 @@ app.manage(db);
   其他阶段（休息）不计。
 - 任务计入 `completed_at` 所在的那一天。`set_completed` 在勾选时写入、取消勾选时清空，所以之后
   重命名一个已完成任务不会把它挪到别的日子。
+- 重复任务的历史完成记录与当前任务完成记录一起计入原本的完成日，因此周期重置不会抹去此前的活动。
 
-任务完成率（`models/todo.rs`）从两个角度看 `todos`：`all` 统计全部任务，`today` 只统计 `created_at`
-在本地零点之后的任务。分子是该口径下已勾选完成的任务，所以取消勾选会把完成率降回去；任务删除时
+任务完成率（`models/todo.rs`）从两个角度看 `todos`：`all` 统计全部任务的当前状态，`today` 只统计
+创建于本地零点之后或当前重复周期始于本地零点之后的任务（`COALESCE(todo_recurrences.current_at, todos.created_at)`）。
+分子是该口径下已勾选完成的任务，所以取消勾选会把完成率降回去；任务删除时
 分子分母同时移除，与用户看到的清单保持一致。
 
 `alarms` 由 `commands/alarm_commands.rs` 维护、由 `services/scheduler.rs` 读取：
@@ -164,6 +182,7 @@ app.manage(db);
 | `count` | 首行首列，类型 `i64` |
 | `exists` | 查询是否至少匹配一行 |
 | `transaction` | `work` 的返回值，`work` 失败时回滚 |
+| `immediate_transaction` | 同上，但在读取前取得写锁，供周期重置与完成操作并发使用 |
 
 行映射器就是 `fn(&Row<'_>) -> ApiResult<T>`（`RowMapper<T>`），因此模型只需把映射函数作为
 关联函数暴露出来，各助手保持通用。

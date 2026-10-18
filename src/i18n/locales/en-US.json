@@ -364,7 +364,33 @@
       "minutes": "{{count}}m ago",
       "now": "just now"
     },
-    "toggle": "Mark as done"
+    "toggle": "Mark as done",
+    "reopen": "Reopen task",
+    "recurrence": {
+      "label": "Repeat",
+      "once": "One-time",
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "monthly": "Monthly",
+      "custom": "Custom",
+      "interval": "Every",
+      "unit": "Unit",
+      "units": {
+        "day": "Days",
+        "week": "Weeks",
+        "month": "Months"
+      },
+      "hint": "Starts today and resets at local midnight on the next scheduled date. Shorter months use their last day.",
+      "next": "Next cycle: {{date}}",
+      "summary": {
+        "day_one": "Daily",
+        "day_other": "Every {{count}} days",
+        "week_one": "Weekly",
+        "week_other": "Every {{count}} weeks",
+        "month_one": "Monthly",
+        "month_other": "Every {{count}} months"
+      }
+    }
   },
   "window": {
     "minimize": "Minimize",

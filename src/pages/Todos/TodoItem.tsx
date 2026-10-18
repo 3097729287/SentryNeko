@@ -50,7 +50,7 @@ export function TodoItem({
   tags,
   todo,
 }: TodoItemProps) {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const [draft, setDraft] = useState<string | null>(null);
   const [tagging, setTagging] = useState(false);
 
@@ -78,7 +78,8 @@ export function TodoItem({
       }}
       style={{ "--row": rowIndex } as CSSProperties}
     >
-      <div className="todo-card" data-completed={todo.completed} data-enter={entering}>
+      <div className="todo-card" data-completed={todo.completed} data-enter={entering}
+        data-recurring={isRecurringTodo(todo)}>
         {selecting ? (
           <input
             aria-label={t("todo.select.item", { title: todo.title })}
@@ -91,7 +92,7 @@ export function TodoItem({
           />
         ) : null}
         <input
-          aria-label={t("todo.toggle")}
+          aria-label={t(todo.completed ? "todo.reopen" : "todo.toggle")}
           checked={todo.completed}
           className="todo-check"
           onChange={() => {
@@ -132,6 +133,19 @@ export function TodoItem({
             />
           )}
           <span className="todo-meta">
+            {todo.recurrence != null ? (
+              <span className="todo-kind">
+                {t(`todo.recurrence.summary.${todo.recurrence.unit}`, { count: todo.recurrence.interval })}
+              </span>
+            ) : null}
+            {todo.nextOccurrenceAt != null ? (
+              <span className="todo-time">
+                {t("todo.recurrence.next", {
+                  date: new Intl.DateTimeFormat(language, { dateStyle: "medium" })
+                    .format(todo.nextOccurrenceAt * 1000),
+                })}
+              </span>
+            ) : null}
             {showType ? (
               <span className="todo-type" data-type={isRecurringTodo(todo) ? "recurring" : "oneTime"}>
                 {t(isRecurringTodo(todo) ? "todo.type.recurring" : "todo.type.oneTime")}

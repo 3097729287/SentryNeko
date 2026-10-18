@@ -36,6 +36,7 @@ pub fn run() {
             let config = Config::open(&directory)?;
             let db = Db::open(config.database_path()?)?;
             schema::ensure(&db)?;
+            crate::models::todo::Todo::advance_recurring(&db, crate::utils::time::now_seconds())?;
             app.manage(config.clone());
             app.manage(db.clone());
             let bus = EventBus::new(app.handle().clone());
