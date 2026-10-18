@@ -1655,17 +1655,70 @@ p {
   margin-left: auto;
 }
 
-/* Dashboard layout editor: same square-cell maths as the dashboard, at a smaller scale. */
+/* Dashboard layout entry in settings, and the editor it opens. */
 
-.layout-settings {
-  display: grid;
+.layout-entry {
+  display: flex;
+  flex-wrap: wrap;
   gap: var(--space-4);
+  align-items: center;
 }
 
-.layout-columns {
-  display: flex;
-  gap: var(--space-3);
+.layout-summary {
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+
+/* Icon-only action buttons: the label lives in `title`/`aria-label`, the drawing carries the meaning. */
+
+.icon-btn {
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.icon-btn:hover:enabled {
+  border-color: var(--accent);
+  background: var(--surface-hover);
+}
+
+.icon-btn:active:enabled {
+  transform: translateY(1px);
+}
+
+.icon-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.icon-btn[data-variant="primary"] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
+.icon-btn[data-variant="primary"]:hover:enabled {
+  background: var(--accent);
+  filter: brightness(1.08);
+}
+
+.action-icon {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.9;
 }
 
 .layout-label {
@@ -1673,95 +1726,143 @@ p {
   font-size: 12px;
 }
 
-.layout-preview {
-  container-type: inline-size;
+/*
+ * The editor covers the window and lays the dashboard out at its real size, so what gets dragged is
+ * literally the page. The mask swallows pointer input, which keeps links inside the panels inert
+ * while the layout is being changed.
+ */
+.editor-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-5);
+  background: rgb(8 10 16 / 62%);
 }
 
-.layout-preview-grid {
-  --layout-gap: 12px;
-  --layout-cell: calc(
-    (100cqw - (var(--layout-columns) - 1) * var(--layout-gap)) / var(--layout-columns)
-  );
-
-  display: grid;
-  grid-template-columns: repeat(var(--layout-columns), minmax(0, 1fr));
-  grid-auto-rows: var(--layout-cell);
-  gap: var(--layout-gap);
-}
-
-.layout-cell {
-  position: relative;
+.editor-dialog {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  overflow: hidden;
-  padding: 8px;
-  border: 1px dashed var(--border-strong);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--text-muted);
-  cursor: grab;
-  font-size: 11px;
-  touch-action: none;
-  user-select: none;
-}
-
-.layout-cell:hover {
-  border-color: var(--accent);
-  color: var(--text);
-}
-
-.layout-cell[data-dragging="true"] {
-  border-color: var(--accent);
-  background: var(--surface-hover);
-  cursor: grabbing;
-}
-
-.layout-cell:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-.layout-cell-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.layout-cell-size {
-  color: var(--text-muted);
-  font-size: 10px;
-  font-variant-numeric: tabular-nums;
-}
-
-.layout-cell-grip {
-  position: absolute;
-  right: 3px;
-  bottom: 3px;
-  width: 10px;
-  height: 10px;
-  border-right: 2px solid currentColor;
-  border-bottom: 2px solid currentColor;
-  cursor: nwse-resize;
-  opacity: 0.5;
-}
-
-.layout-cell:hover .layout-cell-grip {
-  opacity: 1;
-}
-
-.layout-foot {
-  display: flex;
   gap: var(--space-4);
-  align-items: center;
-  justify-content: space-between;
+  width: min(1180px, 100%);
+  max-height: 100%;
+  padding: var(--space-5);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+  box-shadow: 0 24px 80px rgb(0 0 0 / 45%);
 }
 
-.layout-note {
+.editor-dialog:focus-visible {
+  outline: none;
+}
+
+.editor-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4) var(--space-5);
+  align-items: flex-start;
+}
+
+.editor-lead {
+  display: grid;
+  gap: 4px;
+}
+
+.editor-lead h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.editor-sub {
   max-width: 46ch;
   color: var(--text-muted);
   font-size: 12px;
   line-height: 1.5;
+}
+
+.editor-columns {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.editor-actions {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  margin-left: auto;
+}
+
+.editor-body {
+  min-height: 0;
+  overflow: auto;
+  padding: var(--space-1);
+}
+
+.editor-slot {
+  position: relative;
+}
+
+.editor-mask {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border: 2px solid transparent;
+  border-radius: var(--radius-lg);
+  cursor: grab;
+  touch-action: none;
+}
+
+.editor-mask:hover {
+  border-color: var(--accent);
+}
+
+.editor-mask:focus-visible {
+  border-color: var(--accent);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.editor-slot[data-dragging="true"] .editor-mask {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  cursor: grabbing;
+}
+
+.editor-grip {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  z-index: 2;
+  width: 14px;
+  height: 14px;
+  border-right: 2px solid var(--text-muted);
+  border-bottom: 2px solid var(--text-muted);
+  cursor: nwse-resize;
+  touch-action: none;
+}
+
+.editor-slot:hover .editor-grip,
+.editor-slot[data-dragging="true"] .editor-grip {
+  border-color: var(--accent);
+}
+
+.editor-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  justify-content: space-between;
+  color: var(--text-muted);
+  font-size: 11.5px;
+}
+
+.editor-shortcuts {
+  font-variant-numeric: tabular-nums;
 }
 
 @media (max-width: 760px) {

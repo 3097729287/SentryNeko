@@ -123,11 +123,17 @@
     },
     "hours": "h",
     "layout": {
+      "cancel": "Cancel",
       "columns": "Columns",
+      "edit": "Edit layout",
       "hint": "Drag a panel to move it, drag its corner to resize it, or use the arrow keys.",
-      "reset": "Reset layout",
+      "reset": "Reset",
       "rowHint": "Pick the grid, then place each panel where you want it.",
-      "title": "Dashboard layout"
+      "save": "Save",
+      "shortcuts": "Ctrl+S saves · Ctrl+Z undoes · Esc cancels",
+      "summary": "{{columns}} columns",
+      "title": "Dashboard layout",
+      "undo": "Undo"
     },
     "loading": "Loading…",
     "minutes": "m",
