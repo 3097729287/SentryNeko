@@ -21,7 +21,7 @@ Status legend: `[ ]` not started　`[~]` in progress　`[x]` done　`[!]` blocke
 | --- | --- | --- | --- |
 | **M0** Runnable foundation | A shell that proves frontend ↔ Tauri command ↔ SQLite works end to end | T01–T09 | After `pnpm tauri dev`, one test record can be written and read, and the language can be switched |
 | **M1** Usable MVP | Todo + Pomodoro + foreground collection form a closed loop | T10–T16 | One full day of usage recorded, Pomodoro completion notifies, data persisted |
-| **M2** Analytics & system integration | Data visualization plus always-on background service | T17–T26 | Heatmap / trends / ranking available, tray resident and auto-start on boot |
+| **M2** Analytics & system integration | Data visualization plus always-on background service | T17–T26, T34 | Heatmap / trends / ranking available, tray resident and auto-start on boot |
 | **M3** Reserved extensions | Social, sharing, extra languages | T27–T32 | Started on demand, never blocking M1/M2 |
 
 ## P0 Foundation (blocking)
@@ -67,6 +67,7 @@ Status legend: `[ ]` not started　`[~]` in progress　`[x]` done　`[!]` blocke
 | [x] | T34 | Reusable numeric input with wheel adjustment (#36) | T16, T18 | Validated typing, wheel / keyboard / arrow stepping, configurable min / max / step, and both themes; reused for Pomodoro and alarm durations |
 | [x] | T35 | Task list display modes (#26) | T10, T16 | Settings switch between separate sections (default), one merged list with task type indicators and two columns; the preference survives a restart without changing tasks; recurring metadata comes from #25 |
 | [x] | T37 | One-time and recurring tasks (#25) | T10, T17 | Daily, weekly, monthly and custom calendar intervals; distinct list badges; automatic cycle resets and restart catch-up; completed cycles retained in the heatmap |
+| [x] | T38 | Sidebar panel settings (#38) | T09, T16 | Visibility toggles and up/down controls apply immediately; layout survives restarts; defaults show every panel; Settings stays reachable |
 
 ## P3 Reserved (stubs only, not implemented)
 
