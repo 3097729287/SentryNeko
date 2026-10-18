@@ -122,6 +122,13 @@
       "title": "Focus today"
     },
     "hours": "h",
+    "layout": {
+      "columns": "Columns",
+      "hint": "Drag a panel to move it, drag its corner to resize it, or use the arrow keys.",
+      "reset": "Reset layout",
+      "rowHint": "Pick the grid, then place each panel where you want it.",
+      "title": "Dashboard layout"
+    },
     "loading": "Loading…",
     "minutes": "m",
     "pomodoro": {
@@ -145,6 +152,16 @@
       "open": "Open tasks",
       "remaining": "open",
       "title": "Todos"
+    },
+    "widget": {
+      "alarm": "Alarm",
+      "completion": "Completion",
+      "focus": "Focus",
+      "move": "{{name}} panel",
+      "pomodoro": "Pomodoro",
+      "size": "{{w}} × {{h}}",
+      "todos": "Todos",
+      "usage": "Apps"
     }
   },
   "events": {

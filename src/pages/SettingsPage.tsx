@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { AlarmDefaultsSettings } from "../components/AlarmDefaultsSettings";
 import { AppearanceSettings } from "../components/AppearanceSettings";
 import { AutostartSettings } from "../components/AutostartSettings";
+import { DashboardLayoutSettings } from "../components/DashboardLayoutSettings";
 import { LanguageSwitcher } from "../components/LanguageSwitcher";
 import { PomodoroSettings } from "../components/PomodoroSettings";
 import { useI18n } from "../hooks/useI18n";
@@ -66,6 +67,13 @@ export function SettingsPage() {
         </SettingsRow>
         <SettingsRow hint={t("settings.autostart.hint")} index="05" title={t("autostart.title")}>
           <AutostartSettings />
+        </SettingsRow>
+        <SettingsRow
+          hint={t("dashboard.layout.rowHint")}
+          index="06"
+          title={t("dashboard.layout.title")}
+        >
+          <DashboardLayoutSettings />
         </SettingsRow>
       </div>
     </>

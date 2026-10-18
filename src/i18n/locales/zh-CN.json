@@ -122,6 +122,13 @@
       "title": "今日专注"
     },
     "hours": "小时",
+    "layout": {
+      "columns": "列数",
+      "hint": "拖动面板可移动，拖右下角可改大小，也可以用方向键微调。",
+      "reset": "重置布局",
+      "rowHint": "先选网格列数，再把每个面板摆到你想要的位置。",
+      "title": "仪表盘布局"
+    },
     "loading": "加载中…",
     "minutes": "分",
     "pomodoro": {
@@ -145,6 +152,16 @@
       "open": "去待办",
       "remaining": "项待办",
       "title": "待办"
+    },
+    "widget": {
+      "alarm": "闹钟",
+      "completion": "完成率",
+      "focus": "专注",
+      "move": "{{name}}面板",
+      "pomodoro": "番茄钟",
+      "size": "{{w}} × {{h}}",
+      "todos": "待办",
+      "usage": "应用"
     }
   },
   "events": {

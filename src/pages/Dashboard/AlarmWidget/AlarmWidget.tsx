@@ -31,7 +31,7 @@ export function AlarmWidget() {
   };
 
   return (
-    <section className="dash-panel dash-wide">
+    <section className="dash-panel">
       <p className="dash-kicker">{t("dashboard.alarm.title")}</p>
       {loading ? <p className="dash-muted">{t("dashboard.loading")}</p> : null}
       {error !== null ? <p className="error">{t("dashboard.error")}</p> : null}
