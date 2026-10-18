@@ -4,7 +4,7 @@ use tauri::State;
 
 use crate::db::connection::Db;
 use crate::models::recurrence::Recurrence;
-use crate::models::todo::{CompletionScope, TaskCompletion, Todo, TodoCounts};
+use crate::models::todo::{CompletionScope, TaskCompletion, Todo, TodoCounts, TodoSort};
 use crate::services::event_bus::EventBus;
 use crate::services::scheduler::refresh_todos;
 use crate::utils::response::{ApiResponse, ApiResult};
@@ -16,9 +16,10 @@ pub fn list_todos(
     db: State<'_, Db>,
     bus: State<'_, EventBus>,
     completed: Option<bool>,
+    sort: Option<TodoSort>,
 ) -> ApiResponse<Vec<Todo>> {
     refresh_todos(&db, &bus, time::now_seconds())
-        .and_then(|_| Todo::list(&db, completed))
+        .and_then(|_| Todo::list_sorted(&db, completed, sort.unwrap_or_default()))
         .into()
 }
 
@@ -58,6 +59,17 @@ pub fn rename_todo(
     title: String,
 ) -> ApiResponse<Todo> {
     changed(Todo::rename(&db, id, &title), &bus)
+}
+
+/// Changes only the date, keeping all other task fields.
+#[tauri::command]
+pub fn set_todo_due_date(
+    db: State<'_, Db>,
+    bus: State<'_, EventBus>,
+    id: i64,
+    due_date: Option<i64>,
+) -> ApiResponse<Todo> {
+    changed(Todo::set_due_date(&db, id, due_date), &bus)
 }
 
 /// Sets the completion flag of a task.

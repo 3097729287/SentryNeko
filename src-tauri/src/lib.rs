@@ -75,6 +75,7 @@ pub fn run() {
             todo_commands::list_todos,
             todo_commands::add_todo,
             todo_commands::update_todo,
+            todo_commands::set_todo_due_date,
             todo_commands::rename_todo,
             todo_commands::set_todo_completed,
             todo_commands::delete_todo,

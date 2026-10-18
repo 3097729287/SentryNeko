@@ -154,9 +154,10 @@ refuses the write is `PERMISSION_DENIED`.
 | `get_color_mode` | `settings_commands` | — | `String` (`dark`, `light` or `system`) | — |
 | `set_color_mode` | `settings_commands` | `mode: String` | `String` (mode in force) | — |
 | `emit_test_event` | `event_commands` | — | `TestEvent` (`{ sequence }`) | T08 |
-| `list_todos` | `todo_commands` | `completed: bool?` | `Todo[]` | T10 |
+| `list_todos` | `todo_commands` | `completed: bool?`, `sort: TodoSort?` (`default`, `dueDateAsc`, `dueDateDesc`) | `Todo[]` | T10 |
 | `add_todo` | `todo_commands` | `title: String`, `recurrence: Recurrence?`, `dueDate: i64?` | `Todo` | T10, T37 |
 | `update_todo` | `todo_commands` | `id: i64`, `title: String`, `dueDate: i64?` | `Todo` | T10 |
+| `set_todo_due_date` | `todo_commands` | `id: i64`, `dueDate: i64?` | `Todo` | T10 |
 | `rename_todo` | `todo_commands` | `id: i64`, `title: String` | `Todo` | T10 |
 | `set_todo_completed` | `todo_commands` | `id: i64`, `completed: bool` | `Todo` | T10 |
 | `delete_todo` | `todo_commands` | `id: i64` | — | T10 |
@@ -193,3 +194,5 @@ refuses the write is `PERMISSION_DENIED`.
 | `apply_dashboard_changes` | `settings_commands` | `changes: WidgetChange[]` (`upsert` with a widget, or `remove` with an id) | `DashboardLayout` — the layout now in force | — |
 | `get_todo_display_mode` | `settings_commands` | — | `"separated"` (default), `"merged"` or `"twoColumns"` | T35 |
 | `set_todo_display_mode` | `settings_commands` | `mode: String` | The saved display mode; other values return `INVALID_INPUT` | T35 |
+
+Date sorting is global within each task-type section: both directions put undated tasks last, with newest id first for ties, regardless of completion. Default ordering keeps active tasks first. Overdue means an unfinished deadline before the user’s current local calendar day; a task due today is not overdue.

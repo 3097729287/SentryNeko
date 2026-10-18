@@ -7,9 +7,9 @@ import { useI18n } from "../../hooks/useI18n";
 import { useTags } from "../../hooks/useTags";
 import { useTodoDisplay } from "../../hooks/useTodoDisplay";
 import { useTodos } from "../../hooks/useTodos";
-import type { Todo, TodoFilter } from "../../types/todo";
+import type { Todo, TodoFilter, TodoSort } from "../../types/todo";
 import { isRecurringTodo } from "../../types/todoDisplay";
-import { groupTodos, searchTodos } from "./todos";
+import { searchTodos } from "./todos";
 import { TodoItem } from "./TodoItem";
 import { TodoSearch } from "./TodoSearch";
 
@@ -99,6 +99,8 @@ export function TodoList() {
     remove,
     rename,
     setFilter,
+    setSort,
+    sort,
     todos,
     toggle,
     updateTags,
@@ -112,7 +114,7 @@ export function TodoList() {
   const [selected, setSelected] = useState<ReadonlySet<number>>(() => new Set());
   const [leaving, setLeaving] = useState<ReadonlySet<number>>(() => new Set());
 
-  const visible = useMemo(() => searchTodos(todos, tags, query), [todos, tags, query]);
+  const visible = useMemo(() => searchTodos(todos, tags, query, sort), [todos, tags, query, sort]);
   const groups = useMemo(() => {
     const definitions: { id: Group; tasks: readonly Todo[] }[] = mode === "merged"
       ? [{ id: "merged", tasks: visible }]
@@ -120,10 +122,7 @@ export function TodoList() {
         { id: "oneTime", tasks: visible.filter((todo) => !isRecurringTodo(todo)) },
         { id: "recurring", tasks: visible.filter(isRecurringTodo) },
       ];
-    return definitions.map(({ id, tasks }) => {
-      const grouped = groupTodos(tasks);
-      return { id, rows: [...grouped.active, ...grouped.completed] };
-    });
+    return definitions.map(({ id, tasks }) => ({ id, rows: tasks }));
   }, [visible, mode]);
 
   /** The row elements by task id, so a task that moved can be measured where it landed. */
@@ -399,6 +398,15 @@ export function TodoList() {
           options={FILTERS.map((value) => ({ label: t(FILTER_LABELS[value]), value }))}
           value={filter}
         />
+        <label className="todo-sort">
+          <span>{t("todo.sort.label")}</span>
+          <select aria-label={t("todo.sort.label")} value={sort}
+            onChange={(event) => setSort(event.target.value as TodoSort)}>
+            {(["default", "dueDateAsc", "dueDateDesc"] as const).map((value) => (
+              <option key={value} value={value}>{t(`todo.sort.${value}`)}</option>
+            ))}
+          </select>
+        </label>
         <button
           aria-pressed={selecting}
           className="btn btn-quiet"

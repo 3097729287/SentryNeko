@@ -10,12 +10,15 @@ import type {
   TodoCounts,
   TodoFilter,
   TodoRecurrence,
+  TodoSort,
 } from "../types/todo";
 
 export interface TodoState {
   todos: readonly Todo[];
   counts: TodoCounts;
   filter: TodoFilter;
+  sort: TodoSort;
+  setSort: (sort: TodoSort) => void;
   loading: boolean;
   /** Code of the last failed call, `null` while everything is fine. */
   error: ApiCode | null;
@@ -96,10 +99,13 @@ export const useTodoStore = create<TodoState>((set, get) => ({
   todos: [],
   counts: EMPTY_COUNTS,
   filter: "all",
+  sort: "default",
+  setSort: (sort) => { ++refreshVersion; set({ sort }); },
   loading: false,
   error: null,
 
   setFilter: (filter) => {
+    ++refreshVersion;
     set({ filter });
   },
 
@@ -112,6 +118,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 
     const list = await request<Todo[]>("list_todos", {
       completed: completionArgument(get().filter),
+      sort: get().sort,
     });
     if (version !== refreshVersion) return;
 

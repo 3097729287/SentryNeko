@@ -403,7 +403,14 @@
     "dueDate": "Due date (optional)",
     "dueOn": "Due {{date}}",
     "save": "Save",
-    "setDueDate": "Set due date"
+    "setDueDate": "Set due date",
+    "sort": {
+      "label": "Sort",
+      "default": "Default order",
+      "dueDateAsc": "Due date: earliest first",
+      "dueDateDesc": "Due date: latest first"
+    },
+    "overdue": "Overdue"
   },
   "window": {
     "minimize": "Minimize",

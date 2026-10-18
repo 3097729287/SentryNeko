@@ -247,3 +247,5 @@ asserting that both sides end up with the same tables and todo columns.
 3. Run `cargo test` — the script check fails while the two sides disagree.
 4. For additive changes to existing tables, check for the column before adding it in both
    `ensure` and the maintenance script; test that repeat runs preserve existing data.
+
+Date sorting is global within each task-type section: both directions put undated tasks last, with newest id first for ties, regardless of completion. Default ordering keeps active tasks first. Overdue means an unfinished deadline before the user’s current local calendar day; a task due today is not overdue.

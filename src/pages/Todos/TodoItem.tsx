@@ -7,6 +7,7 @@ import { useI18n } from "../../hooks/useI18n";
 import type { Tag } from "../../types/tag";
 import type { Todo } from "../../types/todo";
 import { isRecurringTodo } from "../../types/todoDisplay";
+import { isOverdue, localDate } from "../../types/dueDate";
 import { ageOf, tagNamesOf } from "./todos";
 import { TodoTagEditor } from "./TodoTagEditor";
 import { TodoDateEditor } from "./TodoDateEditor";
@@ -164,7 +165,8 @@ export function TodoItem({
               </span>
             ))}
           </span>
-          <button className="todo-due" onClick={() => setEditingDate((value) => !value)} type="button">
+          <button className="todo-due" data-overdue={isOverdue(todo.dueDate, todo.completed, localDate(new Date(now * 1000)))}
+            onClick={() => setEditingDate((value) => !value)} type="button">
             {todo.dueDate == null ? t("todo.setDueDate") : (
               <time dateTime={new Date(todo.dueDate * 1000).toISOString().slice(0, 10)}>
                 {t("todo.dueOn", { date: new Intl.DateTimeFormat(language, {
@@ -173,6 +175,9 @@ export function TodoItem({
               </time>
             )}
           </button>
+          {isOverdue(todo.dueDate, todo.completed, localDate(new Date(now * 1000))) ? (
+            <span className="todo-overdue">{t("todo.overdue")}</span>
+          ) : null}
           {editingDate ? <TodoDateEditor todo={todo} onClose={() => setEditingDate(false)} /> : null}
           {tagging ? (
             <TodoTagEditor

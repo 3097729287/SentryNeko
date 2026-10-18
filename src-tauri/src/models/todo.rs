@@ -36,6 +36,16 @@ pub struct Todo {
     pub due_date: Option<i64>,
 }
 
+/// Task ordering; undated tasks always follow dated tasks in either date direction.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum TodoSort {
+    #[default]
+    Default,
+    DueDateAsc,
+    DueDateDesc,
+}
+
 /// Totals shown beside the list.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -85,13 +95,21 @@ impl Todo {
 
     /// Lists tasks, open ones first and newest first; `completed` narrows the result.
     pub fn list(db: &Db, completed: Option<bool>) -> ApiResult<Vec<Self>> {
+        Self::list_sorted(db, completed, TodoSort::Default)
+    }
+
+    pub fn list_sorted(db: &Db, completed: Option<bool>, sort: TodoSort) -> ApiResult<Vec<Self>> {
         let condition = match completed {
             None => "",
             Some(false) => " WHERE completed = 0",
             Some(true) => " WHERE completed = 1",
         };
-        let sql =
-            format!("SELECT {COLUMNS} FROM {SOURCE}{condition} ORDER BY completed, todos.id DESC");
+        let order = match sort {
+            TodoSort::Default => "completed, todos.id DESC",
+            TodoSort::DueDateAsc => "due_date IS NULL, due_date ASC, todos.id DESC",
+            TodoSort::DueDateDesc => "due_date IS NULL, due_date DESC, todos.id DESC",
+        };
+        let sql = format!("SELECT {COLUMNS} FROM {SOURCE}{condition} ORDER BY {order}");
 
         repository::query_all(db, &sql, [], Self::from_row)
     }
@@ -191,6 +209,19 @@ impl Todo {
             db,
             "UPDATE todos SET title = ?1, due_date = ?2, updated_at = ?3 WHERE id = ?4",
             params![title, due_date, time::now_seconds(), id],
+        )?;
+
+        require_changed(changed, id)?;
+        Self::find(db, id)
+    }
+
+    /// Sets or clears a deadline without changing the task's title or completion state.
+    pub fn set_due_date(db: &Db, id: i64, due_date: Option<i64>) -> ApiResult<Self> {
+        validate_due_date(due_date)?;
+        let changed = repository::execute(
+            db,
+            "UPDATE todos SET due_date = ?1, updated_at = ?2 WHERE id = ?3",
+            params![due_date, time::now_seconds(), id],
         )?;
 
         require_changed(changed, id)?;
@@ -594,6 +625,38 @@ mod tests {
         ] {
             assert_eq!(result.expect_err("missing id").code(), ApiCode::NotFound);
         }
+    }
+
+    #[test]
+    fn date_sorting_is_global_stable_and_keeps_undated_tasks_last_in_both_directions() {
+        let db = migrated();
+        let undated = Todo::add_with_due_date(&db, "undated", None).expect("stored");
+        let early = Todo::add_with_due_date(&db, "early", Some(0)).expect("stored");
+        let late = Todo::add_with_due_date(&db, "late", Some(86_400)).expect("stored");
+        let tied = Todo::add_with_due_date(&db, "tied", Some(0)).expect("stored");
+        let another_undated = Todo::add_with_due_date(&db, "also undated", None).expect("stored");
+        Todo::set_completed(&db, early.id, true).expect("completed");
+
+        let ids = |completed, sort| {
+            Todo::list_sorted(&db, completed, sort)
+                .expect("list")
+                .iter()
+                .map(|todo| todo.id)
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(
+            ids(None, TodoSort::DueDateAsc),
+            [tied.id, early.id, late.id, another_undated.id, undated.id]
+        );
+        assert_eq!(
+            ids(None, TodoSort::DueDateDesc),
+            [late.id, tied.id, early.id, another_undated.id, undated.id]
+        );
+        assert_eq!(
+            ids(Some(false), TodoSort::DueDateAsc),
+            [tied.id, late.id, another_undated.id, undated.id]
+        );
+        assert_eq!(ids(Some(true), TodoSort::DueDateDesc), [early.id]);
     }
 
     #[test]

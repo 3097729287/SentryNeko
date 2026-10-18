@@ -129,9 +129,10 @@ fn toggle(id: i64) -> ApiResult<Todo> {
 | `get_color_mode` | `settings_commands` | — | `String`（`dark`、`light` 或 `system`） | — |
 | `set_color_mode` | `settings_commands` | `mode: String` | `String`（生效后的模式） | — |
 | `emit_test_event` | `event_commands` | — | `TestEvent`（`{ sequence }`） | T08 |
-| `list_todos` | `todo_commands` | `completed: bool?` | `Todo[]` | T10 |
+| `list_todos` | `todo_commands` | `completed: bool?`, `sort: TodoSort?` (`default`, `dueDateAsc`, `dueDateDesc`) | `Todo[]` | T10 |
 | `add_todo` | `todo_commands` | `title: String`, `recurrence: Recurrence?`, `dueDate: i64?` | `Todo` | T10, T37 |
 | `update_todo` | `todo_commands` | `id: i64`, `title: String`, `dueDate: i64?` | `Todo` | T10 |
+| `set_todo_due_date` | `todo_commands` | `id: i64`, `dueDate: i64?` | `Todo` | T10 |
 | `rename_todo` | `todo_commands` | `id: i64`、`title: String` | `Todo` | T10 |
 | `set_todo_completed` | `todo_commands` | `id: i64`、`completed: bool` | `Todo` | T10 |
 | `delete_todo` | `todo_commands` | `id: i64` | — | T10 |
@@ -168,3 +169,5 @@ fn toggle(id: i64) -> ApiResult<Todo> {
 | `apply_dashboard_changes` | `settings_commands` | `changes: WidgetChange[]`（`upsert` 带组件，或 `remove` 带 id） | `DashboardLayout` —— 应用后生效的布局 | — |
 | `get_todo_display_mode` | `settings_commands` | — | `"separated"`（默认）、`"merged"` 或 `"twoColumns"` | T35 |
 | `set_todo_display_mode` | `settings_commands` | `mode: String` | 保存后的显示方式；其他值返回 `INVALID_INPUT` | T35 |
+
+截止日期排序在每个任务类型分区内统一应用：升序和降序都把无日期任务放在最后，相同日期按 id 从新到旧排列，不按完成状态打断顺序。默认排序仍把进行中任务放在前面。仅未完成且截止日期早于当前本地日历日的任务显示逾期；今天到期不算逾期。

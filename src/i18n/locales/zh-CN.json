@@ -403,7 +403,14 @@
     "dueDate": "截止日期（可选）",
     "dueOn": "截止 {{date}}",
     "save": "保存",
-    "setDueDate": "设置截止日期"
+    "setDueDate": "设置截止日期",
+    "sort": {
+      "label": "排序",
+      "default": "默认顺序",
+      "dueDateAsc": "截止日期：从早到晚",
+      "dueDateDesc": "截止日期：从晚到早"
+    },
+    "overdue": "已逾期"
   },
   "window": {
     "minimize": "最小化",

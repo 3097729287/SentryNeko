@@ -32,6 +32,8 @@ export interface TodoCounts {
 }
 
 /** Which tasks the page shows; `list_todos` takes the same three states. */
+export type TodoSort = "default" | "dueDateAsc" | "dueDateDesc";
+
 export type TodoFilter = "all" | "active" | "completed";
 
 /** Tasks a completion rate covers; `completion_rate` takes the same values. */
