@@ -29,6 +29,20 @@ impl Language {
             _ => None,
         }
     }
+
+    /// Maps a system locale to an offered language, including regional and POSIX variants.
+    #[must_use]
+    pub fn from_locale(locale: &str) -> Option<Self> {
+        let language = locale.split(['-', '_', '.', '@']).next()?;
+
+        if language.eq_ignore_ascii_case("zh") {
+            Some(Self::ZhCn)
+        } else if language.eq_ignore_ascii_case("en") {
+            Some(Self::EnUs)
+        } else {
+            None
+        }
+    }
 }
 
 impl ApiCode {
@@ -117,6 +131,36 @@ mod tests {
 
         assert_eq!(Language::DEFAULT, Language::EnUs);
         assert_eq!(Language::from_code("ja-JP"), None);
+    }
+
+    #[test]
+    fn system_locales_resolve_to_supported_languages() {
+        for locale in [
+            "zh",
+            "zh-CN",
+            "zh-Hans-CN",
+            "zh-TW",
+            "ZH_cn.UTF-8",
+            "zh_SG@pinyin",
+        ] {
+            assert_eq!(
+                Language::from_locale(locale),
+                Some(Language::ZhCn),
+                "{locale}"
+            );
+        }
+
+        for locale in ["en", "en-US", "en-GB", "EN_au.UTF-8"] {
+            assert_eq!(
+                Language::from_locale(locale),
+                Some(Language::EnUs),
+                "{locale}"
+            );
+        }
+
+        for locale in ["", "C", "POSIX", "ja-JP", "fr-FR", "english", "zhongwen"] {
+            assert_eq!(Language::from_locale(locale), None, "{locale}");
+        }
     }
 
     #[test]

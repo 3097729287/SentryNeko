@@ -46,12 +46,14 @@ app.manage(db);
 | 字段 | 含义 | 默认值 |
 | --- | --- | --- |
 | `databasePath` | 应用打开的 SQLite 文件 | `<应用数据目录>/sentryneko.db` |
-| `language` | 语言标签，见 `docs/i18n.md` | `en-US` |
+| `language` | 语言标签，见 `docs/i18n.md` | 检测到的系统语言，兜底为 `en-US` |
 | `colorMode` | `dark`、`light` 或 `system`；`system` 跟随操作系统 | `system` |
 
 规则：
 
 - `databasePath` 为相对路径时，相对 `config.json` 所在目录解析；字段缺失则用默认值。
+- `language` 缺失、为 `null` 或空白时检测系统 locale，立即保存支持的标签；检测失败或不支持
+  时保存 `en-US`。后续启动优先使用已存选择，设置页可以手动覆盖。
 - `language` 为未知标签时回落到 `Language::DEFAULT`，文件保持原样。
 - `colorMode` 为未知取值时同样回落到 `ColorMode::DEFAULT`（`system`）。
 - 文件无法解析时报 `IO`，解析器原文放进 `details`，且绝不覆盖原文件——手工修好或删除即可恢复。
