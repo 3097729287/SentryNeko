@@ -47,13 +47,20 @@ app.manage(db);
 | Field | Meaning | Default |
 | --- | --- | --- |
 | `databasePath` | SQLite file the application opens | `<app data dir>/sentryneko.db` |
-| `language` | Language tag, listed in `docs/i18n.md` | `en-US` |
+| `language` | Language tag, listed in `docs/i18n.md` | Detected system language, falling back to `en-US` |
 | `colorMode` | `dark`, `light` or `system`; `system` follows the operating system | `system` |
 
 Rules:
 
 - A relative `databasePath` resolves against the directory holding `config.json`; an absent
   field falls back to its default.
+- A missing, `null` or blank `language` triggers system-locale detection and an immediate
+  attempt to save the supported tag (or `en-US` if detection fails or is unsupported).
+  For an existing file, only `language` is patched: relative paths, unknown keys and other
+  stored values are preserved, and absent fields remain absent. If saving fails, startup
+  continues with the resolved language in memory and retries detection on the next launch.
+  Creating a new configuration still requires a successful write. A saved choice takes
+  precedence on subsequent launches; settings can override it.
 - An unknown `language` tag falls back to `Language::DEFAULT` and leaves the file as it is.
 - An unknown `colorMode` falls back to `ColorMode::DEFAULT` (`system`) the same way.
 - A file that does not parse is reported as `IO` with the parser message in `details` and is

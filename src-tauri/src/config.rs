@@ -20,7 +20,7 @@ struct StoredConfig {
     #[serde(default)]
     database_path: Option<PathBuf>,
     #[serde(default)]
-    language: String,
+    language: Option<String>,
     #[serde(default)]
     color_mode: String,
 }
@@ -44,28 +44,53 @@ pub struct Config {
 }
 
 impl Config {
-    /// Reads the configuration, creating it from defaults when it does not exist yet.
+    /// Reads the configuration and detects the system language if none is stored.
     pub fn open(directory: impl AsRef<Path>) -> ApiResult<Self> {
+        Self::open_with_locale(directory, sys_locale::get_locale)
+    }
+
+    fn open_with_locale(
+        directory: impl AsRef<Path>,
+        detect_locale: impl FnOnce() -> Option<String>,
+    ) -> ApiResult<Self> {
         let directory = directory.as_ref();
         std::fs::create_dir_all(directory)
             .map_err(|error| io_error("create directory", directory, &error))?;
 
         let path = directory.join(CONFIG_FILE_NAME);
-        let (stored, exists) = match std::fs::read_to_string(&path) {
-            Ok(contents) => (parse(&path, &contents)?, true),
+        let (mut stored, contents) = match std::fs::read_to_string(&path) {
+            Ok(contents) => (parse(&path, &contents)?, Some(contents)),
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
-                (StoredConfig::default(), false)
+                (StoredConfig::default(), None)
             }
             Err(error) => return Err(io_error("read", &path, &error)),
         };
+
+        let language_missing = stored
+            .language
+            .as_deref()
+            .map_or(true, |language| language.trim().is_empty());
+        if language_missing {
+            let language = detect_locale()
+                .as_deref()
+                .and_then(Language::from_locale)
+                .unwrap_or(Language::DEFAULT);
+            stored.language = Some(language.code().to_owned());
+        }
 
         let config = Self {
             path: Arc::new(path),
             current: Arc::new(RwLock::new(stored.resolve(directory))),
         };
 
-        if !exists {
-            config.persist(&config.snapshot()?)?;
+        match contents {
+            Some(contents) if language_missing => {
+                // Backfilling an existing file is best effort: a failed write must not
+                // prevent startup with the language already resolved in memory.
+                let _ = config.persist_detected_language(&contents);
+            }
+            None => config.persist(&config.snapshot()?)?,
+            _ => {}
         }
 
         Ok(config)
@@ -133,10 +158,24 @@ impl Config {
             .map(|current| current.clone())
     }
 
-    /// Writes beside the target and swaps, so a crash cannot truncate the file.
+    /// Patches only the language, preserving relative paths and fields we do not recognise.
+    fn persist_detected_language(&self, contents: &str) -> ApiResult<()> {
+        let mut document: serde_json::Map<String, serde_json::Value> =
+            parse(self.path(), contents)?;
+        document.insert(
+            "language".to_owned(),
+            serde_json::Value::String(self.language()?.code().to_owned()),
+        );
+        self.write_document(&document)
+    }
+
     fn persist(&self, config: &AppConfig) -> ApiResult<()> {
-        let stored = StoredConfig::from(config);
-        let contents = serde_json::to_string_pretty(&stored).map_err(|error| {
+        self.write_document(&StoredConfig::from(config))
+    }
+
+    /// Writes beside the target and swaps, so a crash cannot truncate the file.
+    fn write_document(&self, document: &impl Serialize) -> ApiResult<()> {
+        let contents = serde_json::to_string_pretty(document).map_err(|error| {
             ApiError::new(ApiCode::Internal)
                 .with_details(format!("serialize {}: {error}", self.path.display()))
         })?;
@@ -161,7 +200,11 @@ impl StoredConfig {
 
         AppConfig {
             database_path,
-            language: Language::from_code(&self.language).unwrap_or(Language::DEFAULT),
+            language: self
+                .language
+                .as_deref()
+                .and_then(Language::from_code)
+                .unwrap_or(Language::DEFAULT),
             color_mode: ColorMode::from_code(&self.color_mode).unwrap_or(ColorMode::DEFAULT),
         }
     }
@@ -171,13 +214,13 @@ impl From<&AppConfig> for StoredConfig {
     fn from(config: &AppConfig) -> Self {
         Self {
             database_path: Some(config.database_path.clone()),
-            language: config.language.code().to_owned(),
+            language: Some(config.language.code().to_owned()),
             color_mode: config.color_mode.code().to_owned(),
         }
     }
 }
 
-fn parse(path: &Path, contents: &str) -> ApiResult<StoredConfig> {
+fn parse<T: serde::de::DeserializeOwned>(path: &Path, contents: &str) -> ApiResult<T> {
     serde_json::from_str(contents).map_err(|error| {
         ApiError::new(ApiCode::Io).with_details(format!("parse {}: {error}", path.display()))
     })
@@ -211,7 +254,8 @@ mod tests {
     #[test]
     fn first_run_creates_the_configuration() {
         let directory = temporary_directory();
-        let config = Config::open(directory.path()).expect("the configuration is created");
+        let config = Config::open_with_locale(directory.path(), || None)
+            .expect("the configuration is created");
 
         assert_eq!(config.path(), directory.path().join(CONFIG_FILE_NAME));
         assert_eq!(
@@ -231,6 +275,174 @@ mod tests {
         );
         assert_eq!(stored["language"], serde_json::json!("en-US"));
         assert_eq!(stored["colorMode"], serde_json::json!("system"));
+    }
+
+    #[test]
+    fn first_run_detects_and_persists_the_system_language() {
+        let directory = temporary_directory();
+        let config = Config::open_with_locale(directory.path(), || Some("zh-Hans-CN".to_owned()))
+            .expect("the configuration is created");
+
+        assert_eq!(config.language().expect("language"), Language::ZhCn);
+        let stored: serde_json::Value = serde_json::from_str(
+            &std::fs::read_to_string(config.path()).expect("the configuration is readable"),
+        )
+        .expect("the configuration is json");
+        assert_eq!(stored["language"], "zh-CN");
+
+        let reopened = Config::open_with_locale(directory.path(), || {
+            panic!("a saved language must not query the operating system")
+        })
+        .expect("the configuration is read back");
+        assert_eq!(reopened.language().expect("language"), Language::ZhCn);
+    }
+
+    #[test]
+    fn an_unsupported_system_language_persists_the_fallback() {
+        let directory = temporary_directory();
+        let config = Config::open_with_locale(directory.path(), || Some("ja-JP".to_owned()))
+            .expect("the configuration is created");
+        assert_eq!(config.language().expect("language"), Language::EnUs);
+
+        let reopened = Config::open_with_locale(directory.path(), || {
+            panic!("the fallback must also be saved")
+        })
+        .expect("the configuration is read back");
+        assert_eq!(reopened.language().expect("language"), Language::EnUs);
+    }
+
+    #[test]
+    fn an_existing_configuration_without_a_language_is_completed() {
+        for contents in [
+            r#"{}"#,
+            r#"{ "language": null }"#,
+            r#"{ "language": "" }"#,
+            r#"{ "language": "  " }"#,
+        ] {
+            let directory = temporary_directory();
+            let mut stored: serde_json::Value = serde_json::from_str(contents).expect("json");
+            stored["databasePath"] = serde_json::json!("library.db");
+            stored["colorMode"] = serde_json::json!("dark");
+            stored["futureSetting"] = serde_json::json!({"enabled": true, "items": [1, null]});
+            let path = write_config(directory.path(), &stored.to_string());
+
+            let config = Config::open_with_locale(directory.path(), || Some("zh-CN".to_owned()))
+                .expect("the configuration is read");
+            assert_eq!(config.language().expect("language"), Language::ZhCn);
+            assert_eq!(config.color_mode().expect("color mode"), ColorMode::Dark);
+            assert_eq!(
+                config.database_path().expect("database path"),
+                directory.path().join("library.db")
+            );
+
+            let saved: serde_json::Value = serde_json::from_str(
+                &std::fs::read_to_string(path).expect("the configuration is readable"),
+            )
+            .expect("the configuration is json");
+            stored["language"] = serde_json::json!("zh-CN");
+            assert_eq!(saved, stored, "only the language field may change");
+        }
+    }
+
+    #[test]
+    fn detecting_language_keeps_relative_database_paths_portable() {
+        let original = temporary_directory();
+        let relocated = temporary_directory();
+        let path = write_config(original.path(), r#"{ "databasePath": "data/library.db" }"#);
+        let config = Config::open_with_locale(original.path(), || Some("zh-CN".to_owned()))
+            .expect("the configuration is read");
+        assert_eq!(
+            config.database_path().expect("database path"),
+            original.path().join("data/library.db")
+        );
+
+        let saved = std::fs::read_to_string(&path).expect("the configuration is readable");
+        let document: serde_json::Value = serde_json::from_str(&saved).expect("json");
+        assert_eq!(document["databasePath"], "data/library.db");
+        write_config(relocated.path(), &saved);
+
+        let reopened = Config::open_with_locale(relocated.path(), || {
+            panic!("the saved language must survive relocation")
+        })
+        .expect("the relocated configuration is read");
+        assert_eq!(
+            reopened.database_path().expect("database path"),
+            relocated.path().join("data/library.db")
+        );
+        assert_eq!(reopened.language().expect("language"), Language::ZhCn);
+    }
+
+    #[test]
+    fn detecting_language_preserves_missing_and_unknown_fields() {
+        let directory = temporary_directory();
+        let mut document = serde_json::json!({
+            "colorMode": "sepia",
+            "futureSetting": {"enabled": true, "items": [1, null, "keep"]}
+        });
+        let path = write_config(directory.path(), &document.to_string());
+
+        let config = Config::open_with_locale(directory.path(), || Some("zh-CN".to_owned()))
+            .expect("the configuration is read");
+        assert_eq!(config.color_mode().expect("color mode"), ColorMode::DEFAULT);
+        assert_eq!(
+            config.database_path().expect("database path"),
+            directory.path().join(DATABASE_FILE_NAME)
+        );
+
+        let saved: serde_json::Value = serde_json::from_str(
+            &std::fs::read_to_string(path).expect("the configuration is readable"),
+        )
+        .expect("json");
+        document["language"] = serde_json::json!("zh-CN");
+        assert_eq!(
+            saved, document,
+            "defaults and unknown fields must stay untouched"
+        );
+    }
+
+    #[test]
+    fn an_existing_configuration_opens_when_saving_the_detected_language_fails() {
+        let directory = temporary_directory();
+        let contents = r#"{ "databasePath": "data/library.db", "futureSetting": true }"#;
+        let path = write_config(directory.path(), contents);
+        let temporary = path.with_extension("json.tmp");
+        std::fs::create_dir(&temporary).expect("the temporary file path is blocked");
+
+        let config = Config::open_with_locale(directory.path(), || Some("zh-CN".to_owned()))
+            .expect("a failed language save must not prevent startup");
+        assert_eq!(config.language().expect("language"), Language::ZhCn);
+        assert_eq!(
+            config.database_path().expect("database path"),
+            directory.path().join("data/library.db")
+        );
+        assert_eq!(
+            std::fs::read_to_string(&path).expect("the configuration is readable"),
+            contents
+        );
+
+        std::fs::remove_dir(temporary).expect("the save obstruction is removed");
+        let reopened = Config::open_with_locale(directory.path(), || Some("en-GB".to_owned()))
+            .expect("detection and persistence are retried next launch");
+        assert_eq!(reopened.language().expect("language"), Language::EnUs);
+        let saved: serde_json::Value = serde_json::from_str(
+            &std::fs::read_to_string(path).expect("the configuration is readable"),
+        )
+        .expect("json");
+        let mut expected: serde_json::Value = serde_json::from_str(contents).expect("json");
+        expected["language"] = serde_json::json!("en-US");
+        assert_eq!(saved, expected);
+    }
+
+    #[test]
+    fn first_run_still_reports_a_failed_configuration_write() {
+        let directory = temporary_directory();
+        std::fs::create_dir(directory.path().join("config.json.tmp"))
+            .expect("the temporary file path is blocked");
+
+        let error = Config::open_with_locale(directory.path(), || None)
+            .expect_err("a new configuration still requires a successful write");
+        assert_eq!(error.code(), ApiCode::Io);
+        assert!(!directory.path().join(CONFIG_FILE_NAME).exists());
     }
 
     #[test]
@@ -269,22 +481,26 @@ mod tests {
     }
 
     #[test]
-    fn configuration_survives_a_restart() {
+    fn a_manual_language_overrides_detection_and_survives_a_restart() {
         let directory = temporary_directory();
 
         {
-            let config = Config::open(directory.path()).expect("the configuration is created");
+            let config = Config::open_with_locale(directory.path(), || Some("zh-CN".to_owned()))
+                .expect("the configuration is created");
             assert_eq!(
                 config
-                    .set_language(Language::ZhCn)
+                    .set_language(Language::EnUs)
                     .expect("language is written"),
-                Language::DEFAULT
+                Language::ZhCn
             );
-            assert_eq!(config.language().expect("language"), Language::ZhCn);
+            assert_eq!(config.language().expect("language"), Language::EnUs);
         }
 
-        let reopened = Config::open(directory.path()).expect("the configuration is read back");
-        assert_eq!(reopened.language().expect("language"), Language::ZhCn);
+        let reopened = Config::open_with_locale(directory.path(), || {
+            panic!("a manual choice must not query the operating system")
+        })
+        .expect("the configuration is read back");
+        assert_eq!(reopened.language().expect("language"), Language::EnUs);
     }
 
     #[test]
@@ -327,12 +543,19 @@ mod tests {
         let directory = temporary_directory();
         write_config(directory.path(), r#"{ "language": "ja-JP" }"#);
 
-        let config = Config::open(directory.path()).expect("the configuration is read");
+        let config = Config::open_with_locale(directory.path(), || {
+            panic!("an unknown stored tag must retain its existing fallback behavior")
+        })
+        .expect("the configuration is read");
 
         assert_eq!(config.language().expect("language"), Language::DEFAULT);
         assert_eq!(
             config.database_path().expect("database path"),
             directory.path().join(DATABASE_FILE_NAME)
+        );
+        assert_eq!(
+            std::fs::read_to_string(config.path()).expect("the configuration is readable"),
+            r#"{ "language": "ja-JP" }"#
         );
     }
 

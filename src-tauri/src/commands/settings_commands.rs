@@ -184,6 +184,9 @@ mod tests {
     fn get_language_reports_the_stored_tag() {
         let directory = temporary_directory();
         let config = Config::open(directory.path()).expect("the configuration is created");
+        config
+            .set_language(Language::EnUs)
+            .expect("English is saved");
 
         assert_eq!(read_language(&config).expect("language"), "en-US");
 
@@ -195,6 +198,7 @@ mod tests {
     fn set_language_rejects_unknown_tags() {
         let directory = temporary_directory();
         let config = Config::open(directory.path()).expect("the configuration is created");
+        let previous = read_language(&config).expect("language");
 
         let error = write_language(&config, "ja-JP").expect_err("the tag is rejected");
 
@@ -203,7 +207,7 @@ mod tests {
             error.details().expect("details").contains("zh-CN"),
             "details list the known tags: {error:?}"
         );
-        assert_eq!(read_language(&config).expect("language"), "en-US");
+        assert_eq!(read_language(&config).expect("language"), previous);
     }
 
     #[test]

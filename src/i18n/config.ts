@@ -2,7 +2,7 @@
 
 import type { LanguageCode, LanguageOption } from "../types/i18n";
 
-/** Used when nothing else is stored; mirrors `Language::DEFAULT` in `services/i18n.rs`. */
+/** Fallback when the backend is unavailable; mirrors `Language::DEFAULT` in `services/i18n.rs`. */
 export const DEFAULT_LANGUAGE: LanguageCode = "en-US";
 
 /** Every tag `src/i18n/locales/` holds a file for, reserved ones included. */
