@@ -13,6 +13,8 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 tauri = { version = "2", features = ["tray-icon"] }
+# The released 2.5.4 can start duplicates during concurrent Windows startup (upstream #3704).
+tauri-plugin-single-instance = { git = "https://github.com/tauri-apps/plugins-workspace", rev = "6c9746e5515491a25c9d8c168c73e43a9edec6bb" }
 tauri-plugin-notification = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

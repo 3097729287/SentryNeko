@@ -87,7 +87,7 @@ Status legend: ✅ Planned (implemented in the current scope); 🚧 Reserved (fu
 | Feature | Description | Status |
 | --- | --- | --- |
 | Auto-start with Windows | A settings switch writes the per-user run key, so the app starts at login and waits in the tray | ✅ Planned |
-| System tray | Minimize to tray with a right-click menu (start Pomodoro, view today's stats) | ✅ Planned |
+| System tray | Close to tray with a right-click menu (start Pomodoro, view today's stats); launching again restores the existing window | ✅ Planned |
 | Global shortcuts | Custom shortcuts to start / pause the Pomodoro timer and show / hide the main window | 🚧 Reserved |
 
 ### 8. Settings
