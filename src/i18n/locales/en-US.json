@@ -195,7 +195,15 @@
     }
   },
   "pomodoro": {
+    "cycle": {
+      "label": "This cycle",
+      "value": "{{done}} of {{total}} focus blocks"
+    },
     "error": "The timer could not reach the backend.",
+    "next": {
+      "label": "Up next",
+      "value": "{{phase}} · {{minutes}} min"
+    },
     "pause": "Pause",
     "phase": {
       "focus": "Focus",
@@ -207,6 +215,7 @@
     "settings": {
       "error": "The durations could not be saved.",
       "focus": "Focus (minutes)",
+      "link": "Edit durations",
       "locked": "Stop the timer to change the durations.",
       "longBreak": "Long break (minutes)",
       "saved": "Saved",
@@ -214,7 +223,12 @@
       "slice": "{{phase}} · {{minutes}} min",
       "title": "Pomodoro durations"
     },
-    "start": "Start"
+    "start": "Start",
+    "state": {
+      "idle": "Ready",
+      "paused": "Paused",
+      "running": "Running"
+    }
   },
   "settings": {
     "alarm": {
