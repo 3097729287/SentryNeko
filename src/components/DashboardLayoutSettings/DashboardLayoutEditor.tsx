@@ -4,12 +4,14 @@ import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 
 import type {
   CSSProperties,
   KeyboardEvent as ReactKeyboardEvent,
+  MouseEvent as ReactMouseEvent,
   PointerEvent as ReactPointerEvent,
 } from "react";
 
 import { useDashboardLayout } from "../../hooks/useDashboardLayout";
 import { useI18n } from "../../hooks/useI18n";
 import { DASHBOARD_PANELS } from "../../pages/Dashboard/panels";
+import { addWidgetItems, removeWidgetItem } from "../../pages/Dashboard/widgetMenu";
 import {
   DASHBOARD_COLUMNS,
   DASHBOARD_WIDGETS,
@@ -17,10 +19,12 @@ import {
   hiddenWidgets,
   minSizeOf,
   visibleWidgets,
-  wantedSizeOf,
+  wantedPlacement,
 } from "../../types/dashboard";
 import type { DashboardWidgetId, WidgetPlacement } from "../../types/dashboard";
 import { ActionIcon } from "../ui/ActionIcon";
+import { ContextMenu } from "../ui/ContextMenu";
+import type { ContextMenuItem } from "../ui/ContextMenu";
 import { SegmentedControl } from "../ui/SegmentedControl";
 import { WidgetIcon } from "../ui/WidgetIcon";
 import { useCanvasScale } from "./useCanvasScale";
@@ -42,6 +46,16 @@ interface DragState {
   /** Where the ghost sits right now, in pixels relative to the grid. */
   ghostX: number;
   ghostY: number;
+}
+
+/** Where the right-click menu was opened, and what it was opened on. */
+interface WidgetMenu {
+  /** Pointer position in viewport pixels, which is what the menu is anchored to. */
+  at: { x: number; y: number };
+  /** The panel under the pointer, or `null` when the canvas itself was clicked. */
+  id: DashboardWidgetId | null;
+  /** Cell the canvas was clicked on: where a panel picked from the menu lands. */
+  cell: { x: number; y: number };
 }
 
 /**
@@ -89,23 +103,6 @@ function rectOf(placement: WidgetPlacement, cell: number, gap: number): CellRect
   };
 }
 
-/**
- * The rectangle a parked panel asks for: its wanted size, trimmed to the current column count.
- *
- * `x` and `y` are zero because the ghost is positioned by the pointer; only the cells it spans matter.
- */
-function wantedPlacement(id: DashboardWidgetId, columns: number): WidgetPlacement {
-  const wanted = wantedSizeOf(id);
-  const min = minSizeOf(id);
-
-  return {
-    h: Math.max(min.h, wanted.h),
-    w: Math.max(min.w, Math.min(wanted.w, columns)),
-    x: 0,
-    y: 0,
-  };
-}
-
 /** Full-window editor; the grid is the dashboard itself, one pointer drop away from the layout. */
 export function DashboardLayoutEditor({ onClose }: DashboardLayoutEditorProps) {
   const { t } = useI18n();
@@ -126,6 +123,7 @@ export function DashboardLayoutEditor({ onClose }: DashboardLayoutEditorProps) {
   // here is in canvas pixels: the scale is what turns them into pixels on screen.
   const { frameRef, gridRef, metrics } = useCanvasScale(layout.columns);
   const [dragging, setDragging] = useState<DashboardWidgetId | null>(null);
+  const [menu, setMenu] = useState<WidgetMenu | null>(null);
   /** One node per panel, for the push-away animation and the pointer-follow transform. */
   const slotRefs = useRef<Partial<Record<DashboardWidgetId, HTMLDivElement | null>>>({});
   /** Panel boxes at the last render, so the next render knows where they came from. */
@@ -518,6 +516,71 @@ export function DashboardLayoutEditor({ onClose }: DashboardLayoutEditorProps) {
 
   const visible = visibleWidgets(layout);
   const parked = hiddenWidgets(layout);
+
+  /**
+   * The cell a click on the canvas landed on.
+   *
+   * The pointer moves in screen pixels while the grid is laid out in canvas pixels, so the scale
+   * comes off first; a click past the last column is pulled back onto the grid when the panel is
+   * added, because `clampPlacement` trims the rectangle it is given.
+   */
+  const cellAt = (event: ReactMouseEvent<HTMLElement>): { x: number; y: number } => {
+    const grid = gridRef.current;
+
+    if (grid === null || step <= 0) {
+      return { x: 0, y: 0 };
+    }
+
+    const rect = grid.getBoundingClientRect();
+
+    return {
+      x: Math.floor((event.clientX - rect.left) / step),
+      y: Math.floor((event.clientY - rect.top) / step),
+    };
+  };
+
+  /** Right-click on a panel: the menu offers to take that panel off the grid. */
+  const openPanelMenu = (event: ReactMouseEvent<HTMLElement>, id: DashboardWidgetId): void => {
+    event.preventDefault();
+    setMenu({ at: { x: event.clientX, y: event.clientY }, cell: { x: 0, y: 0 }, id });
+  };
+
+  /** Right-click on the canvas itself: the menu offers the parked panels, at the cell clicked. */
+  const openCanvasMenu = (event: ReactMouseEvent<HTMLElement>): void => {
+    // Panels cover the canvas, so a right-click anywhere else belongs to a panel's own menu.
+    if (event.target !== event.currentTarget) {
+      return;
+    }
+
+    event.preventDefault();
+    setMenu({ at: { x: event.clientX, y: event.clientY }, cell: cellAt(event), id: null });
+  };
+
+  /** What the menu offers, wherever it was opened. */
+  const menuItems = (): ContextMenuItem[] => {
+    if (menu === null) {
+      return [];
+    }
+
+    if (menu.id !== null) {
+      const { id } = menu;
+
+      return [
+        removeWidgetItem(id, t, () => {
+          draft.remove(id);
+        }),
+      ];
+    }
+
+    const { cell } = menu;
+
+    return addWidgetItems(parked, layout.columns, t, (id) => {
+      draft.add(
+        id,
+        clampPlacement(id, { ...wantedPlacement(id, layout.columns), ...cell }, layout.columns),
+      );
+    });
+  };
   const ghost = preview === null ? null : rectOf(preview, metrics.cell, metrics.gap);
   const ghostLabel = dragRef.current?.id ?? null;
 
@@ -622,6 +685,7 @@ export function DashboardLayoutEditor({ onClose }: DashboardLayoutEditorProps) {
               <div
                 aria-label={t("dashboard.layout.canvas")}
                 className="dash-cells"
+                onContextMenu={openCanvasMenu}
                 ref={gridRef}
                 style={{ "--dash-columns": layout.columns } as CSSProperties}
               >
@@ -645,6 +709,9 @@ export function DashboardLayoutEditor({ onClose }: DashboardLayoutEditorProps) {
                       className="dash-slot editor-slot"
                       data-dragging={dragging === id}
                       key={id}
+                      onContextMenu={(event) => {
+                        openPanelMenu(event, id);
+                      }}
                       ref={(element) => {
                         slotRefs.current[id] = element;
                       }}
@@ -764,6 +831,16 @@ export function DashboardLayoutEditor({ onClose }: DashboardLayoutEditorProps) {
           <span className="editor-shortcuts">{t("dashboard.layout.shortcuts")}</span>
         </footer>
       </div>
+      {menu === null ? null : (
+        <ContextMenu
+          at={menu.at}
+          items={menuItems()}
+          label={menu.id === null ? t("dashboard.layout.menuAdd") : t(`dashboard.widget.${menu.id}`)}
+          onClose={() => {
+            setMenu(null);
+          }}
+        />
+      )}
     </div>
   );
 }

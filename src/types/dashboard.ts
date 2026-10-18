@@ -78,6 +78,21 @@ export function wantedSizeOf(id: DashboardWidgetId): { w: number; h: number } {
   return WANTED_SIZE[id];
 }
 
+/**
+ * The rectangle a copy of `id` asks for on a grid `columns` wide.
+ */
+export function wantedPlacement(id: DashboardWidgetId, columns: number): WidgetPlacement {
+  const wanted = wantedSizeOf(id);
+  const min = minSizeOf(id);
+
+  return {
+    h: Math.max(min.h, wanted.h),
+    w: Math.max(min.w, Math.min(wanted.w, columns)),
+    x: 0,
+    y: 0,
+  };
+}
+
 /** The panels the page actually draws, in the order a fresh layout fills them. */
 export function visibleWidgets(layout: DashboardLayout): readonly DashboardWidgetId[] {
   return DASHBOARD_WIDGETS.filter((id) => !layout.hidden.includes(id));
@@ -243,11 +258,7 @@ export function showWidget(
   id: DashboardWidgetId,
   placement?: WidgetPlacement,
 ): DashboardLayout {
-  const wanted = wantedSizeOf(id);
-  const size = {
-    h: Math.max(minSizeOf(id).h, wanted.h),
-    w: Math.max(minSizeOf(id).w, Math.min(wanted.w, layout.columns)),
-  };
+  const size = wantedPlacement(id, layout.columns);
   const spot =
     placement ??
     firstFit(
@@ -260,7 +271,11 @@ export function showWidget(
     columns: layout.columns,
     hidden: layout.hidden.filter((other) => other !== id),
     placements: pack(
-      { ...layout.placements, [id]: clampPlacement(id, { ...spot, ...size }, layout.columns) },
+      {
+        ...layout.placements,
+        // The gap the panel came back to decides where it sits; the wanted size decides how big.
+        [id]: clampPlacement(id, { ...spot, h: size.h, w: size.w }, layout.columns),
+      },
       layout.columns,
       id,
     ),
