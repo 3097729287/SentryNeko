@@ -16,6 +16,7 @@ import { TitleBar } from "./components/TitleBar";
 import { ToastHost } from "./components/ToastHost";
 import { NavIcon } from "./components/ui/NavIcon";
 import { useI18n } from "./hooks/useI18n";
+import { usePageZoom } from "./hooks/usePageZoom";
 import { BACKEND_EVENTS, useTauriEvent } from "./hooks/useTauriEvent";
 import { AlarmsPage } from "./pages/AlarmsPage";
 import { AnalyticsPage } from "./pages/AnalyticsPage";
@@ -78,6 +79,7 @@ function Shell() {
   const loadPomodoro = usePomodoroStore((state) => state.load);
   const startPomodoro = usePomodoroStore((state) => state.start);
   const navigate = useNavigate();
+  const contentRef = useRef<HTMLElement>(null);
   const navRef = useRef<HTMLElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
   const { pathname } = useLocation();
@@ -90,6 +92,8 @@ function Shell() {
   const [narrow, setNarrow] = useState(isNarrowWindow);
   const collapsed = preferredCollapsed || narrow;
   const [tooltip, setTooltip] = useState<NavTooltip | null>(null);
+
+  usePageZoom(contentRef);
 
   // The shell owns the push, so the live tail keeps growing while another page is mounted.
   useTauriEvent<AppEvent>(BACKEND_EVENTS.appSwitch, recordAppSwitch);
@@ -246,7 +250,7 @@ function Shell() {
           {tooltip.label}
         </span>
       ) : null}
-      <main className="content">
+      <main className="content" ref={contentRef}>
         <div className="content-inner">
           <Outlet />
         </div>
