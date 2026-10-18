@@ -3106,6 +3106,7 @@ dependencies = [
  "tauri",
  "tauri-build",
  "tauri-plugin-notification",
+ "tauri-plugin-single-instance",
  "tempfile",
 ]
 
@@ -3712,6 +3713,21 @@ dependencies = [
  "thiserror 2.0.21",
  "time",
  "url",
+ "zbus",
+]
+
+[[package]]
+name = "tauri-plugin-single-instance"
+version = "2.5.4"
+source = "git+https://github.com/tauri-apps/plugins-workspace?rev=6c9746e5515491a25c9d8c168c73e43a9edec6bb#6c9746e5515491a25c9d8c168c73e43a9edec6bb"
+dependencies = [
+ "serde",
+ "serde_json",
+ "tauri",
+ "thiserror 2.0.21",
+ "tokio",
+ "tracing",
+ "windows-sys 0.61.2",
  "zbus",
 ]
 

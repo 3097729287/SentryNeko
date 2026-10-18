@@ -1,8 +1,8 @@
 # System tray
 
 The window is the face of the app, not the app itself: foreground tracking, the Pomodoro timer and
-the alarms keep running while it is hidden. That makes the tray the only place to reach a resident
-app from.
+the alarms keep running while it is hidden. The tray and launching the app again both bring the
+existing window back.
 
 ## Closing is not quitting
 
@@ -11,6 +11,38 @@ and hides the window. The process stays alive, so `RunningCollector`, `RunningSc
 frontend timer keep their course. The tray's `Quit SentryNeko` entry is the only way out: it calls
 `app.exit(0)`, and `RunEvent::Exit` then stops the background threads and closes the collector's open
 row.
+
+## Launching again
+
+`lib.rs` registers the official `tauri-plugin-single-instance` before the notification plugin and
+application setup. A subsequent launch forwards to the resident instance and exits before creating
+another window, tray icon, database pool, collector or scheduler. The OS briefly starts a process
+for that launch; only the original process remains running.
+
+The dependency is pinned to the upstream [Windows startup race fix](https://github.com/tauri-apps/plugins-workspace/pull/3704).
+Released version 2.5.4 can let a second process finish setup if it sees the first process's mutex
+before its IPC window exists. The pinned fix waits for that window and always exits the secondary
+process, including when forwarding times out.
+
+The callback calls `services/tray.rs::show_window`, also used by the tray menu. It unminimizes,
+shows and focuses the existing main window, including when a login start left it hidden in the
+tray. It always shows the window rather than toggling visibility, so launching again while the
+window is visible keeps it visible. The existing tray icon and menu remain installed. The plugin
+releases its instance lock when the app exits, so quitting from the tray allows a fresh launch.
+
+The plugin provides Windows, macOS and Linux backends; SentryNeko itself continues to support
+Windows only, as described in the README.
+
+### Windows smoke test
+
+1. Launch the built executable, then launch it again with its window visible and another app
+   focused. The original window should receive focus, with one resident app process and tray icon.
+2. Minimize the window and launch again. The same window should be restored and focused.
+3. Close the window to the tray and launch again. The same window should reappear. Repeat several
+   times, including quick successive launches; no extra resident process or tray icon should remain.
+4. Use the tray's show/hide and Start Pomodoro actions after those attempts; both should still work.
+5. Quit from the tray, start with `--autostart` and confirm it stays hidden, then launch normally to
+   restore it. Quit and launch once more to confirm the instance lock has been released.
 
 ## The menu
 

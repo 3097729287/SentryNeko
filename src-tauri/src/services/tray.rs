@@ -281,7 +281,7 @@ fn handle_menu_event(app: &AppHandle, id: &str, bus: &EventBus) {
 }
 
 /// Brings the window back to the front, from the tray or from a minimized state.
-fn show_window(app: &AppHandle) {
+pub fn show_window(app: &AppHandle) {
     let Some(window) = app.get_webview_window(WINDOW_LABEL) else {
         return;
     };

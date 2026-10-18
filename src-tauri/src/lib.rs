@@ -26,6 +26,10 @@ use crate::services::tray;
 /// Builds and runs the application.
 pub fn run() {
     let app = tauri::Builder::default()
+        // Check before any other plugin or setup can create another tray or background worker.
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            tray::show_window(app);
+        }))
         .plugin(tauri_plugin_notification::init())
         .setup(|app| {
             let directory = app.path().app_data_dir()?;
